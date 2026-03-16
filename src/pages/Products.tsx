@@ -127,6 +127,16 @@ export default function Products() {
                 {AGING_CATEGORIES.map(c => <SelectItem key={c.key} value={c.key}>{c.label}</SelectItem>)}
               </SelectContent>
             </Select>
+            <Select value={comissaoFilter} onValueChange={v => { setComissaoFilter(v); setPage(0); }}>
+              <SelectTrigger className="w-[170px]"><SelectValue placeholder="Comissão" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas comissões</SelectItem>
+                <SelectItem value="com-fixa">Comissão Fixa</SelectItem>
+                <SelectItem value="com-comissao">Com comissão</SelectItem>
+                <SelectItem value="sem-comissao">Sem comissão</SelectItem>
+                {tiposComissao.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
 
           <p className="text-xs text-muted-foreground">{formatNumber(filtered.length)} produtos</p>
