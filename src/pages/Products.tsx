@@ -56,8 +56,9 @@ export default function Products() {
     else if (comissaoFilter === 'com-comissao') result = result.filter(r => r.nome_comissao);
     else if (comissaoFilter === 'sem-comissao') result = result.filter(r => !r.nome_comissao);
     else if (comissaoFilter !== 'all') result = result.filter(r => r.nome_comissao === comissaoFilter);
-    if (compraFilter === 'descontinuado') result = result.filter(r => r.dias_sem_compra > 180 || r.dias_sem_compra < 0);
-    else if (compraFilter === 'compra-recente') result = result.filter(r => r.dias_sem_compra >= 0 && r.dias_sem_compra <= 90);
+    if (compraFilter === 'lt90') result = result.filter(r => r.dias_sem_compra >= 0 && r.dias_sem_compra < 90);
+    else if (compraFilter === '90-180') result = result.filter(r => r.dias_sem_compra >= 90 && r.dias_sem_compra <= 180);
+    else if (compraFilter === 'gt180') result = result.filter(r => r.dias_sem_compra > 180);
     else if (compraFilter === 'sem-registro') result = result.filter(r => r.dias_sem_compra < 0);
     if (categoriaFilter !== 'all') result = result.filter(r => r.categoria_estoque === categoriaFilter);
 
@@ -135,9 +136,10 @@ export default function Products() {
               <SelectTrigger className="w-[180px]"><SelectValue placeholder="Últ. Compra" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas (compra)</SelectItem>
-                <SelectItem value="descontinuado">Descontinuado (&gt;180d)</SelectItem>
-                <SelectItem value="compra-recente">Compra recente (≤90d)</SelectItem>
-                <SelectItem value="sem-registro">Sem registro compra</SelectItem>
+                <SelectItem value="lt90">&lt; 90 dias</SelectItem>
+                <SelectItem value="90-180">90 a 180 dias</SelectItem>
+                <SelectItem value="gt180">&gt; 180 dias</SelectItem>
+                <SelectItem value="sem-registro">Sem registro</SelectItem>
               </SelectContent>
             </Select>
             <Select value={comissaoFilter} onValueChange={v => { setComissaoFilter(v); setPage(0); }}>

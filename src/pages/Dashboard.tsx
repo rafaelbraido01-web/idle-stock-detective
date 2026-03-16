@@ -108,18 +108,18 @@ export default function Dashboard() {
     }).filter(d => d.value > 0);
   }, [latest]);
 
-  // Análise Compra vs Venda
-  const compraVsVenda = useMemo(() => {
-    const comprandoSemVender = latest.filter(p => p.dias_sem_compra >= 0 && p.dias_sem_compra <= 90 && (p.dias_sem_venda > 180 || p.dias_sem_venda < 0));
-    const descontinuado = latest.filter(p => p.dias_sem_compra > 180 || p.dias_sem_compra < 0);
-    const ativo = latest.filter(p => p.dias_sem_compra >= 0 && p.dias_sem_compra <= 90 && p.dias_sem_venda >= 0 && p.dias_sem_venda <= 90);
-    const semRegistroCompra = latest.filter(p => p.dias_sem_compra < 0);
+  // Análise por última compra
+  const compraDistribuicao = useMemo(() => {
+    const lt90 = latest.filter(p => p.dias_sem_compra >= 0 && p.dias_sem_compra < 90);
+    const d90a180 = latest.filter(p => p.dias_sem_compra >= 90 && p.dias_sem_compra <= 180);
+    const gt180 = latest.filter(p => p.dias_sem_compra > 180);
+    const semRegistro = latest.filter(p => p.dias_sem_compra < 0);
 
     return [
-      { name: 'Ativo (vende e compra)', qtd: ativo.length, valor: ativo.reduce((s, p) => s + p.valor_total, 0), color: '#16a34a' },
-      { name: 'Comprando s/ vender', qtd: comprandoSemVender.length, valor: comprandoSemVender.reduce((s, p) => s + p.valor_total, 0), color: '#d97706' },
-      { name: 'Descontinuado', qtd: descontinuado.length, valor: descontinuado.reduce((s, p) => s + p.valor_total, 0), color: '#dc2626' },
-      { name: 'Sem registro compra', qtd: semRegistroCompra.length, valor: semRegistroCompra.reduce((s, p) => s + p.valor_total, 0), color: '#94a3b8' },
+      { name: '< 90 dias', qtd: lt90.length, valor: lt90.reduce((s, p) => s + p.valor_total, 0), color: '#16a34a' },
+      { name: '90 a 180 dias', qtd: d90a180.length, valor: d90a180.reduce((s, p) => s + p.valor_total, 0), color: '#d97706' },
+      { name: '> 180 dias', qtd: gt180.length, valor: gt180.reduce((s, p) => s + p.valor_total, 0), color: '#dc2626' },
+      { name: 'Sem registro', qtd: semRegistro.length, valor: semRegistro.reduce((s, p) => s + p.valor_total, 0), color: '#94a3b8' },
     ].filter(d => d.qtd > 0);
   }, [latest]);
 
@@ -263,16 +263,16 @@ export default function Dashboard() {
               transition={{ delay: 0.2 }}
               className="bg-card rounded-xl shadow-card p-5"
             >
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Compra vs Venda — Status dos Produtos</p>
-              <p className="text-[10px] text-muted-foreground mb-3">Identifica produtos descontinuados ou que estão sendo comprados sem vender</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Última Compra — Distribuição</p>
+              <p className="text-[10px] text-muted-foreground mb-3">Produtos agrupados pela data da última compra</p>
               <ResponsiveContainer width="100%" height={240}>
-                <BarChart data={compraVsVenda}>
+                <BarChart data={compraDistribuicao}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(214 32% 91%)" />
-                  <XAxis dataKey="name" tick={{ fontSize: 9 }} stroke="hsl(215 16% 47%)" interval={0} />
+                  <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="hsl(215 16% 47%)" interval={0} />
                   <YAxis tick={{ fontSize: 11 }} stroke="hsl(215 16% 47%)" />
                   <Tooltip formatter={(v: number, name: string) => name === 'Valor' ? formatCurrency(v) : formatNumber(v)} />
                   <Bar dataKey="qtd" name="Produtos" radius={[4, 4, 0, 0]}>
-                    {compraVsVenda.map((entry, i) => (
+                    {compraDistribuicao.map((entry, i) => (
                       <Cell key={i} fill={entry.color} />
                     ))}
                   </Bar>
