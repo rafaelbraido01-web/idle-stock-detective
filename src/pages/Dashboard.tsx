@@ -312,25 +312,8 @@ export default function Dashboard() {
             </motion.div>
           </div>
 
-          {/* Charts Row 2: Valor por Aging + Curva ABC */}
+          {/* Charts Row 2: Curva ABC + Evolução */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-xl shadow-card p-5">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-4">Valor por Categoria de Aging</p>
-              <ResponsiveContainer width="100%" height={260}>
-                <BarChart data={agingByValue}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(214 32% 91%)" />
-                  <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="hsl(215 16% 47%)" />
-                  <YAxis tick={{ fontSize: 11 }} stroke="hsl(215 16% 47%)" tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                  <Bar dataKey="valor" name="Valor" radius={[4, 4, 0, 0]}>
-                    {agingByValue.map((entry, i) => (
-                      <Cell key={i} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </motion.div>
-
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="bg-card rounded-xl shadow-card p-5">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Curva ABC — Concentração de Valor</p>
               <p className="text-[10px] text-muted-foreground mb-3">Quanto menor a área, mais concentrado o valor em poucos SKUs</p>
@@ -344,28 +327,6 @@ export default function Dashboard() {
                   <Line type="linear" dataKey="pctSKUs" stroke="hsl(215 16% 47% / 0.3)" strokeDasharray="4 4" dot={false} name="Igualdade" />
                 </AreaChart>
               </ResponsiveContainer>
-            </motion.div>
-          </div>
-
-          {/* Charts Row 3: Top Grupos Parados + Evolução */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-card rounded-xl shadow-card p-5">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-4">Top Grupos — Maior Estoque Parado</p>
-              {topGruposParados.length > 0 ? (
-                <ResponsiveContainer width="100%" height={240}>
-                  <BarChart data={topGruposParados} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(214 32% 91%)" />
-                    <XAxis type="number" tick={{ fontSize: 11 }} stroke="hsl(215 16% 47%)" tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
-                    <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} stroke="hsl(215 16% 47%)" width={100} />
-                    <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                    <Bar dataKey="valor" name="Valor Parado" radius={[0, 4, 4, 0]} fill="hsl(0 72% 51%)" />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-[240px] flex items-center justify-center">
-                  <p className="text-xs text-muted-foreground">Nenhum produto parado acima de 180 dias</p>
-                </div>
-              )}
             </motion.div>
 
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-card rounded-xl shadow-card p-5">
