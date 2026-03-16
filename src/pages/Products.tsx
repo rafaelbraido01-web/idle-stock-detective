@@ -37,6 +37,7 @@ export default function Products() {
   const grupos = useMemo(() => [...new Set(produtos.map(p => p.grupo).filter(Boolean))].sort(), [produtos]);
   const subgrupos = useMemo(() => [...new Set(produtos.map(p => p.subgrupo).filter(Boolean))].sort(), [produtos]);
   const marcas = useMemo(() => [...new Set(produtos.map(p => p.marca).filter(Boolean))].sort(), [produtos]);
+  const tiposComissao = useMemo(() => [...new Set(latestSnapshots.map(ps => ps.nome_comissao).filter(Boolean))].sort(), [latestSnapshots]);
 
   const filtered = useMemo(() => {
     let result = enriched;
