@@ -173,6 +173,10 @@ export function processExcelFile(file: File, existingProdutos: Produto[]): Promi
           'Última Compra': colUltimaCompra || '—',
           'Nome Comissão': colNomeComissao || '—',
           'Comissão': colComissao || '—',
+          'Preço Tabela': colPrecoTabela || '—',
+          'Valor Promoção': colValorPromocao || '—',
+          'Fim Promoção': colDataFimPromocao || '—',
+          'Valor Venda Total': colValorVendaTotal || '—',
         };
 
         const warnings: string[] = [];
