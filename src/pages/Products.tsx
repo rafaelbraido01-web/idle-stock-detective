@@ -184,6 +184,14 @@ export default function Products() {
                         {item.data_ultima_venda ? formatDate(item.data_ultima_venda) : '—'}
                       </td>
                       <td className="px-4 py-2.5 text-right font-mono text-foreground">{item.dias_sem_venda < 0 ? '—' : item.dias_sem_venda}</td>
+                      <td className="px-4 py-2.5 text-xs text-muted-foreground">
+                        {item.nome_comissao ? (
+                          <span className="inline-flex items-center gap-1">
+                            <span>{item.nome_comissao}</span>
+                            {item.comissao > 0 && <span className="font-mono text-foreground">({item.comissao}%)</span>}
+                          </span>
+                        ) : '—'}
+                      </td>
                       <td className="px-4 py-2.5 text-center"><AgingBadge dias={item.dias_sem_venda} /></td>
                     </tr>
                   ))}
