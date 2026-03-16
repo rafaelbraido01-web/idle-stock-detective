@@ -236,9 +236,9 @@ export default function Dashboard() {
               valueClassName="text-aging-critical"
             />
             <KPICard
-              title="Média Dias sem Venda"
-              value={`${Math.round(kpis.mediaDias)} dias`}
-              subtitle={kpis.semRegistro > 0 ? `${formatNumber(kpis.semRegistro)} sem registro de venda` : undefined}
+              title="Ticket Médio por SKU"
+              value={formatCurrency(kpis.ticketMedio)}
+              subtitle="Valor médio em estoque por produto"
             />
             <KPICard
               title="Ticket Médio por SKU"
