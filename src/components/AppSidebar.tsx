@@ -1,4 +1,4 @@
-import { BarChart3, Box, FileSpreadsheet, LayoutDashboard, TrendingUp } from 'lucide-react';
+import { BarChart3, Box, FileSpreadsheet, GitCompareArrows, LayoutDashboard } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import {
@@ -17,7 +17,7 @@ const navItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
   { title: 'Produtos', url: '/produtos', icon: Box },
   { title: 'Importações', url: '/importacoes', icon: FileSpreadsheet },
-  
+  { title: 'Comparação', url: '/comparacao', icon: GitCompareArrows },
 ];
 
 export function AppSidebar() {
