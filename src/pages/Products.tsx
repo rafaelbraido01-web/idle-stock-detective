@@ -172,48 +172,58 @@ export default function Products() {
                     <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('quantidade')}>
                       <span className="inline-flex items-center gap-1">Qtd <ArrowUpDown className="h-3 w-3" /></span>
                     </th>
-                    <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('valor_total')}>
-                      <span className="inline-flex items-center gap-1">Valor Total <ArrowUpDown className="h-3 w-3" /></span>
+                    <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">Custo Médio</th>
+                    <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('preco_tabela')}>
+                      <span className="inline-flex items-center gap-1">Preço Tabela <ArrowUpDown className="h-3 w-3" /></span>
                     </th>
-                    <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">Últ. Venda</th>
-                    <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">Últ. Compra</th>
+                    <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">Promoção</th>
+                    <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('valor_total')}>
+                      <span className="inline-flex items-center gap-1">Vlr Estoque <ArrowUpDown className="h-3 w-3" /></span>
+                    </th>
+                    <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('valor_venda_total')}>
+                      <span className="inline-flex items-center gap-1">Vlr Venda <ArrowUpDown className="h-3 w-3" /></span>
+                    </th>
                     <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('dias_sem_venda')}>
                       <span className="inline-flex items-center gap-1">Dias s/ Venda <ArrowUpDown className="h-3 w-3" /></span>
                     </th>
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">Comissão</th>
                     <th className="text-center px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {paginated.map(item => (
-                    <tr
-                      key={item.id}
-                      className="border-b last:border-0 hover:bg-muted/30 transition-colors duration-150 cursor-pointer"
-                      onClick={() => setSelectedProdutoId(item.produto_id)}
-                    >
-                      <td className="px-4 py-2.5 font-mono text-xs text-foreground">{item.produto?.codigo}</td>
-                      <td className="px-4 py-2.5 text-foreground max-w-[300px] truncate">{item.produto?.descricao}</td>
-                      <td className="px-4 py-2.5 text-muted-foreground text-xs">{item.produto?.grupo}</td>
-                      <td className="px-4 py-2.5 text-right font-mono text-foreground">{formatNumber(item.quantidade)}</td>
-                      <td className="px-4 py-2.5 text-right font-mono text-foreground">{formatCurrency(item.valor_total)}</td>
-                      <td className="px-4 py-2.5 text-right text-xs text-muted-foreground">
-                        {item.data_ultima_venda ? formatDate(item.data_ultima_venda) : '—'}
-                      </td>
-                      <td className="px-4 py-2.5 text-right text-xs text-muted-foreground">
-                        {item.data_ultima_compra ? formatDate(item.data_ultima_compra) : '—'}
-                      </td>
-                      <td className="px-4 py-2.5 text-right font-mono text-foreground">{item.dias_sem_venda < 0 ? '—' : item.dias_sem_venda}</td>
-                      <td className="px-4 py-2.5 text-xs text-muted-foreground">
-                        {item.nome_comissao ? (
-                          <span className="inline-flex items-center gap-1">
-                            <span>{item.nome_comissao}</span>
-                            {item.comissao > 0 && <span className="font-mono text-foreground">({item.comissao}%)</span>}
-                          </span>
-                        ) : '—'}
-                      </td>
-                      <td className="px-4 py-2.5 text-center"><AgingBadge dias={item.dias_sem_venda} /></td>
-                    </tr>
-                  ))}
+                  {paginated.map(item => {
+                    const isHighQty = item.quantidade >= 100;
+                    return (
+                      <tr
+                        key={item.id}
+                        className="border-b last:border-0 hover:bg-muted/30 transition-colors duration-150 cursor-pointer"
+                        onClick={() => setSelectedProdutoId(item.produto_id)}
+                      >
+                        <td className="px-4 py-2.5 font-mono text-xs text-foreground">{item.produto?.codigo}</td>
+                        <td className="px-4 py-2.5 text-foreground max-w-[250px] truncate">{item.produto?.descricao}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground text-xs">{item.produto?.grupo}</td>
+                        <td className={`px-4 py-2.5 text-right font-mono ${isHighQty ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-foreground'}`}>
+                          {formatNumber(item.quantidade)}
+                          {isHighQty && <span className="ml-1 text-[10px]">🔥</span>}
+                        </td>
+                        <td className="px-4 py-2.5 text-right font-mono text-foreground">{formatCurrency(item.valor_unitario)}</td>
+                        <td className="px-4 py-2.5 text-right font-mono text-foreground">{item.preco_tabela > 0 ? formatCurrency(item.preco_tabela) : '—'}</td>
+                        <td className="px-4 py-2.5 text-right text-xs">
+                          {item.valor_promocao ? (
+                            <span className="inline-flex flex-col items-end">
+                              <span className="font-mono text-green-600 dark:text-green-400 font-semibold">{formatCurrency(item.valor_promocao)}</span>
+                              {item.percentual_desconto && (
+                                <span className="text-[10px] text-green-600 dark:text-green-400">-{item.percentual_desconto.toFixed(1)}%</span>
+                              )}
+                            </span>
+                          ) : '—'}
+                        </td>
+                        <td className="px-4 py-2.5 text-right font-mono text-foreground">{formatCurrency(item.valor_total)}</td>
+                        <td className="px-4 py-2.5 text-right font-mono text-foreground">{item.valor_venda_total > 0 ? formatCurrency(item.valor_venda_total) : '—'}</td>
+                        <td className="px-4 py-2.5 text-right font-mono text-foreground">{item.dias_sem_venda < 0 ? '—' : item.dias_sem_venda}</td>
+                        <td className="px-4 py-2.5 text-center"><AgingBadge dias={item.dias_sem_venda} /></td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

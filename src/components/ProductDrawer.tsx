@@ -43,11 +43,43 @@ export function ProductDrawer({ produtoId, onClose }: ProductDrawerProps) {
             <div className="grid grid-cols-2 gap-3 mb-6">
               <div className="bg-muted/50 rounded-lg p-3">
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Quantidade</p>
-                <p className="text-lg font-mono font-semibold">{formatNumber(latestSnap.quantidade)}</p>
+                <p className={`text-lg font-mono font-semibold ${latestSnap.quantidade >= 100 ? 'text-amber-600 dark:text-amber-400' : ''}`}>
+                  {formatNumber(latestSnap.quantidade)}
+                  {latestSnap.quantidade >= 100 && <span className="ml-1 text-sm">🔥</span>}
+                </p>
               </div>
               <div className="bg-muted/50 rounded-lg p-3">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Valor Total</p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Custo Médio</p>
+                <p className="text-lg font-mono font-semibold">{formatCurrency(latestSnap.valor_unitario)}</p>
+              </div>
+              <div className="bg-muted/50 rounded-lg p-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Preço Tabela</p>
+                <p className="text-lg font-mono font-semibold">{latestSnap.preco_tabela > 0 ? formatCurrency(latestSnap.preco_tabela) : '—'}</p>
+              </div>
+              {latestSnap.valor_promocao ? (
+                <div className="bg-green-50 dark:bg-green-950/30 rounded-lg p-3 border border-green-200 dark:border-green-800">
+                  <p className="text-[10px] uppercase tracking-wider text-green-700 dark:text-green-400 font-medium">Promoção</p>
+                  <p className="text-lg font-mono font-semibold text-green-700 dark:text-green-400">{formatCurrency(latestSnap.valor_promocao)}</p>
+                  {latestSnap.percentual_desconto && (
+                    <p className="text-xs font-mono text-green-600 dark:text-green-500">-{latestSnap.percentual_desconto.toFixed(1)}% de desconto</p>
+                  )}
+                  {latestSnap.data_fim_promocao && (
+                    <p className="text-[10px] text-green-600 dark:text-green-500 mt-1">Válido até {formatDate(latestSnap.data_fim_promocao)}</p>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-muted/50 rounded-lg p-3">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Promoção</p>
+                  <p className="text-sm font-mono text-muted-foreground">Sem promoção</p>
+                </div>
+              )}
+              <div className="bg-muted/50 rounded-lg p-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Valor em Estoque</p>
                 <p className="text-lg font-mono font-semibold">{formatCurrency(latestSnap.valor_total)}</p>
+              </div>
+              <div className="bg-muted/50 rounded-lg p-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Valor Venda (total vida)</p>
+                <p className="text-lg font-mono font-semibold">{latestSnap.valor_venda_total > 0 ? formatCurrency(latestSnap.valor_venda_total) : '—'}</p>
               </div>
               <div className="bg-muted/50 rounded-lg p-3">
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Última Venda</p>
