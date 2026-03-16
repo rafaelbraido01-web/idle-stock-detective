@@ -63,7 +63,7 @@ export default function Products() {
       return sortDir === 'desc' ? (vb as number) - (va as number) : (va as number) - (vb as number);
     });
     return result;
-  }, [enriched, search, grupoFilter, subgrupoFilter, marcaFilter, categoriaFilter, sortKey, sortDir]);
+  }, [enriched, search, grupoFilter, subgrupoFilter, marcaFilter, comissaoFilter, categoriaFilter, sortKey, sortDir]);
 
   // Reset page when filters change
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
