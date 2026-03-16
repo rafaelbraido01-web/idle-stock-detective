@@ -9,6 +9,7 @@ interface InventoryState {
 
 interface InventoryContextType extends InventoryState {
   addImport: (snapshot: EstoqueSnapshot, produtos: Produto[], produtoSnapshots: EstoqueProdutoSnapshot[]) => void;
+  clearData: () => void;
   getLatestSnapshot: () => EstoqueSnapshot | null;
   getLatestProdutoSnapshots: () => EstoqueProdutoSnapshot[];
   getProdutoHistory: (produtoId: string) => Array<EstoqueProdutoSnapshot & { data_importacao: string }>;
@@ -56,6 +57,12 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const clearData = useCallback(() => {
+    const empty: InventoryState = { produtos: [], snapshots: [], produtoSnapshots: [] };
+    setState(empty);
+    localStorage.removeItem(STORAGE_KEY);
+  }, []);
+
   const getLatestSnapshot = useCallback(() => {
     if (state.snapshots.length === 0) return null;
     return state.snapshots[state.snapshots.length - 1];
@@ -78,7 +85,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
   }, [state.produtoSnapshots, state.snapshots]);
 
   return (
-    <InventoryContext.Provider value={{ ...state, addImport, getLatestSnapshot, getLatestProdutoSnapshots, getProdutoHistory }}>
+    <InventoryContext.Provider value={{ ...state, addImport, clearData, getLatestSnapshot, getLatestProdutoSnapshots, getProdutoHistory }}>
       {children}
     </InventoryContext.Provider>
   );
