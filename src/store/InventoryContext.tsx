@@ -9,6 +9,7 @@ interface InventoryState {
 
 interface InventoryContextType extends InventoryState {
   addImport: (snapshot: EstoqueSnapshot, produtos: Produto[], produtoSnapshots: EstoqueProdutoSnapshot[]) => void;
+  clearData: () => void;
   getLatestSnapshot: () => EstoqueSnapshot | null;
   getLatestProdutoSnapshots: () => EstoqueProdutoSnapshot[];
   getProdutoHistory: (produtoId: string) => Array<EstoqueProdutoSnapshot & { data_importacao: string }>;
