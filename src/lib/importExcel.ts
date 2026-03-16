@@ -147,6 +147,8 @@ export function processExcelFile(file: File, existingProdutos: Produto[]): Promi
           'datavenda', 'data_venda', 'data venda',
           'lastsale', 'last_sale',
         ]);
+        const colNomeComissao = findKey(['nomecomiss', 'nome_comiss', 'nome comiss', 'nomecomissao', 'nome_comissao', 'nome comissão', 'tipocomissao', 'tipo_comissao']);
+        const colComissao = findKey(['comissao', 'comissão', 'commission', 'comiss', 'vlrcomissao', 'vlr_comissao', 'valorcomissao']);
 
         const detectedColumns: Record<string, string> = {
           'Código': colCodigo || '❌ Não encontrado',
