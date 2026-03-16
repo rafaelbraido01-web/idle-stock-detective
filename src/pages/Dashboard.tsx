@@ -263,16 +263,16 @@ export default function Dashboard() {
               transition={{ delay: 0.2 }}
               className="bg-card rounded-xl shadow-card p-5"
             >
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Compra vs Venda — Status dos Produtos</p>
-              <p className="text-[10px] text-muted-foreground mb-3">Identifica produtos descontinuados ou que estão sendo comprados sem vender</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Última Compra — Distribuição</p>
+              <p className="text-[10px] text-muted-foreground mb-3">Produtos agrupados pela data da última compra</p>
               <ResponsiveContainer width="100%" height={240}>
-                <BarChart data={compraVsVenda}>
+                <BarChart data={compraDistribuicao}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(214 32% 91%)" />
-                  <XAxis dataKey="name" tick={{ fontSize: 9 }} stroke="hsl(215 16% 47%)" interval={0} />
+                  <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="hsl(215 16% 47%)" interval={0} />
                   <YAxis tick={{ fontSize: 11 }} stroke="hsl(215 16% 47%)" />
                   <Tooltip formatter={(v: number, name: string) => name === 'Valor' ? formatCurrency(v) : formatNumber(v)} />
                   <Bar dataKey="qtd" name="Produtos" radius={[4, 4, 0, 0]}>
-                    {compraVsVenda.map((entry, i) => (
+                    {compraDistribuicao.map((entry, i) => (
                       <Cell key={i} fill={entry.color} />
                     ))}
                   </Bar>
