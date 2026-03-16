@@ -105,18 +105,8 @@ export default function Dashboard() {
     });
   }, [snapshots, produtoSnapshots]);
 
-  // Valor por Aging
-  const agingByValue = useMemo(() => {
-    return AGING_CATEGORIES.map((cat, i) => {
-      const items = filteredLatest.filter(p => p.categoria_estoque === cat.key);
-      return {
-        name: cat.label,
-        valor: items.reduce((s, p) => s + p.valor_total, 0),
-        count: items.length,
-        color: AGING_COLORS[i],
-      };
-    });
-  }, [filteredLatest]);
+
+
 
   // Curva ABC
   const curvaABC = useMemo(() => {
