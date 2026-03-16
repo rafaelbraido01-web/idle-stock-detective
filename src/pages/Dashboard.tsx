@@ -88,24 +88,8 @@ export default function Dashboard() {
     ].filter(d => d.qtd > 0);
   }, [filteredLatest]);
 
-  // Top grupos parados
-  const topGruposParados = useMemo(() => {
-    const grupoMap = new Map<string, { valor: number; qtd: number }>();
-    filteredLatest
-      .filter(p => p.dias_sem_venda > 180 || p.dias_sem_venda < 0)
-      .forEach(ps => {
-        const produto = produtos.find(p => p.id === ps.produto_id);
-        const grupo = produto?.grupo || 'Sem grupo';
-        const cur = grupoMap.get(grupo) || { valor: 0, qtd: 0 };
-        cur.valor += ps.valor_total;
-        cur.qtd++;
-        grupoMap.set(grupo, cur);
-      });
-    return [...grupoMap.entries()]
-      .map(([name, data]) => ({ name, ...data }))
-      .sort((a, b) => b.valor - a.valor)
-      .slice(0, 7);
-  }, [filteredLatest, produtos]);
+
+
 
   // Evolução
   const evolutionData = useMemo(() => {
