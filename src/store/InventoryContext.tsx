@@ -79,7 +79,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
   }, [state.produtoSnapshots, state.snapshots]);
 
   return (
-    <InventoryContext.Provider value={{ ...state, addImport, getLatestSnapshot, getLatestProdutoSnapshots, getProdutoHistory }}>
+    <InventoryContext.Provider value={{ ...state, addImport, clearData, getLatestSnapshot, getLatestProdutoSnapshots, getProdutoHistory }}>
       {children}
     </InventoryContext.Provider>
   );
