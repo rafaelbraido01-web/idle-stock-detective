@@ -20,6 +20,7 @@ export default function Products() {
   const [grupoFilter, setGrupoFilter] = useState('all');
   const [subgrupoFilter, setSubgrupoFilter] = useState('all');
   const [marcaFilter, setMarcaFilter] = useState('all');
+  const [comissaoFilter, setComissaoFilter] = useState('all');
   const [categoriaFilter, setCategoriaFilter] = useState<string>('all');
   const [sortKey, setSortKey] = useState<SortKey>('valor_total');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
