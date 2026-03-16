@@ -219,6 +219,17 @@ export function processExcelFile(file: File, existingProdutos: Produto[]): Promi
 
           const nomeComissao = String(row[colNomeComissao] || '').trim();
           const comissao = Number(row[colComissao]) || 0;
+          const precoTabela = colPrecoTabela ? (Number(row[colPrecoTabela]) || 0) : 0;
+          const valorPromocaoRaw = colValorPromocao ? Number(row[colValorPromocao]) : null;
+          const valorPromocao = valorPromocaoRaw && valorPromocaoRaw > 0 ? valorPromocaoRaw : null;
+          const dataFimPromocao = colDataFimPromocao ? parseExcelDate(row[colDataFimPromocao]) : null;
+          const valorVendaTotal = colValorVendaTotal ? (Number(row[colValorVendaTotal]) || 0) : 0;
+
+          // Calculate discount percentage
+          let percentualDesconto: number | null = null;
+          if (valorPromocao && precoTabela > 0) {
+            percentualDesconto = Math.round(((precoTabela - valorPromocao) / precoTabela) * 10000) / 100;
+          }
 
           produtoSnapshots.push({
             id: generateId(),
@@ -234,6 +245,11 @@ export function processExcelFile(file: File, existingProdutos: Produto[]): Promi
             categoria_estoque: getCategoriaEstoque(diasSemVenda),
             nome_comissao: nomeComissao,
             comissao,
+            preco_tabela: precoTabela,
+            valor_promocao: valorPromocao,
+            percentual_desconto: percentualDesconto,
+            data_fim_promocao: dataFimPromocao,
+            valor_venda_total: valorVendaTotal,
           });
         }
 

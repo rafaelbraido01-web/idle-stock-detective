@@ -32,6 +32,11 @@ export interface EstoqueProdutoSnapshot {
   categoria_estoque: CategoriaEstoque;
   nome_comissao: string;
   comissao: number;
+  preco_tabela: number;
+  valor_promocao: number | null;
+  percentual_desconto: number | null;
+  data_fim_promocao: string | null;
+  valor_venda_total: number;
 }
 
 export type CategoriaEstoque = '0-90' | '90-180' | '180-270' | '270-365' | '365+' | 'sem-registro';
