@@ -54,8 +54,16 @@ export function ProductDrawer({ produtoId, onClose }: ProductDrawerProps) {
                 <p className="text-sm font-mono">{latestSnap.data_ultima_venda ? formatDate(latestSnap.data_ultima_venda) : '—'}</p>
               </div>
               <div className="bg-muted/50 rounded-lg p-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Última Compra</p>
+                <p className="text-sm font-mono">{latestSnap.data_ultima_compra ? formatDate(latestSnap.data_ultima_compra) : '—'}</p>
+              </div>
+              <div className="bg-muted/50 rounded-lg p-3">
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Dias s/ Venda</p>
                 <p className="text-lg font-mono font-semibold">{latestSnap.dias_sem_venda < 0 ? '—' : latestSnap.dias_sem_venda}</p>
+              </div>
+              <div className="bg-muted/50 rounded-lg p-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Dias s/ Compra</p>
+                <p className="text-lg font-mono font-semibold">{latestSnap.dias_sem_compra < 0 ? '—' : latestSnap.dias_sem_compra}</p>
               </div>
               {latestSnap.nome_comissao && (
                 <div className="bg-muted/50 rounded-lg p-3 col-span-2">
