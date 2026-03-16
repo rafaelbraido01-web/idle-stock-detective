@@ -4,11 +4,10 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import { useInventory } from '@/store/InventoryContext';
 import { KPICard } from '@/components/KPICard';
 import { AgingBadge } from '@/components/AgingBadge';
-import { formatCurrency, formatNumber, AGING_CATEGORIES } from '@/types/inventory';
+import { formatCurrency, formatNumber } from '@/types/inventory';
 import { AlertTriangle, TrendingDown, Filter } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-const AGING_COLORS = ['#16a34a', '#6b7280', '#d97706', '#ea580c', '#dc2626', '#94a3b8'];
 
 export default function Dashboard() {
   const { snapshots, produtoSnapshots, getLatestProdutoSnapshots, produtos } = useInventory();
@@ -88,24 +87,8 @@ export default function Dashboard() {
     ].filter(d => d.qtd > 0);
   }, [filteredLatest]);
 
-  // Top grupos parados
-  const topGruposParados = useMemo(() => {
-    const grupoMap = new Map<string, { valor: number; qtd: number }>();
-    filteredLatest
-      .filter(p => p.dias_sem_venda > 180 || p.dias_sem_venda < 0)
-      .forEach(ps => {
-        const produto = produtos.find(p => p.id === ps.produto_id);
-        const grupo = produto?.grupo || 'Sem grupo';
-        const cur = grupoMap.get(grupo) || { valor: 0, qtd: 0 };
-        cur.valor += ps.valor_total;
-        cur.qtd++;
-        grupoMap.set(grupo, cur);
-      });
-    return [...grupoMap.entries()]
-      .map(([name, data]) => ({ name, ...data }))
-      .sort((a, b) => b.valor - a.valor)
-      .slice(0, 7);
-  }, [filteredLatest, produtos]);
+
+
 
   // Evolução
   const evolutionData = useMemo(() => {
@@ -121,18 +104,8 @@ export default function Dashboard() {
     });
   }, [snapshots, produtoSnapshots]);
 
-  // Valor por Aging
-  const agingByValue = useMemo(() => {
-    return AGING_CATEGORIES.map((cat, i) => {
-      const items = filteredLatest.filter(p => p.categoria_estoque === cat.key);
-      return {
-        name: cat.label,
-        valor: items.reduce((s, p) => s + p.valor_total, 0),
-        count: items.length,
-        color: AGING_COLORS[i],
-      };
-    });
-  }, [filteredLatest]);
+
+
 
   // Curva ABC
   const curvaABC = useMemo(() => {
@@ -250,10 +223,10 @@ export default function Dashboard() {
           {/* KPIs */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <KPICard
-              title="Estoque Parado (>180d)"
-              value={formatCurrency(kpis.valorParado180)}
-              subtitle={`${kpis.pctParado.toFixed(1)}% do total · ${formatNumber(kpis.qtd180)} itens`}
-              valueClassName="text-aging-warning"
+              title="Estoque Crítico (>365d)"
+              value={formatCurrency(kpis.valorParado365)}
+              subtitle={`${formatNumber(kpis.qtd365)} itens`}
+              valueClassName="text-aging-critical"
             />
             <KPICard
               title="Estoque Crítico (>365d)"
@@ -262,9 +235,9 @@ export default function Dashboard() {
               valueClassName="text-aging-critical"
             />
             <KPICard
-              title="Média Dias sem Venda"
-              value={`${Math.round(kpis.mediaDias)} dias`}
-              subtitle={kpis.semRegistro > 0 ? `${formatNumber(kpis.semRegistro)} sem registro de venda` : undefined}
+              title="Ticket Médio por SKU"
+              value={formatCurrency(kpis.ticketMedio)}
+              subtitle="Valor médio em estoque por produto"
             />
             <KPICard
               title="Ticket Médio por SKU"
@@ -338,25 +311,8 @@ export default function Dashboard() {
             </motion.div>
           </div>
 
-          {/* Charts Row 2: Valor por Aging + Curva ABC */}
+          {/* Charts Row 2: Curva ABC + Evolução */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-xl shadow-card p-5">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-4">Valor por Categoria de Aging</p>
-              <ResponsiveContainer width="100%" height={260}>
-                <BarChart data={agingByValue}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(214 32% 91%)" />
-                  <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="hsl(215 16% 47%)" />
-                  <YAxis tick={{ fontSize: 11 }} stroke="hsl(215 16% 47%)" tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                  <Bar dataKey="valor" name="Valor" radius={[4, 4, 0, 0]}>
-                    {agingByValue.map((entry, i) => (
-                      <Cell key={i} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </motion.div>
-
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="bg-card rounded-xl shadow-card p-5">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Curva ABC — Concentração de Valor</p>
               <p className="text-[10px] text-muted-foreground mb-3">Quanto menor a área, mais concentrado o valor em poucos SKUs</p>
@@ -370,28 +326,6 @@ export default function Dashboard() {
                   <Line type="linear" dataKey="pctSKUs" stroke="hsl(215 16% 47% / 0.3)" strokeDasharray="4 4" dot={false} name="Igualdade" />
                 </AreaChart>
               </ResponsiveContainer>
-            </motion.div>
-          </div>
-
-          {/* Charts Row 3: Top Grupos Parados + Evolução */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-card rounded-xl shadow-card p-5">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-4">Top Grupos — Maior Estoque Parado</p>
-              {topGruposParados.length > 0 ? (
-                <ResponsiveContainer width="100%" height={240}>
-                  <BarChart data={topGruposParados} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(214 32% 91%)" />
-                    <XAxis type="number" tick={{ fontSize: 11 }} stroke="hsl(215 16% 47%)" tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
-                    <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} stroke="hsl(215 16% 47%)" width={100} />
-                    <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                    <Bar dataKey="valor" name="Valor Parado" radius={[0, 4, 4, 0]} fill="hsl(0 72% 51%)" />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-[240px] flex items-center justify-center">
-                  <p className="text-xs text-muted-foreground">Nenhum produto parado acima de 180 dias</p>
-                </div>
-              )}
             </motion.div>
 
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-card rounded-xl shadow-card p-5">
