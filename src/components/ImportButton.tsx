@@ -19,9 +19,19 @@ export function ImportButton() {
     try {
       const result = await processExcelFile(file, produtos);
       addImport(result.snapshot, result.produtos, result.produtoSnapshots);
+
+      const colSummary = Object.entries(result.detectedColumns)
+        .map(([label, col]) => `${label}: ${col}`)
+        .join('\n');
+
+      const warningText = result.warnings.length > 0
+        ? `\n\n⚠️ ${result.warnings.join('; ')}`
+        : '';
+
       toast({
         title: 'Importação concluída',
-        description: `${result.produtoSnapshots.length} produtos processados.`,
+        description: `${result.produtoSnapshots.length} produtos processados.\n\nColunas detectadas:\n${colSummary}${warningText}`,
+        duration: 10000,
       });
     } catch (err: any) {
       toast({

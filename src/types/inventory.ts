@@ -30,7 +30,7 @@ export interface EstoqueProdutoSnapshot {
   categoria_estoque: CategoriaEstoque;
 }
 
-export type CategoriaEstoque = '0-90' | '90-180' | '180-270' | '270-365' | '365+';
+export type CategoriaEstoque = '0-90' | '90-180' | '180-270' | '270-365' | '365+' | 'sem-registro';
 
 export interface AgingCategory {
   key: CategoriaEstoque;
@@ -47,9 +47,11 @@ export const AGING_CATEGORIES: AgingCategory[] = [
   { key: '180-270', label: 'Alerta', className: 'text-aging-warning', bgClassName: 'bg-aging-warning', min: 180, max: 270 },
   { key: '270-365', label: 'Risco', className: 'text-aging-alert', bgClassName: 'bg-aging-alert', min: 270, max: 365 },
   { key: '365+', label: 'Crítico', className: 'text-aging-critical', bgClassName: 'bg-aging-critical', min: 365, max: Infinity },
+  { key: 'sem-registro', label: 'Sem Registro', className: 'text-muted-foreground', bgClassName: 'bg-muted', min: -1, max: -1 },
 ];
 
 export function getAgingCategory(dias: number): AgingCategory {
+  if (dias < 0) return AGING_CATEGORIES[5]; // sem-registro
   return AGING_CATEGORIES.find(c => dias >= c.min && dias < c.max) || AGING_CATEGORIES[4];
 }
 

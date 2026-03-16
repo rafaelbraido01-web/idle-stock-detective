@@ -6,6 +6,7 @@ function generateId(): string {
 }
 
 function getCategoriaEstoque(dias: number): CategoriaEstoque {
+  if (dias < 0) return 'sem-registro';
   if (dias <= 90) return '0-90';
   if (dias <= 180) return '90-180';
   if (dias <= 270) return '180-270';
@@ -15,24 +16,59 @@ function getCategoriaEstoque(dias: number): CategoriaEstoque {
 
 function parseExcelDate(value: any): string | null {
   if (!value) return null;
+
+  // Excel serial date number
   if (typeof value === 'number') {
-    const date = XLSX.SSF.parse_date_code(value);
-    return `${date.y}-${String(date.m).padStart(2, '0')}-${String(date.d).padStart(2, '0')}`;
+    try {
+      const date = XLSX.SSF.parse_date_code(value);
+      if (date && date.y > 1900) {
+        return `${date.y}-${String(date.m).padStart(2, '0')}-${String(date.d).padStart(2, '0')}`;
+      }
+    } catch { /* fall through */ }
+    return null;
   }
-  if (typeof value === 'string') {
-    // Try dd/mm/yyyy
-    const parts = value.split('/');
-    if (parts.length === 3) {
-      return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+
+  if (value instanceof Date) {
+    if (!isNaN(value.getTime())) {
+      return value.toISOString().split('T')[0];
     }
-    return value;
+    return null;
   }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+
+    // Try dd/mm/yyyy, dd-mm-yyyy, dd.mm.yyyy
+    const match = trimmed.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
+    if (match) {
+      const day = match[1].padStart(2, '0');
+      const month = match[2].padStart(2, '0');
+      let year = match[3];
+      if (year.length === 2) year = `20${year}`;
+      return `${year}-${month}-${day}`;
+    }
+
+    // Try yyyy-mm-dd or yyyy/mm/dd
+    const isoMatch = trimmed.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+    if (isoMatch) {
+      return `${isoMatch[1]}-${isoMatch[2].padStart(2, '0')}-${isoMatch[3].padStart(2, '0')}`;
+    }
+
+    // Try parsing as Date
+    const parsed = new Date(trimmed);
+    if (!isNaN(parsed.getTime()) && parsed.getFullYear() > 1900) {
+      return parsed.toISOString().split('T')[0];
+    }
+  }
+
   return null;
 }
 
 function calcDiasSemVenda(dataUltimaVenda: string | null, referenceDate: Date): number {
-  if (!dataUltimaVenda) return 9999;
+  if (!dataUltimaVenda) return -1; // -1 = sem registro
   const lastSale = new Date(dataUltimaVenda);
+  if (isNaN(lastSale.getTime())) return -1;
   const diff = referenceDate.getTime() - lastSale.getTime();
   return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
 }
@@ -41,6 +77,8 @@ interface ImportResult {
   snapshot: EstoqueSnapshot;
   produtos: Produto[];
   produtoSnapshots: EstoqueProdutoSnapshot[];
+  detectedColumns: Record<string, string>;
+  warnings: string[];
 }
 
 export function processExcelFile(file: File, existingProdutos: Produto[]): Promise<ImportResult> {
@@ -75,20 +113,57 @@ export function processExcelFile(file: File, existingProdutos: Produto[]): Promi
         const produtos: Produto[] = [];
         const produtoSnapshots: EstoqueProdutoSnapshot[] = [];
 
-        // Auto-detect columns by looking at header keys
+        // Auto-detect columns
         const sampleKeys = Object.keys(rows[0]);
-        const findKey = (candidates: string[]) => 
-          sampleKeys.find(k => candidates.some(c => k.toLowerCase().includes(c.toLowerCase()))) || '';
+        const findKey = (candidates: string[]): string => {
+          // First try exact match (case-insensitive)
+          for (const k of sampleKeys) {
+            const kl = k.toLowerCase().replace(/[_.\s]+/g, '');
+            for (const c of candidates) {
+              const cl = c.toLowerCase().replace(/[_.\s]+/g, '');
+              if (kl === cl) return k;
+            }
+          }
+          // Then try includes
+          return sampleKeys.find(k => {
+            const kl = k.toLowerCase().replace(/[_.\s]+/g, '');
+            return candidates.some(c => kl.includes(c.toLowerCase().replace(/[_.\s]+/g, '')));
+          }) || '';
+        };
 
-        const colCodigo = findKey(['codigo', 'código', 'cod', 'Codigo', 'CODIGO', 'Código']);
-        const colDescricao = findKey(['descri', 'Descri', 'DESCRI', 'produto', 'Produto', 'PRODUTO']);
-        const colGrupo = findKey(['grupo', 'Grupo', 'GRUPO']);
-        const colSubgrupo = findKey(['subgrupo', 'Subgrupo', 'SUBGRUPO', 'sub_grupo']);
-        const colMarca = findKey(['marca', 'Marca', 'MARCA']);
-        const colQuantidade = findKey(['qtd', 'quantidade', 'Quantidade', 'QUANTIDADE', 'Qtd', 'QTD', 'estoque', 'Estoque']);
-        const colValorUnit = findKey(['valor_unit', 'preco', 'Preco', 'PRECO', 'unitario', 'Unitário', 'Unitario', 'vlr_unit', 'Vlr']);
-        const colValorTotal = findKey(['valor_total', 'total', 'Total', 'TOTAL', 'vlr_total']);
-        const colUltimaVenda = findKey(['ultima_venda', 'Ultima_Venda', 'dt_ultima', 'Dt_Ultima', 'última', 'ultima', 'Ultima', 'ult_venda', 'data_venda']);
+        const colCodigo = findKey(['codigo', 'código', 'cod', 'codprod', 'cod_prod', 'cod prod', 'code']);
+        const colDescricao = findKey(['descricao', 'descrição', 'descri', 'produto', 'nome', 'desc', 'nome_produto', 'nmproduto']);
+        const colGrupo = findKey(['grupo', 'group', 'categoria', 'nmgrupo', 'nm_grupo']);
+        const colSubgrupo = findKey(['subgrupo', 'sub_grupo', 'sub grupo', 'subcategoria', 'nmsubgrupo']);
+        const colMarca = findKey(['marca', 'brand', 'fabricante', 'nmmarca']);
+        const colQuantidade = findKey(['qtd', 'quantidade', 'qtde', 'quant', 'estoque', 'saldo', 'qt', 'qtdestoque', 'qtd_estoque']);
+        const colValorUnit = findKey(['valorunit', 'valor_unit', 'preco', 'preço', 'unitario', 'unitário', 'vlr_unit', 'vlrunit', 'precovenda', 'preco_venda']);
+        const colValorTotal = findKey(['valortotal', 'valor_total', 'vlr_total', 'vlrtotal', 'total']);
+        const colUltimaVenda = findKey([
+          'ultimavenda', 'ultima_venda', 'últimavenda', 'última_venda',
+          'dtultvenda', 'dt_ult_venda', 'dt ult venda', 'dtultimavenda',
+          'data_ultima_venda', 'dataultimavenda', 'data ultima venda',
+          'ultvenda', 'ult_venda', 'ult venda',
+          'datavenda', 'data_venda', 'data venda',
+          'lastsale', 'last_sale',
+        ]);
+
+        const detectedColumns: Record<string, string> = {
+          'Código': colCodigo || '❌ Não encontrado',
+          'Descrição': colDescricao || '❌ Não encontrado',
+          'Grupo': colGrupo || '—',
+          'Subgrupo': colSubgrupo || '—',
+          'Marca': colMarca || '—',
+          'Quantidade': colQuantidade || '❌ Não encontrado',
+          'Valor Unitário': colValorUnit || '—',
+          'Valor Total': colValorTotal || '—',
+          'Última Venda': colUltimaVenda || '⚠️ Não encontrado',
+        };
+
+        const warnings: string[] = [];
+        if (!colCodigo) warnings.push('Coluna de código não encontrada');
+        if (!colQuantidade) warnings.push('Coluna de quantidade não encontrada');
+        if (!colUltimaVenda) warnings.push('Coluna de data de última venda não encontrada — todos os produtos serão classificados como "Sem registro"');
 
         let totalEstoque = 0;
 
@@ -137,7 +212,7 @@ export function processExcelFile(file: File, existingProdutos: Produto[]): Promi
         snapshot.total_produtos = produtoSnapshots.length;
         snapshot.valor_total = totalEstoque;
 
-        resolve({ snapshot, produtos, produtoSnapshots });
+        resolve({ snapshot, produtos, produtoSnapshots, detectedColumns, warnings });
       } catch (err) {
         reject(err);
       }

@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, CartesianGrid, Cell } from 'recharts';
 import { useInventory } from '@/store/InventoryContext';
 import { KPICard } from '@/components/KPICard';
 import { formatCurrency, formatNumber, AGING_CATEGORIES } from '@/types/inventory';
 
-const AGING_COLORS = ['#16a34a', '#6b7280', '#d97706', '#ea580c', '#dc2626'];
+const AGING_COLORS = ['#16a34a', '#6b7280', '#d97706', '#ea580c', '#dc2626', '#94a3b8'];
 
 export default function Dashboard() {
   const { snapshots, produtoSnapshots, getLatestProdutoSnapshots } = useInventory();
@@ -13,8 +13,8 @@ export default function Dashboard() {
 
   const kpis = useMemo(() => {
     const valorTotal = latest.reduce((s, p) => s + p.valor_total, 0);
-    const parados180 = latest.filter(p => p.dias_sem_venda > 180);
-    const parados365 = latest.filter(p => p.dias_sem_venda > 365);
+    const parados180 = latest.filter(p => p.dias_sem_venda > 180 || p.dias_sem_venda < 0);
+    const parados365 = latest.filter(p => p.dias_sem_venda > 365 || p.dias_sem_venda < 0);
     const valorParado = parados180.reduce((s, p) => s + p.valor_total, 0);
     const pctParado = valorTotal > 0 ? (valorParado / valorTotal) * 100 : 0;
 
@@ -33,7 +33,7 @@ export default function Dashboard() {
     return snapshots.map(snap => {
       const items = produtoSnapshots.filter(ps => ps.snapshot_id === snap.id);
       const total = items.reduce((s, p) => s + p.valor_total, 0);
-      const parado = items.filter(p => p.dias_sem_venda > 180).reduce((s, p) => s + p.valor_total, 0);
+      const parado = items.filter(p => p.dias_sem_venda > 180 || p.dias_sem_venda < 0).reduce((s, p) => s + p.valor_total, 0);
       return {
         data: new Date(snap.data_importacao).toLocaleDateString('pt-BR'),
         total,
@@ -66,7 +66,6 @@ export default function Dashboard() {
         </motion.div>
       ) : (
         <>
-          {/* KPI Row */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <KPICard title="Valor Total Estoque" value={formatCurrency(kpis.valorTotal)} />
             <KPICard title="Valor Estoque Parado" value={formatCurrency(kpis.valorParado)} valueClassName="text-aging-warning" />
@@ -75,7 +74,6 @@ export default function Dashboard() {
             <KPICard title="Sem Venda > 365d" value={formatNumber(kpis.qtd365)} valueClassName="text-aging-critical" />
           </div>
 
-          {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <motion.div
               initial={{ opacity: 0, y: 8 }}
@@ -112,7 +110,7 @@ export default function Dashboard() {
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={agingDistribution} layout="vertical">
                   <XAxis type="number" tick={{ fontSize: 11 }} stroke="hsl(215 16% 47%)" />
-                  <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} stroke="hsl(215 16% 47%)" width={70} />
+                  <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} stroke="hsl(215 16% 47%)" width={80} />
                   <Tooltip />
                   <Bar dataKey="value" name="Produtos" radius={[0, 4, 4, 0]}>
                     {agingDistribution.map((entry, i) => (
