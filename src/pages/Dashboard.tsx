@@ -224,10 +224,10 @@ export default function Dashboard() {
           {/* KPIs */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <KPICard
-              title="Estoque Parado (>180d)"
-              value={formatCurrency(kpis.valorParado180)}
-              subtitle={`${kpis.pctParado.toFixed(1)}% do total · ${formatNumber(kpis.qtd180)} itens`}
-              valueClassName="text-aging-warning"
+              title="Estoque Crítico (>365d)"
+              value={formatCurrency(kpis.valorParado365)}
+              subtitle={`${formatNumber(kpis.qtd365)} itens`}
+              valueClassName="text-aging-critical"
             />
             <KPICard
               title="Estoque Crítico (>365d)"
