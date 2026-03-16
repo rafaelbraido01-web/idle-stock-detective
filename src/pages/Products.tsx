@@ -21,6 +21,7 @@ export default function Products() {
   const [subgrupoFilter, setSubgrupoFilter] = useState('all');
   const [marcaFilter, setMarcaFilter] = useState('all');
   const [comissaoFilter, setComissaoFilter] = useState('all');
+  const [compraFilter, setCompraFilter] = useState('all');
   const [categoriaFilter, setCategoriaFilter] = useState<string>('all');
   const [sortKey, setSortKey] = useState<SortKey>('valor_total');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
@@ -55,6 +56,9 @@ export default function Products() {
     else if (comissaoFilter === 'com-comissao') result = result.filter(r => r.nome_comissao);
     else if (comissaoFilter === 'sem-comissao') result = result.filter(r => !r.nome_comissao);
     else if (comissaoFilter !== 'all') result = result.filter(r => r.nome_comissao === comissaoFilter);
+    if (compraFilter === 'descontinuado') result = result.filter(r => r.dias_sem_compra > 180 || r.dias_sem_compra < 0);
+    else if (compraFilter === 'compra-recente') result = result.filter(r => r.dias_sem_compra >= 0 && r.dias_sem_compra <= 90);
+    else if (compraFilter === 'sem-registro') result = result.filter(r => r.dias_sem_compra < 0);
     if (categoriaFilter !== 'all') result = result.filter(r => r.categoria_estoque === categoriaFilter);
 
     result.sort((a, b) => {
@@ -63,7 +67,7 @@ export default function Products() {
       return sortDir === 'desc' ? (vb as number) - (va as number) : (va as number) - (vb as number);
     });
     return result;
-  }, [enriched, search, grupoFilter, subgrupoFilter, marcaFilter, comissaoFilter, categoriaFilter, sortKey, sortDir]);
+  }, [enriched, search, grupoFilter, subgrupoFilter, marcaFilter, comissaoFilter, compraFilter, categoriaFilter, sortKey, sortDir]);
 
   // Reset page when filters change
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -125,6 +129,15 @@ export default function Products() {
               <SelectContent>
                 <SelectItem value="all">Todas categorias</SelectItem>
                 {AGING_CATEGORIES.map(c => <SelectItem key={c.key} value={c.key}>{c.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={compraFilter} onValueChange={v => { setCompraFilter(v); setPage(0); }}>
+              <SelectTrigger className="w-[180px]"><SelectValue placeholder="Últ. Compra" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas (compra)</SelectItem>
+                <SelectItem value="descontinuado">Descontinuado (&gt;180d)</SelectItem>
+                <SelectItem value="compra-recente">Compra recente (≤90d)</SelectItem>
+                <SelectItem value="sem-registro">Sem registro compra</SelectItem>
               </SelectContent>
             </Select>
             <Select value={comissaoFilter} onValueChange={v => { setComissaoFilter(v); setPage(0); }}>
