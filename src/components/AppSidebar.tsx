@@ -17,7 +17,7 @@ const navItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
   { title: 'Produtos', url: '/produtos', icon: Box },
   { title: 'Importações', url: '/importacoes', icon: FileSpreadsheet },
-  { title: 'Análises', url: '/analises', icon: TrendingUp },
+  
 ];
 
 export function AppSidebar() {
