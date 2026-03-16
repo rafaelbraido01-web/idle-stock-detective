@@ -256,11 +256,35 @@ export default function Dashboard() {
 
           {/* Row 4: Grupos parados + Evolução */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Top grupos com estoque parado */}
+            {/* Compra vs Venda */}
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
+              className="bg-card rounded-xl shadow-card p-5"
+            >
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Compra vs Venda — Status dos Produtos</p>
+              <p className="text-[10px] text-muted-foreground mb-3">Identifica produtos descontinuados ou que estão sendo comprados sem vender</p>
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart data={compraVsVenda}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(214 32% 91%)" />
+                  <XAxis dataKey="name" tick={{ fontSize: 9 }} stroke="hsl(215 16% 47%)" interval={0} />
+                  <YAxis tick={{ fontSize: 11 }} stroke="hsl(215 16% 47%)" />
+                  <Tooltip formatter={(v: number, name: string) => name === 'Valor' ? formatCurrency(v) : formatNumber(v)} />
+                  <Bar dataKey="qtd" name="Produtos" radius={[4, 4, 0, 0]}>
+                    {compraVsVenda.map((entry, i) => (
+                      <Cell key={i} fill={entry.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </motion.div>
+
+            {/* Top grupos com estoque parado */}
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
               className="bg-card rounded-xl shadow-card p-5"
             >
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-4">Top Grupos — Maior Estoque Parado</p>
@@ -280,34 +304,34 @@ export default function Dashboard() {
                 </div>
               )}
             </motion.div>
-
-            {/* Evolução do estoque */}
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.25 }}
-              className="bg-card rounded-xl shadow-card p-5"
-            >
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-4">Evolução do Estoque</p>
-              {evolutionData.length > 1 ? (
-                <ResponsiveContainer width="100%" height={240}>
-                  <AreaChart data={evolutionData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(214 32% 91%)" />
-                    <XAxis dataKey="data" tick={{ fontSize: 11 }} stroke="hsl(215 16% 47%)" />
-                    <YAxis tick={{ fontSize: 11 }} stroke="hsl(215 16% 47%)" tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                    <Area type="monotone" dataKey="total" stroke="hsl(222 47% 11%)" fill="hsl(222 47% 11% / 0.08)" name="Total" />
-                    <Area type="monotone" dataKey="saudavel" stroke="hsl(160 60% 36%)" fill="hsl(160 60% 36% / 0.08)" name="Saudável" />
-                    <Area type="monotone" dataKey="parado" stroke="hsl(0 72% 51%)" fill="hsl(0 72% 51% / 0.08)" name="Parado (>180d)" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-[240px] flex items-center justify-center border border-dashed rounded-lg">
-                  <p className="text-xs text-muted-foreground">Importe mais relatórios para ver a evolução</p>
-                </div>
-              )}
-            </motion.div>
           </div>
+
+          {/* Row 5: Evolução */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-card rounded-xl shadow-card p-5"
+          >
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-4">Evolução do Estoque</p>
+            {evolutionData.length > 1 ? (
+              <ResponsiveContainer width="100%" height={240}>
+                <AreaChart data={evolutionData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(214 32% 91%)" />
+                  <XAxis dataKey="data" tick={{ fontSize: 11 }} stroke="hsl(215 16% 47%)" />
+                  <YAxis tick={{ fontSize: 11 }} stroke="hsl(215 16% 47%)" tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
+                  <Tooltip formatter={(v: number) => formatCurrency(v)} />
+                  <Area type="monotone" dataKey="total" stroke="hsl(222 47% 11%)" fill="hsl(222 47% 11% / 0.08)" name="Total" />
+                  <Area type="monotone" dataKey="saudavel" stroke="hsl(160 60% 36%)" fill="hsl(160 60% 36% / 0.08)" name="Saudável" />
+                  <Area type="monotone" dataKey="parado" stroke="hsl(0 72% 51%)" fill="hsl(0 72% 51% / 0.08)" name="Parado (>180d)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[240px] flex items-center justify-center border border-dashed rounded-lg">
+                <p className="text-xs text-muted-foreground">Importe mais relatórios para ver a evolução</p>
+              </div>
+            )}
+          </motion.div>
         </>
       )}
     </div>
