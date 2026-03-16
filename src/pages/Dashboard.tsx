@@ -108,18 +108,18 @@ export default function Dashboard() {
     }).filter(d => d.value > 0);
   }, [latest]);
 
-  // Análise Compra vs Venda
-  const compraVsVenda = useMemo(() => {
-    const comprandoSemVender = latest.filter(p => p.dias_sem_compra >= 0 && p.dias_sem_compra <= 90 && (p.dias_sem_venda > 180 || p.dias_sem_venda < 0));
-    const descontinuado = latest.filter(p => p.dias_sem_compra > 180 || p.dias_sem_compra < 0);
-    const ativo = latest.filter(p => p.dias_sem_compra >= 0 && p.dias_sem_compra <= 90 && p.dias_sem_venda >= 0 && p.dias_sem_venda <= 90);
-    const semRegistroCompra = latest.filter(p => p.dias_sem_compra < 0);
+  // Análise por última compra
+  const compraDistribuicao = useMemo(() => {
+    const lt90 = latest.filter(p => p.dias_sem_compra >= 0 && p.dias_sem_compra < 90);
+    const d90a180 = latest.filter(p => p.dias_sem_compra >= 90 && p.dias_sem_compra <= 180);
+    const gt180 = latest.filter(p => p.dias_sem_compra > 180);
+    const semRegistro = latest.filter(p => p.dias_sem_compra < 0);
 
     return [
-      { name: 'Ativo (vende e compra)', qtd: ativo.length, valor: ativo.reduce((s, p) => s + p.valor_total, 0), color: '#16a34a' },
-      { name: 'Comprando s/ vender', qtd: comprandoSemVender.length, valor: comprandoSemVender.reduce((s, p) => s + p.valor_total, 0), color: '#d97706' },
-      { name: 'Descontinuado', qtd: descontinuado.length, valor: descontinuado.reduce((s, p) => s + p.valor_total, 0), color: '#dc2626' },
-      { name: 'Sem registro compra', qtd: semRegistroCompra.length, valor: semRegistroCompra.reduce((s, p) => s + p.valor_total, 0), color: '#94a3b8' },
+      { name: '< 90 dias', qtd: lt90.length, valor: lt90.reduce((s, p) => s + p.valor_total, 0), color: '#16a34a' },
+      { name: '90 a 180 dias', qtd: d90a180.length, valor: d90a180.reduce((s, p) => s + p.valor_total, 0), color: '#d97706' },
+      { name: '> 180 dias', qtd: gt180.length, valor: gt180.reduce((s, p) => s + p.valor_total, 0), color: '#dc2626' },
+      { name: 'Sem registro', qtd: semRegistro.length, valor: semRegistro.reduce((s, p) => s + p.valor_total, 0), color: '#94a3b8' },
     ].filter(d => d.qtd > 0);
   }, [latest]);
 
