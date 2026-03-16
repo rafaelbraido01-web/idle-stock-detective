@@ -131,6 +131,15 @@ export default function Products() {
                 {AGING_CATEGORIES.map(c => <SelectItem key={c.key} value={c.key}>{c.label}</SelectItem>)}
               </SelectContent>
             </Select>
+            <Select value={compraFilter} onValueChange={v => { setCompraFilter(v); setPage(0); }}>
+              <SelectTrigger className="w-[180px]"><SelectValue placeholder="Últ. Compra" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas (compra)</SelectItem>
+                <SelectItem value="descontinuado">Descontinuado (&gt;180d)</SelectItem>
+                <SelectItem value="compra-recente">Compra recente (≤90d)</SelectItem>
+                <SelectItem value="sem-registro">Sem registro compra</SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={comissaoFilter} onValueChange={v => { setComissaoFilter(v); setPage(0); }}>
               <SelectTrigger className="w-[170px]"><SelectValue placeholder="Comissão" /></SelectTrigger>
               <SelectContent>
