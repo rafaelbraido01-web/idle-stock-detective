@@ -4,11 +4,10 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import { useInventory } from '@/store/InventoryContext';
 import { KPICard } from '@/components/KPICard';
 import { AgingBadge } from '@/components/AgingBadge';
-import { formatCurrency, formatNumber, AGING_CATEGORIES } from '@/types/inventory';
+import { formatCurrency, formatNumber } from '@/types/inventory';
 import { AlertTriangle, TrendingDown, Filter } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-const AGING_COLORS = ['#16a34a', '#6b7280', '#d97706', '#ea580c', '#dc2626', '#94a3b8'];
 
 export default function Dashboard() {
   const { snapshots, produtoSnapshots, getLatestProdutoSnapshots, produtos } = useInventory();
