@@ -147,6 +147,8 @@ export function processExcelFile(file: File, existingProdutos: Produto[]): Promi
           'datavenda', 'data_venda', 'data venda',
           'lastsale', 'last_sale',
         ]);
+        const colNomeComissao = findKey(['nomecomiss', 'nome_comiss', 'nome comiss', 'nomecomissao', 'nome_comissao', 'nome comissão', 'tipocomissao', 'tipo_comissao']);
+        const colComissao = findKey(['comissao', 'comissão', 'commission', 'comiss', 'vlrcomissao', 'vlr_comissao', 'valorcomissao']);
 
         const detectedColumns: Record<string, string> = {
           'Código': colCodigo || '❌ Não encontrado',
@@ -158,6 +160,8 @@ export function processExcelFile(file: File, existingProdutos: Produto[]): Promi
           'Valor Unitário': colValorUnit || '—',
           'Valor Total': colValorTotal || '—',
           'Última Venda': colUltimaVenda || '⚠️ Não encontrado',
+          'Nome Comissão': colNomeComissao || '—',
+          'Comissão': colComissao || '—',
         };
 
         const warnings: string[] = [];
@@ -196,6 +200,9 @@ export function processExcelFile(file: File, existingProdutos: Produto[]): Promi
 
           totalEstoque += valorTotalRow;
 
+          const nomeComissao = String(row[colNomeComissao] || '').trim();
+          const comissao = Number(row[colComissao]) || 0;
+
           produtoSnapshots.push({
             id: generateId(),
             snapshot_id: snapshotId,
@@ -206,6 +213,8 @@ export function processExcelFile(file: File, existingProdutos: Produto[]): Promi
             data_ultima_venda: dataUltimaVenda,
             dias_sem_venda: diasSemVenda,
             categoria_estoque: getCategoriaEstoque(diasSemVenda),
+            nome_comissao: nomeComissao,
+            comissao,
           });
         }
 

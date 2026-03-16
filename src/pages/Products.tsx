@@ -20,6 +20,7 @@ export default function Products() {
   const [grupoFilter, setGrupoFilter] = useState('all');
   const [subgrupoFilter, setSubgrupoFilter] = useState('all');
   const [marcaFilter, setMarcaFilter] = useState('all');
+  const [comissaoFilter, setComissaoFilter] = useState('all');
   const [categoriaFilter, setCategoriaFilter] = useState<string>('all');
   const [sortKey, setSortKey] = useState<SortKey>('valor_total');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
@@ -36,6 +37,7 @@ export default function Products() {
   const grupos = useMemo(() => [...new Set(produtos.map(p => p.grupo).filter(Boolean))].sort(), [produtos]);
   const subgrupos = useMemo(() => [...new Set(produtos.map(p => p.subgrupo).filter(Boolean))].sort(), [produtos]);
   const marcas = useMemo(() => [...new Set(produtos.map(p => p.marca).filter(Boolean))].sort(), [produtos]);
+  const tiposComissao = useMemo(() => [...new Set(latestSnapshots.map(ps => ps.nome_comissao).filter(Boolean))].sort(), [latestSnapshots]);
 
   const filtered = useMemo(() => {
     let result = enriched;
@@ -49,6 +51,10 @@ export default function Products() {
     if (grupoFilter !== 'all') result = result.filter(r => r.produto?.grupo === grupoFilter);
     if (subgrupoFilter !== 'all') result = result.filter(r => r.produto?.subgrupo === subgrupoFilter);
     if (marcaFilter !== 'all') result = result.filter(r => r.produto?.marca === marcaFilter);
+    if (comissaoFilter === 'com-fixa') result = result.filter(r => r.nome_comissao && r.nome_comissao.toLowerCase().includes('fix'));
+    else if (comissaoFilter === 'com-comissao') result = result.filter(r => r.nome_comissao);
+    else if (comissaoFilter === 'sem-comissao') result = result.filter(r => !r.nome_comissao);
+    else if (comissaoFilter !== 'all') result = result.filter(r => r.nome_comissao === comissaoFilter);
     if (categoriaFilter !== 'all') result = result.filter(r => r.categoria_estoque === categoriaFilter);
 
     result.sort((a, b) => {
@@ -57,7 +63,7 @@ export default function Products() {
       return sortDir === 'desc' ? (vb as number) - (va as number) : (va as number) - (vb as number);
     });
     return result;
-  }, [enriched, search, grupoFilter, subgrupoFilter, marcaFilter, categoriaFilter, sortKey, sortDir]);
+  }, [enriched, search, grupoFilter, subgrupoFilter, marcaFilter, comissaoFilter, categoriaFilter, sortKey, sortDir]);
 
   // Reset page when filters change
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -121,6 +127,16 @@ export default function Products() {
                 {AGING_CATEGORIES.map(c => <SelectItem key={c.key} value={c.key}>{c.label}</SelectItem>)}
               </SelectContent>
             </Select>
+            <Select value={comissaoFilter} onValueChange={v => { setComissaoFilter(v); setPage(0); }}>
+              <SelectTrigger className="w-[170px]"><SelectValue placeholder="Comissão" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas comissões</SelectItem>
+                <SelectItem value="com-fixa">Comissão Fixa</SelectItem>
+                <SelectItem value="com-comissao">Com comissão</SelectItem>
+                <SelectItem value="sem-comissao">Sem comissão</SelectItem>
+                {tiposComissao.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
 
           <p className="text-xs text-muted-foreground">{formatNumber(filtered.length)} produtos</p>
@@ -148,6 +164,7 @@ export default function Products() {
                     <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('dias_sem_venda')}>
                       <span className="inline-flex items-center gap-1">Dias s/ Venda <ArrowUpDown className="h-3 w-3" /></span>
                     </th>
+                    <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">Comissão</th>
                     <th className="text-center px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
                   </tr>
                 </thead>
@@ -167,6 +184,14 @@ export default function Products() {
                         {item.data_ultima_venda ? formatDate(item.data_ultima_venda) : '—'}
                       </td>
                       <td className="px-4 py-2.5 text-right font-mono text-foreground">{item.dias_sem_venda < 0 ? '—' : item.dias_sem_venda}</td>
+                      <td className="px-4 py-2.5 text-xs text-muted-foreground">
+                        {item.nome_comissao ? (
+                          <span className="inline-flex items-center gap-1">
+                            <span>{item.nome_comissao}</span>
+                            {item.comissao > 0 && <span className="font-mono text-foreground">({item.comissao}%)</span>}
+                          </span>
+                        ) : '—'}
+                      </td>
                       <td className="px-4 py-2.5 text-center"><AgingBadge dias={item.dias_sem_venda} /></td>
                     </tr>
                   ))}

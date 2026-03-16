@@ -55,8 +55,17 @@ export function ProductDrawer({ produtoId, onClose }: ProductDrawerProps) {
               </div>
               <div className="bg-muted/50 rounded-lg p-3">
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Dias s/ Venda</p>
-                <p className="text-lg font-mono font-semibold">{latestSnap.dias_sem_venda >= 9999 ? '—' : latestSnap.dias_sem_venda}</p>
+                <p className="text-lg font-mono font-semibold">{latestSnap.dias_sem_venda < 0 ? '—' : latestSnap.dias_sem_venda}</p>
               </div>
+              {latestSnap.nome_comissao && (
+                <div className="bg-muted/50 rounded-lg p-3 col-span-2">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Comissão</p>
+                  <p className="text-sm font-mono font-semibold">
+                    {latestSnap.nome_comissao}
+                    {latestSnap.comissao > 0 && <span className="text-muted-foreground ml-2">({latestSnap.comissao}%)</span>}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* History charts */}
