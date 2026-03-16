@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { ProductDrawer } from '@/components/ProductDrawer';
 
-type SortKey = 'valor_total' | 'dias_sem_venda' | 'quantidade';
+type SortKey = 'valor_total' | 'dias_sem_venda' | 'quantidade' | 'preco_tabela' | 'valor_venda_total';
 const PAGE_SIZE = 50;
 
 export default function Products() {
