@@ -7,7 +7,7 @@ import { Layout } from "@/components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import Imports from "./pages/Imports";
-
+import Comparacao from "./pages/Comparacao";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
