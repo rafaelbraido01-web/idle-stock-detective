@@ -203,7 +203,9 @@ export function processExcelFile(file: File, existingProdutos: Produto[]): Promi
           const valorUnit = Number(row[colValorUnit]) || 0;
           const valorTotalRow = Number(row[colValorTotal]) || (quantidade * valorUnit);
           const dataUltimaVenda = parseExcelDate(row[colUltimaVenda]);
+          const dataUltimaCompra = parseExcelDate(row[colUltimaCompra]);
           const diasSemVenda = calcDiasSemVenda(dataUltimaVenda, now);
+          const diasSemCompra = calcDiasSemVenda(dataUltimaCompra, now);
 
           totalEstoque += valorTotalRow;
 
@@ -218,7 +220,9 @@ export function processExcelFile(file: File, existingProdutos: Produto[]): Promi
             valor_unitario: valorUnit,
             valor_total: valorTotalRow,
             data_ultima_venda: dataUltimaVenda,
+            data_ultima_compra: dataUltimaCompra,
             dias_sem_venda: diasSemVenda,
+            dias_sem_compra: diasSemCompra,
             categoria_estoque: getCategoriaEstoque(diasSemVenda),
             nome_comissao: nomeComissao,
             comissao,

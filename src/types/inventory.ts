@@ -26,7 +26,9 @@ export interface EstoqueProdutoSnapshot {
   valor_unitario: number;
   valor_total: number;
   data_ultima_venda: string | null;
+  data_ultima_compra: string | null;
   dias_sem_venda: number;
+  dias_sem_compra: number;
   categoria_estoque: CategoriaEstoque;
   nome_comissao: string;
   comissao: number;
