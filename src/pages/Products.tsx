@@ -136,9 +136,10 @@ export default function Products() {
               <SelectTrigger className="w-[180px]"><SelectValue placeholder="Últ. Compra" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas (compra)</SelectItem>
-                <SelectItem value="descontinuado">Descontinuado (&gt;180d)</SelectItem>
-                <SelectItem value="compra-recente">Compra recente (≤90d)</SelectItem>
-                <SelectItem value="sem-registro">Sem registro compra</SelectItem>
+                <SelectItem value="lt90">&lt; 90 dias</SelectItem>
+                <SelectItem value="90-180">90 a 180 dias</SelectItem>
+                <SelectItem value="gt180">&gt; 180 dias</SelectItem>
+                <SelectItem value="sem-registro">Sem registro</SelectItem>
               </SelectContent>
             </Select>
             <Select value={comissaoFilter} onValueChange={v => { setComissaoFilter(v); setPage(0); }}>
