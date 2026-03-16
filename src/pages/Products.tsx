@@ -160,7 +160,8 @@ export default function Products() {
                     <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('valor_total')}>
                       <span className="inline-flex items-center gap-1">Valor Total <ArrowUpDown className="h-3 w-3" /></span>
                     </th>
-                    <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">Última Venda</th>
+                    <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">Últ. Venda</th>
+                    <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">Últ. Compra</th>
                     <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('dias_sem_venda')}>
                       <span className="inline-flex items-center gap-1">Dias s/ Venda <ArrowUpDown className="h-3 w-3" /></span>
                     </th>
@@ -182,6 +183,9 @@ export default function Products() {
                       <td className="px-4 py-2.5 text-right font-mono text-foreground">{formatCurrency(item.valor_total)}</td>
                       <td className="px-4 py-2.5 text-right text-xs text-muted-foreground">
                         {item.data_ultima_venda ? formatDate(item.data_ultima_venda) : '—'}
+                      </td>
+                      <td className="px-4 py-2.5 text-right text-xs text-muted-foreground">
+                        {item.data_ultima_compra ? formatDate(item.data_ultima_compra) : '—'}
                       </td>
                       <td className="px-4 py-2.5 text-right font-mono text-foreground">{item.dias_sem_venda < 0 ? '—' : item.dias_sem_venda}</td>
                       <td className="px-4 py-2.5 text-xs text-muted-foreground">
