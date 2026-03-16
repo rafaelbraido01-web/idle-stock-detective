@@ -155,6 +155,10 @@ export function processExcelFile(file: File, existingProdutos: Produto[]): Promi
           'data_ultima_compra', 'dataultimacompra', 'data ultima compra',
           'lastpurchase', 'last_purchase',
         ]);
+        const colPrecoTabela = findKey(['precotabela', 'preco_tabela', 'preço_tabela', 'preçotabela', 'prcotabela', 'preco tabela', 'vlrtabela', 'vlr_tabela', 'precacheio', 'precocheio', 'preco_cheio']);
+        const colValorPromocao = findKey(['valorpromocao', 'valor_promocao', 'vlrpromocao', 'vlr_promocao', 'precopromocao', 'preco_promocao', 'precopromo', 'preco_promo', 'vlrpromo', 'promocao']);
+        const colDataFimPromocao = findKey(['datafimpromocao', 'data_fim_promocao', 'dtfimpromocao', 'dt_fim_promocao', 'fimpromocao', 'fim_promocao', 'validadepromocao', 'validade_promocao', 'dtfimpromo']);
+        const colValorVendaTotal = findKey(['valorvenda', 'valor_venda', 'vlrvenda', 'vlr_venda', 'totalvenda', 'total_venda', 'vendatotal', 'venda_total', 'vlrvendatotal', 'vlr_venda_total']);
 
         const detectedColumns: Record<string, string> = {
           'Código': colCodigo || '❌ Não encontrado',
@@ -169,6 +173,10 @@ export function processExcelFile(file: File, existingProdutos: Produto[]): Promi
           'Última Compra': colUltimaCompra || '—',
           'Nome Comissão': colNomeComissao || '—',
           'Comissão': colComissao || '—',
+          'Preço Tabela': colPrecoTabela || '—',
+          'Valor Promoção': colValorPromocao || '—',
+          'Fim Promoção': colDataFimPromocao || '—',
+          'Valor Venda Total': colValorVendaTotal || '—',
         };
 
         const warnings: string[] = [];
@@ -211,6 +219,17 @@ export function processExcelFile(file: File, existingProdutos: Produto[]): Promi
 
           const nomeComissao = String(row[colNomeComissao] || '').trim();
           const comissao = Number(row[colComissao]) || 0;
+          const precoTabela = colPrecoTabela ? (Number(row[colPrecoTabela]) || 0) : 0;
+          const valorPromocaoRaw = colValorPromocao ? Number(row[colValorPromocao]) : null;
+          const valorPromocao = valorPromocaoRaw && valorPromocaoRaw > 0 ? valorPromocaoRaw : null;
+          const dataFimPromocao = colDataFimPromocao ? parseExcelDate(row[colDataFimPromocao]) : null;
+          const valorVendaTotal = colValorVendaTotal ? (Number(row[colValorVendaTotal]) || 0) : 0;
+
+          // Calculate discount percentage
+          let percentualDesconto: number | null = null;
+          if (valorPromocao && precoTabela > 0) {
+            percentualDesconto = Math.round(((precoTabela - valorPromocao) / precoTabela) * 10000) / 100;
+          }
 
           produtoSnapshots.push({
             id: generateId(),
@@ -226,6 +245,11 @@ export function processExcelFile(file: File, existingProdutos: Produto[]): Promi
             categoria_estoque: getCategoriaEstoque(diasSemVenda),
             nome_comissao: nomeComissao,
             comissao,
+            preco_tabela: precoTabela,
+            valor_promocao: valorPromocao,
+            percentual_desconto: percentualDesconto,
+            data_fim_promocao: dataFimPromocao,
+            valor_venda_total: valorVendaTotal,
           });
         }
 
