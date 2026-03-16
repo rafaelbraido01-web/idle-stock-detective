@@ -184,6 +184,9 @@ export default function Products() {
                       <td className="px-4 py-2.5 text-right text-xs text-muted-foreground">
                         {item.data_ultima_venda ? formatDate(item.data_ultima_venda) : '—'}
                       </td>
+                      <td className="px-4 py-2.5 text-right text-xs text-muted-foreground">
+                        {item.data_ultima_compra ? formatDate(item.data_ultima_compra) : '—'}
+                      </td>
                       <td className="px-4 py-2.5 text-right font-mono text-foreground">{item.dias_sem_venda < 0 ? '—' : item.dias_sem_venda}</td>
                       <td className="px-4 py-2.5 text-xs text-muted-foreground">
                         {item.nome_comissao ? (
