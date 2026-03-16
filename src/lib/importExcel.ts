@@ -160,6 +160,8 @@ export function processExcelFile(file: File, existingProdutos: Produto[]): Promi
           'Valor Unitário': colValorUnit || '—',
           'Valor Total': colValorTotal || '—',
           'Última Venda': colUltimaVenda || '⚠️ Não encontrado',
+          'Nome Comissão': colNomeComissao || '—',
+          'Comissão': colComissao || '—',
         };
 
         const warnings: string[] = [];
