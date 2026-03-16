@@ -200,6 +200,9 @@ export function processExcelFile(file: File, existingProdutos: Produto[]): Promi
 
           totalEstoque += valorTotalRow;
 
+          const nomeComissao = String(row[colNomeComissao] || '').trim();
+          const comissao = Number(row[colComissao]) || 0;
+
           produtoSnapshots.push({
             id: generateId(),
             snapshot_id: snapshotId,
@@ -210,6 +213,8 @@ export function processExcelFile(file: File, existingProdutos: Produto[]): Promi
             data_ultima_venda: dataUltimaVenda,
             dias_sem_venda: diasSemVenda,
             categoria_estoque: getCategoriaEstoque(diasSemVenda),
+            nome_comissao: nomeComissao,
+            comissao,
           });
         }
 

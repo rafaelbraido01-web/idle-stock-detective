@@ -28,6 +28,8 @@ export interface EstoqueProdutoSnapshot {
   data_ultima_venda: string | null;
   dias_sem_venda: number;
   categoria_estoque: CategoriaEstoque;
+  nome_comissao: string;
+  comissao: number;
 }
 
 export type CategoriaEstoque = '0-90' | '90-180' | '180-270' | '270-365' | '365+' | 'sem-registro';
