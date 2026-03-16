@@ -57,6 +57,12 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const clearData = useCallback(() => {
+    const empty: InventoryState = { produtos: [], snapshots: [], produtoSnapshots: [] };
+    setState(empty);
+    localStorage.removeItem(STORAGE_KEY);
+  }, []);
+
   const getLatestSnapshot = useCallback(() => {
     if (state.snapshots.length === 0) return null;
     return state.snapshots[state.snapshots.length - 1];
