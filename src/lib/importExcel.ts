@@ -155,6 +155,10 @@ export function processExcelFile(file: File, existingProdutos: Produto[]): Promi
           'data_ultima_compra', 'dataultimacompra', 'data ultima compra',
           'lastpurchase', 'last_purchase',
         ]);
+        const colPrecoTabela = findKey(['precotabela', 'preco_tabela', 'preço_tabela', 'preçotabela', 'prcotabela', 'preco tabela', 'vlrtabela', 'vlr_tabela', 'precacheio', 'precocheio', 'preco_cheio']);
+        const colValorPromocao = findKey(['valorpromocao', 'valor_promocao', 'vlrpromocao', 'vlr_promocao', 'precopromocao', 'preco_promocao', 'precopromo', 'preco_promo', 'vlrpromo', 'promocao']);
+        const colDataFimPromocao = findKey(['datafimpromocao', 'data_fim_promocao', 'dtfimpromocao', 'dt_fim_promocao', 'fimpromocao', 'fim_promocao', 'validadepromocao', 'validade_promocao', 'dtfimpromo']);
+        const colValorVendaTotal = findKey(['valorvenda', 'valor_venda', 'vlrvenda', 'vlr_venda', 'totalvenda', 'total_venda', 'vendatotal', 'venda_total', 'vlrvendatotal', 'vlr_venda_total']);
 
         const detectedColumns: Record<string, string> = {
           'Código': colCodigo || '❌ Não encontrado',
