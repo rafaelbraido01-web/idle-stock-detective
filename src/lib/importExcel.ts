@@ -149,6 +149,12 @@ export function processExcelFile(file: File, existingProdutos: Produto[]): Promi
         ]);
         const colNomeComissao = findKey(['nomecomiss', 'nome_comiss', 'nome comiss', 'nomecomissao', 'nome_comissao', 'nome comissão', 'tipocomissao', 'tipo_comissao']);
         const colComissao = findKey(['comissao', 'comissão', 'commission', 'comiss', 'vlrcomissao', 'vlr_comissao', 'valorcomissao']);
+        const colUltimaCompra = findKey([
+          'ultcompra', 'ult_compra', 'ult compra', 'ultimacompra', 'ultima_compra', 'última_compra',
+          'dtultcompra', 'dt_ult_compra', 'dt ult compra', 'dtultimacompra',
+          'data_ultima_compra', 'dataultimacompra', 'data ultima compra',
+          'lastpurchase', 'last_purchase',
+        ]);
 
         const detectedColumns: Record<string, string> = {
           'Código': colCodigo || '❌ Não encontrado',
@@ -160,6 +166,7 @@ export function processExcelFile(file: File, existingProdutos: Produto[]): Promi
           'Valor Unitário': colValorUnit || '—',
           'Valor Total': colValorTotal || '—',
           'Última Venda': colUltimaVenda || '⚠️ Não encontrado',
+          'Última Compra': colUltimaCompra || '—',
           'Nome Comissão': colNomeComissao || '—',
           'Comissão': colComissao || '—',
         };
