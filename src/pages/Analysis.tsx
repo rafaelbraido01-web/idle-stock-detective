@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell, PieChart, Pie, Legend } from 'recharts';
 import { useInventory } from '@/store/InventoryContext';
 import { formatCurrency, formatNumber, AGING_CATEGORIES } from '@/types/inventory';
+import { AgingBadge } from '@/components/AgingBadge';
 import { AlertTriangle, TrendingDown } from 'lucide-react';
 
 const AGING_COLORS = ['#16a34a', '#6b7280', '#d97706', '#ea580c', '#dc2626'];
