@@ -157,7 +157,7 @@ export function processExcelFile(file: File, existingProdutos: Produto[]): Promi
         ]);
         const colPrecoTabela = findKey(['precotabela', 'preco_tabela', 'preço_tabela', 'preçotabela', 'prcotabela', 'preco tabela', 'vlrtabela', 'vlr_tabela', 'precacheio', 'precocheio', 'preco_cheio']);
         const colValorPromocao = findKey(['valorpromocao', 'valor_promocao', 'vlrpromocao', 'vlr_promocao', 'precopromocao', 'preco_promocao', 'precopromo', 'preco_promo', 'vlrpromo', 'promocao']);
-        const colDataFimPromocao = findKey(['datafimpromocao', 'data_fim_promocao', 'dtfimpromocao', 'dt_fim_promocao', 'fimpromocao', 'fim_promocao', 'validadepromocao', 'validade_promocao', 'dtfimpromo']);
+        const colDataFimPromocao = findKey(['datafimpromocao', 'data_fim_promocao', 'dtfimpromocao', 'dt_fim_promocao', 'fimpromocao', 'fim_promocao', 'validadepromocao', 'validade_promocao', 'dtfimpromo', 'validprom', 'valid_prom', 'valid prom', 'vlprom', 'vl_prom']);
         const colValorVendaTotal = findKey(['valorvenda', 'valor_venda', 'vlrvenda', 'vlr_venda', 'totalvenda', 'total_venda', 'vendatotal', 'venda_total', 'vlrvendatotal', 'vlr_venda_total']);
 
         const detectedColumns: Record<string, string> = {
