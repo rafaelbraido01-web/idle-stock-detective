@@ -276,13 +276,20 @@ export default function Dashboard() {
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-card rounded-xl shadow-card p-5">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Última Compra — Distribuição</p>
               <p className="text-[10px] text-muted-foreground mb-3">Produtos agrupados pela data da última compra</p>
-              <ResponsiveContainer width="100%" height={240}>
+              <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={compraDistribuicao}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(214 32% 91%)" />
                   <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="hsl(215 16% 47%)" interval={0} />
-                  <YAxis tick={{ fontSize: 11 }} stroke="hsl(215 16% 47%)" />
+                  <YAxis yAxisId="left" tick={{ fontSize: 10 }} stroke="hsl(215 16% 47%)" />
+                  <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} stroke="hsl(215 16% 47%)" tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
                   <Tooltip formatter={(v: number, name: string) => name === 'Valor' ? formatCurrency(v) : formatNumber(v)} />
-                  <Bar dataKey="qtd" name="Produtos" radius={[4, 4, 0, 0]}>
+                  <Legend iconSize={8} wrapperStyle={{ fontSize: 10 }} />
+                  <Bar yAxisId="left" dataKey="qtd" name="Qtd" radius={[4, 4, 0, 0]}>
+                    {compraDistribuicao.map((entry, i) => (
+                      <Cell key={i} fill={entry.color} />
+                    ))}
+                  </Bar>
+                  <Bar yAxisId="right" dataKey="valor" name="Valor" radius={[4, 4, 0, 0]} opacity={0.5}>
                     {compraDistribuicao.map((entry, i) => (
                       <Cell key={i} fill={entry.color} />
                     ))}
