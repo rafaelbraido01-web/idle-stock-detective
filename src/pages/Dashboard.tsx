@@ -74,13 +74,15 @@ export default function Dashboard() {
 
   // Última Compra
   const compraDistribuicao = useMemo(() => {
-    const lt90 = filteredLatest.filter(p => p.dias_sem_compra >= 0 && p.dias_sem_compra < 90);
+    const lt30 = filteredLatest.filter(p => p.dias_sem_compra >= 0 && p.dias_sem_compra < 30);
+    const d30a90 = filteredLatest.filter(p => p.dias_sem_compra >= 30 && p.dias_sem_compra < 90);
     const d90a180 = filteredLatest.filter(p => p.dias_sem_compra >= 90 && p.dias_sem_compra <= 180);
     const gt180 = filteredLatest.filter(p => p.dias_sem_compra > 180);
     const semRegistro = filteredLatest.filter(p => p.dias_sem_compra < 0);
 
     return [
-      { name: '< 90 dias', qtd: lt90.length, valor: lt90.reduce((s, p) => s + p.valor_total, 0), color: '#16a34a' },
+      { name: '< 30 dias', qtd: lt30.length, valor: lt30.reduce((s, p) => s + p.valor_total, 0), color: '#059669' },
+      { name: '30 a 90 dias', qtd: d30a90.length, valor: d30a90.reduce((s, p) => s + p.valor_total, 0), color: '#16a34a' },
       { name: '90 a 180 dias', qtd: d90a180.length, valor: d90a180.reduce((s, p) => s + p.valor_total, 0), color: '#d97706' },
       { name: '> 180 dias', qtd: gt180.length, valor: gt180.reduce((s, p) => s + p.valor_total, 0), color: '#dc2626' },
       { name: 'Sem registro', qtd: semRegistro.length, valor: semRegistro.reduce((s, p) => s + p.valor_total, 0), color: '#94a3b8' },
@@ -135,7 +137,7 @@ export default function Dashboard() {
   // Top parados
   const topParados = useMemo(() => {
     return [...filteredLatest]
-      .filter(p => p.dias_sem_venda > 180 || p.dias_sem_venda < 0)
+      .filter(p => p.dias_sem_compra > 180 || p.dias_sem_compra < 0)
       .sort((a, b) => b.valor_total - a.valor_total)
       .slice(0, 10)
       .map(ps => {
@@ -363,7 +365,7 @@ export default function Dashboard() {
                     <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Descrição</th>
                     <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Grupo</th>
                     <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Valor</th>
-                    <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Dias</th>
+                    <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Dias s/ Compra</th>
                     <th className="text-center px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
                   </tr>
                 </thead>
@@ -374,8 +376,8 @@ export default function Dashboard() {
                       <td className="px-4 py-2.5 max-w-[250px] truncate">{item.produto?.descricao}</td>
                       <td className="px-4 py-2.5 text-xs text-muted-foreground">{item.produto?.grupo}</td>
                       <td className="px-4 py-2.5 text-right font-mono">{formatCurrency(item.valor_total)}</td>
-                      <td className="px-4 py-2.5 text-right font-mono">{item.dias_sem_venda < 0 ? '—' : item.dias_sem_venda}</td>
-                      <td className="px-4 py-2.5 text-center"><AgingBadge dias={item.dias_sem_venda} /></td>
+                      <td className="px-4 py-2.5 text-right font-mono">{item.dias_sem_compra < 0 ? '—' : item.dias_sem_compra}</td>
+                      <td className="px-4 py-2.5 text-center"><AgingBadge dias={item.dias_sem_compra} /></td>
                     </tr>
                   ))}
                   {topParados.length === 0 && (
