@@ -135,7 +135,7 @@ export default function Dashboard() {
   // Top parados
   const topParados = useMemo(() => {
     return [...filteredLatest]
-      .filter(p => p.dias_sem_venda > 180 || p.dias_sem_venda < 0)
+      .filter(p => p.dias_sem_compra > 180 || p.dias_sem_compra < 0)
       .sort((a, b) => b.valor_total - a.valor_total)
       .slice(0, 10)
       .map(ps => {
