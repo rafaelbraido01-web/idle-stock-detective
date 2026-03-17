@@ -223,7 +223,7 @@ export default function Dashboard() {
           )}
 
           {/* KPIs */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <KPICard
               title="Estoque Crítico (>365d)"
               value={formatCurrency(kpis.valorParado365)}
@@ -231,15 +231,9 @@ export default function Dashboard() {
               valueClassName="text-aging-critical"
             />
             <KPICard
-              title="Estoque Parado (>180d)"
-              value={formatCurrency(kpis.valorParado180)}
-              subtitle={`${formatNumber(kpis.qtd180)} itens · ${kpis.pctParado.toFixed(1)}% do total`}
-              valueClassName="text-aging-warning"
-            />
-            <KPICard
-              title="Média Dias s/ Venda"
-              value={`${kpis.mediaDias.toFixed(0)} dias`}
-              subtitle={`${formatNumber(kpis.semRegistro)} itens sem registro`}
+              title="Valor Total em Estoque"
+              value={formatCurrency(kpis.valorTotal)}
+              subtitle={`${formatNumber(kpis.totalSKUs)} SKUs ativos`}
             />
             <KPICard
               title="Concentração (Pareto)"
