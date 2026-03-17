@@ -190,6 +190,10 @@ export function processExcelFile(file: File, existingProdutos: Produto[]): Promi
           const codigo = String(row[colCodigo] || '').trim();
           if (!codigo) continue;
 
+          // Skip rows where ValorEstoque = 0 (irrelevant)
+          const valorEstoqueCheck = Number(row[colValorTotal]) || 0;
+          if (colValorTotal && valorEstoqueCheck === 0) continue;
+
           const existing = existingMap.get(codigo);
           const produtoId = existing?.id || generateId();
 
