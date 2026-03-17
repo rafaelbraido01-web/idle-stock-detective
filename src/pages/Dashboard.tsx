@@ -231,10 +231,10 @@ export default function Dashboard() {
               valueClassName="text-aging-critical"
             />
             <KPICard
-              title="Estoque Crítico (>365d)"
-              value={formatCurrency(kpis.valorParado365)}
-              subtitle={`${formatNumber(kpis.qtd365)} itens`}
-              valueClassName="text-aging-critical"
+              title="Estoque Parado (>180d)"
+              value={formatCurrency(kpis.valorParado180)}
+              subtitle={`${formatNumber(kpis.qtd180)} itens · ${kpis.pctParado.toFixed(1)}% do total`}
+              valueClassName="text-aging-warning"
             />
             <KPICard
               title="Ticket Médio por SKU"
@@ -242,9 +242,9 @@ export default function Dashboard() {
               subtitle="Valor médio em estoque por produto"
             />
             <KPICard
-              title="Ticket Médio por SKU"
-              value={formatCurrency(kpis.ticketMedio)}
-              subtitle="Valor médio em estoque por produto"
+              title="Média Dias s/ Venda"
+              value={`${kpis.mediaDias.toFixed(0)} dias`}
+              subtitle={`${formatNumber(kpis.semRegistro)} itens sem registro`}
             />
           </div>
 
