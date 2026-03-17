@@ -223,13 +223,7 @@ export default function Dashboard() {
           )}
 
           {/* KPIs */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <KPICard
-              title="Estoque Crítico (>365d)"
-              value={formatCurrency(kpis.valorParado365)}
-              subtitle={`${formatNumber(kpis.qtd365)} itens`}
-              valueClassName="text-aging-critical"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <KPICard
               title="Valor Total em Estoque"
               value={formatCurrency(kpis.valorTotal)}
