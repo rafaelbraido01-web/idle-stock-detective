@@ -29,8 +29,26 @@ function loadFromStorage(): InventoryState {
 
 function saveToStorage(state: InventoryState) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch {}
+    const json = JSON.stringify(state);
+    localStorage.setItem(STORAGE_KEY, json);
+  } catch (e) {
+    console.error('Falha ao salvar dados no localStorage (possível limite de 5MB excedido):', e);
+    // Try to save a trimmed version - keep only latest snapshot data
+    try {
+      if (state.snapshots.length > 1) {
+        const latestSnap = state.snapshots[state.snapshots.length - 1];
+        const trimmed: InventoryState = {
+          produtos: state.produtos,
+          snapshots: [latestSnap],
+          produtoSnapshots: state.produtoSnapshots.filter(ps => ps.snapshot_id === latestSnap.id),
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+        console.warn('Dados antigos removidos para caber no localStorage. Apenas o último snapshot foi mantido.');
+      }
+    } catch (e2) {
+      console.error('Impossível salvar mesmo dados reduzidos:', e2);
+    }
+  }
 }
 
 export function InventoryProvider({ children }: { children: React.ReactNode }) {
