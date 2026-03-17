@@ -376,8 +376,8 @@ export default function Dashboard() {
                       <td className="px-4 py-2.5 max-w-[250px] truncate">{item.produto?.descricao}</td>
                       <td className="px-4 py-2.5 text-xs text-muted-foreground">{item.produto?.grupo}</td>
                       <td className="px-4 py-2.5 text-right font-mono">{formatCurrency(item.valor_total)}</td>
-                      <td className="px-4 py-2.5 text-right font-mono">{item.dias_sem_venda < 0 ? '—' : item.dias_sem_venda}</td>
-                      <td className="px-4 py-2.5 text-center"><AgingBadge dias={item.dias_sem_venda} /></td>
+                      <td className="px-4 py-2.5 text-right font-mono">{item.dias_sem_compra < 0 ? '—' : item.dias_sem_compra}</td>
+                      <td className="px-4 py-2.5 text-center"><AgingBadge dias={item.dias_sem_compra} /></td>
                     </tr>
                   ))}
                   {topParados.length === 0 && (
