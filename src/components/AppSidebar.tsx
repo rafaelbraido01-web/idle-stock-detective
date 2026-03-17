@@ -18,6 +18,7 @@ const navItems = [
   { title: 'Produtos', url: '/produtos', icon: Box },
   { title: 'Importações', url: '/importacoes', icon: FileSpreadsheet },
   { title: 'Comparação', url: '/comparacao', icon: GitCompareArrows },
+  { title: 'Promoções', url: '/promocoes', icon: Tag },
 ];
 
 export function AppSidebar() {
