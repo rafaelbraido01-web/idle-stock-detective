@@ -102,6 +102,7 @@ export default function Promocoes() {
       });
     }
 
+    
     return results.sort((a, b) => b.delta - a.delta);
   }, [atualId, anteriorId, produtoSnapshots, produtos]);
 
