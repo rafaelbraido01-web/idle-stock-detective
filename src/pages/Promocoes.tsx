@@ -102,7 +102,7 @@ export default function Promocoes() {
       });
     }
 
-    console.log('[Promo Debug] Total comparisons:', results.length, 'Sample:', results.slice(0, 3).map(r => ({ codigo: r.codigo, qtdAnt: r.qtdAnterior, qtdAtual: r.qtdAtual, delta: r.delta })));
+    
     return results.sort((a, b) => b.delta - a.delta);
   }, [atualId, anteriorId, produtoSnapshots, produtos]);
 
