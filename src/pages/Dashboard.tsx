@@ -74,13 +74,15 @@ export default function Dashboard() {
 
   // Última Compra
   const compraDistribuicao = useMemo(() => {
-    const lt90 = filteredLatest.filter(p => p.dias_sem_compra >= 0 && p.dias_sem_compra < 90);
+    const lt30 = filteredLatest.filter(p => p.dias_sem_compra >= 0 && p.dias_sem_compra < 30);
+    const d30a90 = filteredLatest.filter(p => p.dias_sem_compra >= 30 && p.dias_sem_compra < 90);
     const d90a180 = filteredLatest.filter(p => p.dias_sem_compra >= 90 && p.dias_sem_compra <= 180);
     const gt180 = filteredLatest.filter(p => p.dias_sem_compra > 180);
     const semRegistro = filteredLatest.filter(p => p.dias_sem_compra < 0);
 
     return [
-      { name: '< 90 dias', qtd: lt90.length, valor: lt90.reduce((s, p) => s + p.valor_total, 0), color: '#16a34a' },
+      { name: '< 30 dias', qtd: lt30.length, valor: lt30.reduce((s, p) => s + p.valor_total, 0), color: '#059669' },
+      { name: '30 a 90 dias', qtd: d30a90.length, valor: d30a90.reduce((s, p) => s + p.valor_total, 0), color: '#16a34a' },
       { name: '90 a 180 dias', qtd: d90a180.length, valor: d90a180.reduce((s, p) => s + p.valor_total, 0), color: '#d97706' },
       { name: '> 180 dias', qtd: gt180.length, valor: gt180.reduce((s, p) => s + p.valor_total, 0), color: '#dc2626' },
       { name: 'Sem registro', qtd: semRegistro.length, valor: semRegistro.reduce((s, p) => s + p.valor_total, 0), color: '#94a3b8' },

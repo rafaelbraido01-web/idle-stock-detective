@@ -138,7 +138,7 @@ export function processExcelFile(file: File, existingProdutos: Produto[]): Promi
         const colMarca = findKey(['marca', 'brand', 'fabricante', 'nmmarca']);
         const colQuantidade = findKey(['qtd', 'quantidade', 'qtde', 'quant', 'estoque', 'saldo', 'qt', 'qtdestoque', 'qtd_estoque']);
         const colValorUnit = findKey(['valorunit', 'valor_unit', 'preco', 'preço', 'unitario', 'unitário', 'vlr_unit', 'vlrunit', 'precovenda', 'preco_venda']);
-        const colValorTotal = findKey(['valortotal', 'valor_total', 'vlr_total', 'vlrtotal', 'total']);
+        const colValorTotal = findKey(['valorestoque', 'valor_estoque', 'vlrestoque', 'vlr_estoque', 'valortotal', 'valor_total', 'vlr_total', 'vlrtotal', 'total']);
         const colUltimaVenda = findKey([
           'ultimavenda', 'ultima_venda', 'últimavenda', 'última_venda',
           'dtultvenda', 'dt_ult_venda', 'dt ult venda', 'dtultimavenda',
