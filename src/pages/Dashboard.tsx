@@ -237,37 +237,14 @@ export default function Dashboard() {
               valueClassName="text-aging-warning"
             />
             <KPICard
-              title="Ticket Médio por SKU"
-              value={formatCurrency(kpis.ticketMedio)}
-              subtitle="Valor médio em estoque por produto"
-            />
-            <KPICard
               title="Média Dias s/ Venda"
               value={`${kpis.mediaDias.toFixed(0)} dias`}
               subtitle={`${formatNumber(kpis.semRegistro)} itens sem registro`}
             />
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <KPICard
               title="Concentração (Pareto)"
               value={`${kpis.pctPareto.toFixed(0)}% dos SKUs`}
               subtitle={`${formatNumber(kpis.skusPareto)} SKUs = 80% do valor`}
-            />
-            <KPICard
-              title="Importações Realizadas"
-              value={String(snapshots.length)}
-              subtitle={snapshots.length > 1 ? 'Compare a evolução abaixo' : 'Importe mais para ver evolução'}
-            />
-            <KPICard
-              title="Total SKUs"
-              value={formatNumber(kpis.totalSKUs)}
-              subtitle={isFiltered ? 'Filtro aplicado' : 'Todos os produtos'}
-            />
-            <KPICard
-              title="Valor Total"
-              value={formatCurrency(kpis.valorTotal)}
-              subtitle={isFiltered ? 'Filtro aplicado' : undefined}
             />
           </div>
 
