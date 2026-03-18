@@ -125,15 +125,19 @@ function codeMatchesExact(title: string, code: string): boolean {
 function extractModelCodes(productName: string): string[] {
   const models: string[] = [];
   const patterns = [
-    /[A-Z0-9]{2,}[-][A-Z0-9]+(?:[-\.][A-Z0-9]+)*/gi,
-    /[A-Z]{1,3}\d{2,}[A-Z]*/gi,
-    /i[3579]-?\d{4,5}[A-Z]*/gi,
+    /[A-Z0-9]{2,}[-][A-Z0-9]+(?:[-\.][A-Z0-9]+)*/gi, // H610M-H, 24MS500-B.AWZM
+    /[A-Z]{2,}\d+[A-Z0-9\/\-]*/gi, // KVR32N22S6/8, SWG256G
+    /i[3579]-?\d{4,5}[A-Z]*/gi, // i5-12400, i7-13700K
   ];
+
   for (const p of patterns) {
     const matches = productName.match(p);
     if (matches) models.push(...matches);
   }
-  return [...new Set(models)].filter(m => m.length >= 3);
+
+  return [...new Set(models)]
+    .map(m => m.trim())
+    .filter(m => m.length >= 4);
 }
 
 // ── URL relevance check ──
@@ -172,7 +176,7 @@ function isRelevantProduct(title: string, code: string, productName: string): bo
   const matchCount = significantWords.filter(w => titleLower.includes(w)).length;
   const matchRatio = significantWords.length > 0 ? matchCount / significantWords.length : 0;
 
-  if (matchRatio < 0.3) {
+  if (matchRatio < 0.25) {
     console.log(`[Validation] REJECTED: low relevance (${matchCount}/${significantWords.length}) for "${title.substring(0, 80)}"`);
     return false;
   }
@@ -180,10 +184,29 @@ function isRelevantProduct(title: string, code: string, productName: string): bo
   return true;
 }
 
-// ── Google search via HTML ──
-async function searchGoogle(query: string): Promise<string[]> {
-  const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&hl=pt-BR&gl=br&num=5`;
-  
+function extractTrustedUrlsFromHtml(html: string): string[] {
+  const urls: string[] = [];
+  const patterns = [
+    /href="\/url\?q=(https?[^&"]+)/g,
+    /href="(https?:\/\/(?:www\.)?(?:kabum|mercadolivre|amazon|magazineluiza|pichau)[^"]+)"/g,
+    /"url":"(https?:\\\/\\\/(?:www\\\.)?(?:kabum|mercadolivre|amazon|magazineluiza|pichau)[^"]+)"/g,
+  ];
+
+  for (const pattern of patterns) {
+    let match;
+    while ((match = pattern.exec(html)) !== null) {
+      const raw = match[1].replace(/\\\//g, '/');
+      const decoded = decodeURIComponent(raw);
+      if (isValidProductUrl(decoded) && !urls.includes(decoded)) {
+        urls.push(decoded);
+      }
+    }
+  }
+
+  return urls.slice(0, 5);
+}
+
+async function searchEngine(url: string, query: string, source: string): Promise<string[]> {
   try {
     const response = await fetch(url, {
       headers: {
@@ -193,41 +216,40 @@ async function searchGoogle(query: string): Promise<string[]> {
       },
       signal: AbortSignal.timeout(5000),
     });
-    
+
     if (!response.ok) {
-      console.error(`Google search failed: ${response.status}`);
+      console.error(`${source} search failed: ${response.status}`);
       return [];
     }
-    
+
     const html = await response.text();
-    
-    // Extract URLs from Google results
-    const urls: string[] = [];
-    const urlPattern = /href="\/url\?q=(https?[^&"]+)/g;
-    let match;
-    while ((match = urlPattern.exec(html)) !== null) {
-      const decoded = decodeURIComponent(match[1]);
-      if (isValidProductUrl(decoded) && !urls.includes(decoded)) {
-        urls.push(decoded);
-      }
+
+    // Google frequently returns CAPTCHA in server-side environments
+    if (source === 'Google' && (html.includes('/sorry/index') || html.includes('g-recaptcha'))) {
+      console.log(`[Search] Google CAPTCHA detected for query "${query}"`);
+      return [];
     }
-    
-    // Fallback: try direct href patterns
-    if (urls.length === 0) {
-      const directPattern = /href="(https?:\/\/(?:www\.)?(?:kabum|mercadolivre|amazon|magazineluiza|pichau)[^"]+)"/g;
-      while ((match = directPattern.exec(html)) !== null) {
-        const decoded = decodeURIComponent(match[1]);
-        if (isValidProductUrl(decoded) && !urls.includes(decoded)) {
-          urls.push(decoded);
-        }
-      }
-    }
-    
-    return urls.slice(0, 5);
+
+    return extractTrustedUrlsFromHtml(html);
   } catch (err) {
-    console.error(`Google search error for "${query}":`, err);
+    console.error(`${source} search error for "${query}":`, err);
     return [];
   }
+}
+
+// ── Search: Google first, then free HTML fallbacks if blocked ──
+async function searchGoogle(query: string): Promise<string[]> {
+  const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}&hl=pt-BR&gl=br&num=5`;
+  const googleResults = await searchEngine(googleUrl, query, 'Google');
+  if (googleResults.length > 0) return googleResults;
+
+  const duckUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
+  const duckResults = await searchEngine(duckUrl, query, 'DuckDuckGo');
+  if (duckResults.length > 0) return duckResults;
+
+  const bingUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}&count=5&setlang=pt-BR`;
+  const bingResults = await searchEngine(bingUrl, query, 'Bing');
+  return bingResults;
 }
 
 // ── Fetch and scrape a product page ──
