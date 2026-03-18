@@ -174,7 +174,13 @@ export default function Promocoes() {
 
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <KPICard title="Itens em Promoção" value={formatNumber(kpis.total)} subtitle={`${kpis.venderam} venderam`} />
+        <KPICard
+          title="Itens em Promoção"
+          value={formatNumber(kpis.total)}
+          subtitle={`${kpis.venderam} venderam`}
+          onClick={() => setPromoFilter(prev => prev === 'ativa' ? 'todas' : 'ativa')}
+          active={promoFilter === 'ativa'}
+        />
         <KPICard
           title="Taxa de Conversão"
           value={kpis.total > 0 ? `${((kpis.venderam / kpis.total) * 100).toFixed(1)}%` : '—'}
