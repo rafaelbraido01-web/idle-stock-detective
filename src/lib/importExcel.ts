@@ -88,12 +88,20 @@ function calcDiasSemVenda(dataUltimaVenda: string | null, referenceDate: Date): 
   return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
 }
 
+interface ImportDiagnostics {
+  totalLinhasArquivo: number;
+  linhasSemCodigo: number;
+  linhasValorZero: number;
+  linhasProcessadas: number;
+}
+
 interface ImportResult {
   snapshot: EstoqueSnapshot;
   produtos: Produto[];
   produtoSnapshots: EstoqueProdutoSnapshot[];
   detectedColumns: Record<string, string>;
   warnings: string[];
+  diagnostics: ImportDiagnostics;
 }
 
 export function processExcelFile(file: File, existingProdutos: Produto[], referenceDate?: Date): Promise<ImportResult> {
