@@ -108,52 +108,75 @@ function extractTitle(html: string): string {
   return '';
 }
 
+// ── Detect if code is a manufacturer model (has letters/slashes) vs internal numeric code ──
+function isManufacturerCode(code: string): boolean {
+  return /[a-zA-Z]/.test(code) || /[\/\-]/.test(code);
+}
+
 // ── Variant-safe code matching ──
-// Ensures "12400" doesn't match "12400F" and vice-versa
 function codeMatchesExact(title: string, code: string): boolean {
   if (!code) return false;
   const escaped = code.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  // Code must appear as a whole token — not followed/preceded by alphanumeric chars
   const regex = new RegExp(`(?<![a-zA-Z0-9])${escaped}(?![a-zA-Z0-9])`, 'i');
   return regex.test(title);
+}
+
+// ── Extract model identifiers from product name ──
+function extractModelCodes(productName: string): string[] {
+  const models: string[] = [];
+  const patterns = [
+    /[A-Z0-9]{2,}[-][A-Z0-9]+(?:[-\.][A-Z0-9]+)*/gi,
+    /[A-Z]{1,3}\d{2,}[A-Z]*/gi,
+    /i[3579]-?\d{4,5}[A-Z]*/gi,
+  ];
+  for (const p of patterns) {
+    const matches = productName.match(p);
+    if (matches) models.push(...matches);
+  }
+  return [...new Set(models)].filter(m => m.length >= 3);
 }
 
 // ── URL relevance check ──
 function isUrlRelevant(url: string, code: string, productName: string): boolean {
   const pathLower = url.toLowerCase();
-  const codeLower = code.toLowerCase();
-  
-  // URL should contain the code or at least 2 significant words from the product name
-  if (codeLower && pathLower.includes(codeLower)) return true;
-  
-  const words = productName.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+  if (code && isManufacturerCode(code) && pathLower.includes(code.toLowerCase())) return true;
+  const words = productName.toLowerCase().split(/\s+/).filter(w => w.length > 3 && !['para', 'com', 'sem', 'que'].includes(w));
   const matchCount = words.filter(w => pathLower.includes(w)).length;
-  return matchCount >= 2;
+  return matchCount >= 1;
 }
 
-// ── Product relevance check (strict) ──
+// ── Product relevance check (balanced) ──
 function isRelevantProduct(title: string, code: string, productName: string): boolean {
   const titleLower = title.toLowerCase();
-  const codeLower = code.toLowerCase();
-  
-  // RULE 1: Title MUST contain the exact code (variant-safe)
-  if (codeLower && !codeMatchesExact(titleLower, codeLower)) {
-    console.log(`[Validation] REJECTED: code "${code}" not found exactly in title "${title}"`);
+  const modelCodes = extractModelCodes(productName);
+
+  // For manufacturer codes, require exact match in title
+  if (code && isManufacturerCode(code)) {
+    if (!codeMatchesExact(titleLower, code)) {
+      console.log(`[Validation] REJECTED: manufacturer code "${code}" not in title "${title.substring(0, 80)}"`);
+      return false;
+    }
+    return true;
+  }
+
+  // For internal numeric codes, rely on name/model matching
+  if (modelCodes.length > 0) {
+    const hasModelMatch = modelCodes.some(m => titleLower.includes(m.toLowerCase()));
+    if (hasModelMatch) return true;
+  }
+
+  // Fallback: significant word overlap
+  const significantWords = productName.toLowerCase()
+    .split(/\s+/)
+    .filter(w => w.length > 2 && !['para', 'com', 'sem', 'que', 'led', 'ips'].includes(w));
+  const matchCount = significantWords.filter(w => titleLower.includes(w)).length;
+  const matchRatio = significantWords.length > 0 ? matchCount / significantWords.length : 0;
+
+  if (matchRatio < 0.3) {
+    console.log(`[Validation] REJECTED: low relevance (${matchCount}/${significantWords.length}) for "${title.substring(0, 80)}"`);
     return false;
   }
-  
-  // RULE 2: Title must not be a completely different product category
-  // Extract key product type words from the search name
-  const categoryWords = productName.toLowerCase().split(/\s+/).filter(w => w.length > 3);
-  const titleWords = titleLower.split(/\s+/);
-  
-  // At least some category overlap required (prevent i5 returning a keyboard)
-  const categoryMatch = categoryWords.filter(w => titleLower.includes(w)).length;
-  if (categoryWords.length > 0 && categoryMatch === 0) {
-    console.log(`[Validation] REJECTED: no category overlap between "${productName}" and "${title}"`);
-    return false;
-  }
-  
+
   return true;
 }
 
