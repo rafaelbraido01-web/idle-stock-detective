@@ -15,6 +15,7 @@ const TRUSTED_DOMAINS = [
 ];
 
 const BLOCKED_PATH_PATTERNS = ['/categoria', '/b/', '/busca', '/search', '/listing', '/s?k='];
+const BLOCKED_HOSTNAME_PATTERNS = ['sacola.magazineluiza', 'sacola.magazinevoce', 'carrinho.', 'checkout.', 'login.'];
 const FETCH_TIMEOUT = 8000;
 
 // ── Known brands for relevance scoring ──
@@ -47,6 +48,8 @@ function isValidProductUrl(url: string): boolean {
     const hostname = parsed.hostname.replace('www.', '');
     const isTrusted = TRUSTED_DOMAINS.some(d => hostname === d || hostname.endsWith('.' + d));
     if (!isTrusted) return false;
+    // Block cart/checkout/login subdomains
+    if (BLOCKED_HOSTNAME_PATTERNS.some(p => hostname.includes(p) || parsed.hostname.includes(p))) return false;
     const path = parsed.pathname.toLowerCase();
     if (BLOCKED_PATH_PATTERNS.some(p => path.includes(p))) return false;
     if (path === '/' || path === '') return false;
