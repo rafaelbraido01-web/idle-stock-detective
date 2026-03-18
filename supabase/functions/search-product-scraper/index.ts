@@ -490,9 +490,16 @@ Deno.serve(async (req) => {
       }
     }
     
-    const uniqueUrls = Array.from(allUrls).slice(0, 8);
+    let uniqueUrls = Array.from(allUrls).slice(0, 8);
+
+    // Fallback when search engines return no links
+    if (uniqueUrls.length === 0) {
+      console.log(`[Scraper] No URLs from search engines. Trying direct store search...`);
+      uniqueUrls = await searchStoresDirectly(searchTerm);
+    }
+
     console.log(`[Scraper] Found ${uniqueUrls.length} unique URLs to scrape`);
-    
+
     if (uniqueUrls.length === 0) {
       return new Response(
         JSON.stringify({ success: true, data: { results: [] }, citations: [] }),
