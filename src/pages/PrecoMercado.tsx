@@ -143,7 +143,7 @@ export default function PrecoMercado() {
         </div>
       ) : (
         <>
-          <div className="flex items-center gap-3 max-w-md">
+          <div className="flex items-center gap-4 max-w-lg">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -152,6 +152,16 @@ export default function PrecoMercado() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="promo-filter"
+                checked={onlyActivePromo}
+                onCheckedChange={(v) => setOnlyActivePromo(!!v)}
+              />
+              <Label htmlFor="promo-filter" className="text-sm whitespace-nowrap cursor-pointer">
+                Promoção ativa
+              </Label>
             </div>
           </div>
 
