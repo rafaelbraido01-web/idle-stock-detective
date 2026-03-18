@@ -51,10 +51,13 @@ export function ImportButton() {
         ? `\n\n⚠️ ${result.warnings.join('; ')}`
         : '';
 
+      const d = result.diagnostics;
+      const diagText = `📊 Linhas no arquivo: ${d.totalLinhasArquivo}\n❌ Sem código: ${d.linhasSemCodigo}\n🚫 Valor estoque zero: ${d.linhasValorZero}\n✅ Processadas: ${d.linhasProcessadas}`;
+
       toast({
         title: 'Importação concluída',
-        description: `${result.produtoSnapshots.length} produtos processados.\nData de referência: ${format(reportDate, 'dd/MM/yyyy')}\n\nColunas detectadas:\n${colSummary}${warningText}`,
-        duration: 10000,
+        description: `${result.produtoSnapshots.length} produtos processados.\nData de referência: ${format(reportDate, 'dd/MM/yyyy')}\n\n${diagText}\n\nColunas detectadas:\n${colSummary}${warningText}`,
+        duration: 15000,
       });
     } catch (err: any) {
       toast({
