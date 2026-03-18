@@ -179,6 +179,10 @@ export function processExcelFile(file: File, existingProdutos: Produto[]): Promi
           'Valor Venda Total': colValorVendaTotal || '—',
         };
 
+        console.log('[DEBUG Import] Colunas do arquivo:', sampleKeys);
+        console.log('[DEBUG Import] colQuantidade mapeada para:', colQuantidade);
+        console.log('[DEBUG Import] Primeiras 3 linhas - quantidade raw:', rows.slice(0, 3).map(r => ({ col: colQuantidade, val: r[colQuantidade] })));
+
         const warnings: string[] = [];
         if (!colCodigo) warnings.push('Coluna de código não encontrada');
         if (!colQuantidade) warnings.push('Coluna de quantidade não encontrada');
