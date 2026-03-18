@@ -5,6 +5,7 @@ import { useInventory } from '@/store/InventoryContext';
 import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { clearData, snapshots } = useInventory();
