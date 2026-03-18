@@ -108,18 +108,53 @@ function extractTitle(html: string): string {
   return '';
 }
 
-// ── Product relevance check ──
+// ── Variant-safe code matching ──
+// Ensures "12400" doesn't match "12400F" and vice-versa
+function codeMatchesExact(title: string, code: string): boolean {
+  if (!code) return false;
+  const escaped = code.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // Code must appear as a whole token — not followed/preceded by alphanumeric chars
+  const regex = new RegExp(`(?<![a-zA-Z0-9])${escaped}(?![a-zA-Z0-9])`, 'i');
+  return regex.test(title);
+}
+
+// ── URL relevance check ──
+function isUrlRelevant(url: string, code: string, productName: string): boolean {
+  const pathLower = url.toLowerCase();
+  const codeLower = code.toLowerCase();
+  
+  // URL should contain the code or at least 2 significant words from the product name
+  if (codeLower && pathLower.includes(codeLower)) return true;
+  
+  const words = productName.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+  const matchCount = words.filter(w => pathLower.includes(w)).length;
+  return matchCount >= 2;
+}
+
+// ── Product relevance check (strict) ──
 function isRelevantProduct(title: string, code: string, productName: string): boolean {
   const titleLower = title.toLowerCase();
   const codeLower = code.toLowerCase();
-  const nameParts = productName.toLowerCase().split(/\s+/).filter(w => w.length > 2);
   
-  // If code appears in title, it's very likely relevant
-  if (codeLower && titleLower.includes(codeLower)) return true;
+  // RULE 1: Title MUST contain the exact code (variant-safe)
+  if (codeLower && !codeMatchesExact(titleLower, codeLower)) {
+    console.log(`[Validation] REJECTED: code "${code}" not found exactly in title "${title}"`);
+    return false;
+  }
   
-  // Check if enough name parts appear
-  const matchCount = nameParts.filter(part => titleLower.includes(part)).length;
-  return matchCount >= Math.max(2, Math.floor(nameParts.length * 0.4));
+  // RULE 2: Title must not be a completely different product category
+  // Extract key product type words from the search name
+  const categoryWords = productName.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+  const titleWords = titleLower.split(/\s+/);
+  
+  // At least some category overlap required (prevent i5 returning a keyboard)
+  const categoryMatch = categoryWords.filter(w => titleLower.includes(w)).length;
+  if (categoryWords.length > 0 && categoryMatch === 0) {
+    console.log(`[Validation] REJECTED: no category overlap between "${productName}" and "${title}"`);
+    return false;
+  }
+  
+  return true;
 }
 
 // ── Google search via HTML ──
@@ -180,6 +215,12 @@ async function scrapePage(url: string, productCode: string, productName: string)
   url: string;
 } | null> {
   try {
+    // VALIDATION: URL must be relevant to the product
+    if (!isUrlRelevant(url, productCode, productName)) {
+      console.log(`[Validation] URL rejected (no relevance): ${url}`);
+      return null;
+    }
+    
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -198,8 +239,12 @@ async function scrapePage(url: string, productCode: string, productName: string)
     const html = await response.text();
     const title = extractTitle(html);
     
-    if (!title || !isRelevantProduct(title, productCode, productName)) {
-      console.log(`Irrelevant product at ${url}: "${title}"`);
+    if (!title) {
+      console.log(`[Validation] No title found at ${url}`);
+      return null;
+    }
+    
+    if (!isRelevantProduct(title, productCode, productName)) {
       return null;
     }
     
