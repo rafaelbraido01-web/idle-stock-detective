@@ -54,6 +54,10 @@ function isValidProductUrl(url: string): boolean {
     if (hostname.includes('mercadolivre') || hostname.includes('mercadolibre')) {
       if (!isValidMercadoLivreUrl(url)) return false;
     }
+    // Kabum: URLs must have numeric product IDs
+    if (hostname.includes('kabum')) {
+      if (!isValidKabumUrl(url)) return false;
+    }
     return true;
   } catch {
     return false;
@@ -104,6 +108,19 @@ function isLikelyFabricatedMLB(digits: string): boolean {
   // Check if it looks too "clean" - real MLB IDs are random-ish
   if (/^\d{10}$/.test(digits) && digits.endsWith('0000')) return true;
   return false;
+}
+
+// Kabum URLs must have numeric product IDs: /produto/123456/slug
+function isValidKabumUrl(url: string): boolean {
+  try {
+    const path = new URL(url).pathname;
+    // Valid: /produto/186763/... or /produto/186763
+    if (/\/produto\/\d+/.test(path)) return true;
+    console.log(`[Kabum URL] Rejected non-numeric ID: ${url}`);
+    return false;
+  } catch {
+    return false;
+  }
 }
 
 function getSourceName(url: string): string {
@@ -501,6 +518,12 @@ async function searchKabumAPI(searchTerm: string, productName: string, productCo
 
         if (!name || price <= 50 || price > 100000) continue;
         if (product.available === false || product.quantity === 0) continue;
+
+        // Kabum product IDs must be numeric
+        if (!code || !/^\d+$/.test(String(code))) {
+          console.log(`[KabumAPI] Skipping non-numeric code: "${code}" for "${name}"`);
+          continue;
+        }
 
         const url = slug
           ? `https://www.kabum.com.br/produto/${code}/${slug}`
