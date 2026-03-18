@@ -795,11 +795,12 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── Scrape all Perplexity URLs to validate prices ──
-    const scrapePromises = perplexityData.urls.map(url =>
-      scrapePage(url, productCode, productName, perplexityPriceMap.get(url))
+    // ── Scrape Perplexity URLs with Firecrawl (max 2 URLs, max 3 concurrent) ──
+    const urlsToScrape = perplexityData.urls.slice(0, 2);
+    const scrapeTasks = urlsToScrape.map(url => () =>
+      scrapePageWithFirecrawl(url, productCode, productName, perplexityPriceMap.get(url))
     );
-    const scraped = await Promise.all(scrapePromises);
+    const scraped = await withConcurrencyLimit(scrapeTasks, 3);
     const validScraped = scraped.filter(Boolean) as Array<{ source: string; productName: string; price: number; url: string; score: number }>;
 
     console.log(`[Scraper] Scraped ${perplexityData.urls.length} URLs → ${validScraped.length} valid results`);
