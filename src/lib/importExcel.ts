@@ -88,12 +88,20 @@ function calcDiasSemVenda(dataUltimaVenda: string | null, referenceDate: Date): 
   return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
 }
 
+interface ImportDiagnostics {
+  totalLinhasArquivo: number;
+  linhasSemCodigo: number;
+  linhasValorZero: number;
+  linhasProcessadas: number;
+}
+
 interface ImportResult {
   snapshot: EstoqueSnapshot;
   produtos: Produto[];
   produtoSnapshots: EstoqueProdutoSnapshot[];
   detectedColumns: Record<string, string>;
   warnings: string[];
+  diagnostics: ImportDiagnostics;
 }
 
 export function processExcelFile(file: File, existingProdutos: Produto[], referenceDate?: Date): Promise<ImportResult> {
@@ -212,12 +220,15 @@ export function processExcelFile(file: File, existingProdutos: Produto[], refere
 
         let totalEstoque = 0;
 
+        let skippedNoCodigo = 0;
+        let skippedZeroValue = 0;
+
         for (const row of rows) {
           const codigo = String(row[colCodigo] || '').trim();
-          if (!codigo) continue;
+          if (!codigo) { skippedNoCodigo++; continue; }
 
           const valorEstoqueCheck = parseNumericValue(row[colValorTotal]);
-          if (colValorTotal && valorEstoqueCheck === 0) continue;
+          if (colValorTotal && valorEstoqueCheck === 0) { skippedZeroValue++; continue; }
 
           const existing = existingMap.get(codigo);
           const produtoId = existing?.id || generateId();
@@ -284,7 +295,16 @@ export function processExcelFile(file: File, existingProdutos: Produto[], refere
         snapshot.total_produtos = produtoSnapshots.length;
         snapshot.valor_total = totalEstoque;
 
-        resolve({ snapshot, produtos, produtoSnapshots, detectedColumns, warnings });
+        const diagnostics: ImportDiagnostics = {
+          totalLinhasArquivo: rows.length,
+          linhasSemCodigo: skippedNoCodigo,
+          linhasValorZero: skippedZeroValue,
+          linhasProcessadas: produtoSnapshots.length,
+        };
+
+        console.log('[Import Diagnostics]', diagnostics);
+
+        resolve({ snapshot, produtos, produtoSnapshots, detectedColumns, warnings, diagnostics });
       } catch (err) {
         reject(err);
       }
