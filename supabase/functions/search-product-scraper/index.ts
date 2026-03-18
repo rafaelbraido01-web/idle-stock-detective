@@ -248,8 +248,46 @@ async function searchGoogle(query: string): Promise<string[]> {
   if (duckResults.length > 0) return duckResults;
 
   const bingUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}&count=5&setlang=pt-BR`;
-  const bingResults = await searchEngine(bingUrl, query, 'Bing');
-  return bingResults;
+  return await searchEngine(bingUrl, query, 'Bing');
+}
+
+// ── Fallback: scrape product links directly from store search pages ──
+async function searchStoresDirectly(searchTerm: string): Promise<string[]> {
+  const storeSearchUrls = [
+    `https://www.kabum.com.br/busca/${encodeURIComponent(searchTerm)}`,
+    `https://lista.mercadolivre.com.br/${encodeURIComponent(searchTerm)}`,
+    `https://www.amazon.com.br/s?k=${encodeURIComponent(searchTerm)}`,
+    `https://www.magazineluiza.com.br/busca/${encodeURIComponent(searchTerm)}`,
+    `https://www.pichau.com.br/search?q=${encodeURIComponent(searchTerm)}`,
+  ];
+
+  const pages = await Promise.all(
+    storeSearchUrls.map(async (url) => {
+      try {
+        const response = await fetch(url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml',
+            'Accept-Language': 'pt-BR,pt;q=0.9',
+          },
+          signal: AbortSignal.timeout(5000),
+        });
+        if (!response.ok) return '';
+        return await response.text();
+      } catch {
+        return '';
+      }
+    })
+  );
+
+  const urls = new Set<string>();
+  for (const html of pages) {
+    if (!html) continue;
+    const extracted = extractTrustedUrlsFromHtml(html);
+    for (const url of extracted) urls.add(url);
+  }
+
+  return Array.from(urls).slice(0, 8);
 }
 
 // ── Fetch and scrape a product page ──
