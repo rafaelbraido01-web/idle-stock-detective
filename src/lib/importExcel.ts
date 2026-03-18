@@ -96,7 +96,7 @@ export function processExcelFile(file: File, existingProdutos: Produto[], refere
           return;
         }
 
-        const now = new Date();
+        const now = referenceDate || new Date();
         const snapshotId = generateId();
         const existingMap = new Map(existingProdutos.map(p => [p.codigo, p]));
 
