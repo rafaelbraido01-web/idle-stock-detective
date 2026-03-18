@@ -81,7 +81,7 @@ interface ImportResult {
   warnings: string[];
 }
 
-export function processExcelFile(file: File, existingProdutos: Produto[]): Promise<ImportResult> {
+export function processExcelFile(file: File, existingProdutos: Produto[], referenceDate?: Date): Promise<ImportResult> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -96,7 +96,7 @@ export function processExcelFile(file: File, existingProdutos: Produto[]): Promi
           return;
         }
 
-        const now = new Date();
+        const now = referenceDate || new Date();
         const snapshotId = generateId();
         const existingMap = new Map(existingProdutos.map(p => [p.codigo, p]));
 
