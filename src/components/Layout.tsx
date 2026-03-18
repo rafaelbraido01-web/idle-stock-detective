@@ -24,7 +24,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="flex-1 flex flex-col min-w-0">
           <header className="h-14 flex items-center justify-between border-b bg-card px-4 shrink-0">
             <div className="flex items-center gap-2">
-              <SidebarTrigger />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <SidebarTrigger className="h-9 w-9 border border-input bg-background hover:bg-accent" />
+                </TooltipTrigger>
+                <TooltipContent side="right">Ocultar/Exibir menu</TooltipContent>
+              </Tooltip>
             </div>
             <div className="flex items-center gap-2">
               {snapshots.length > 0 && (
