@@ -918,13 +918,19 @@ Deno.serve(async (req) => {
       || (productCode && isManufacturerCode(productCode) ? productCode : '')
       || (attrs.brand ? `${attrs.brand} ${attrs.capacity} ${attrs.types[0] || ''}`.trim() : productName.split(/\s+/).slice(0, 4).join(' '));
 
-    // ── Run Perplexity + Kabum API in parallel ──
-    const [perplexityData, kabumResults] = await Promise.all([
+    // ── Run Perplexity + Kabum API + ML Search in parallel ──
+    const mlSearchTerm = bestModel
+      || (productCode && isManufacturerCode(productCode) ? productCode : '')
+      || `${attrs.brand} ${attrs.capacity} ${attrs.types[0] || ''}`.trim()
+      || productName.split(/\s+/).slice(0, 5).join(' ');
+
+    const [perplexityData, kabumResults, mlResults] = await Promise.all([
       searchWithPerplexity(productName, productCode),
       searchKabumAPI(kabumTerm, productName, productCode),
+      searchMercadoLivre(mlSearchTerm, productName, productCode),
     ]);
 
-    console.log(`[Scraper] Perplexity: ${perplexityData.urls.length} URLs, ${perplexityData.perplexityResults.length} structured. Kabum API: ${kabumResults.length} results`);
+    console.log(`[Scraper] Perplexity: ${perplexityData.urls.length} URLs, ${perplexityData.perplexityResults.length} structured. Kabum API: ${kabumResults.length} results. ML: ${mlResults.length} results`);
 
     // ── Build price map from Perplexity structured results ──
     const perplexityPriceMap = new Map<string, number>();
@@ -934,24 +940,33 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── Scrape Perplexity URLs with Firecrawl (max 2 URLs, max 3 concurrent) ──
-    const urlsToScrape = perplexityData.urls.slice(0, 2);
+    // ── Filter out ML URLs from Perplexity (they're usually fabricated) ──
+    const nonMlUrls = perplexityData.urls.filter(u => {
+      const hostname = new URL(u).hostname.replace('www.', '');
+      return !hostname.includes('mercadolivre') && !hostname.includes('mercadolibre');
+    });
+
+    // ── Scrape non-ML Perplexity URLs with Firecrawl (max 2 URLs, max 3 concurrent) ──
+    const urlsToScrape = nonMlUrls.slice(0, 2);
     const scrapeTasks = urlsToScrape.map(url => () =>
       scrapePageWithFirecrawl(url, productCode, productName, perplexityPriceMap.get(url))
     );
     const scraped = await withConcurrencyLimit(scrapeTasks, 3);
     const validScraped = scraped.filter(Boolean) as Array<{ source: string; productName: string; price: number; url: string; score: number }>;
 
-    console.log(`[Scraper] Scraped ${perplexityData.urls.length} URLs → ${validScraped.length} valid results`);
+    console.log(`[Scraper] Scraped ${urlsToScrape.length} non-ML URLs → ${validScraped.length} valid results`);
 
     // ── Combine all results ──
-    let allResults = [...kabumResults, ...validScraped];
+    let allResults = [...kabumResults, ...mlResults, ...validScraped];
 
-    // If scraping yielded nothing but Perplexity gave structured results, use them directly
+    // If scraping yielded nothing but Perplexity gave structured results (non-ML), use them
     if (validScraped.length === 0 && perplexityData.perplexityResults.length > 0) {
-      console.log(`[Scraper] Scraping failed, using Perplexity structured results as fallback`);
+      console.log(`[Scraper] Scraping failed, using non-ML Perplexity structured results as fallback`);
       for (const pr of perplexityData.perplexityResults) {
         if (pr.price > 50 && pr.price < 100000 && pr.url) {
+          const hostname = new URL(pr.url).hostname.replace('www.', '');
+          // Skip ML results from Perplexity - we have our own ML search
+          if (hostname.includes('mercadolivre') || hostname.includes('mercadolibre')) continue;
           const { score, details } = calculateRelevanceScore(pr.name || productName, productCode, productName);
           if (score >= 30) {
             allResults.push({
