@@ -54,6 +54,10 @@ function isValidProductUrl(url: string): boolean {
     if (hostname.includes('mercadolivre') || hostname.includes('mercadolibre')) {
       if (!isValidMercadoLivreUrl(url)) return false;
     }
+    // Kabum: URLs must have numeric product IDs
+    if (hostname.includes('kabum')) {
+      if (!isValidKabumUrl(url)) return false;
+    }
     return true;
   } catch {
     return false;
