@@ -15,6 +15,7 @@ const TRUSTED_DOMAINS = [
 ];
 
 const BLOCKED_PATH_PATTERNS = ['/categoria', '/b/', '/busca', '/search', '/listing', '/s?k='];
+const BLOCKED_HOSTNAME_PATTERNS = ['sacola.magazineluiza', 'sacola.magazinevoce', 'carrinho.', 'checkout.', 'login.'];
 const FETCH_TIMEOUT = 8000;
 
 // ── Known brands for relevance scoring ──
