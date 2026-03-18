@@ -20,6 +20,7 @@ const navItems = [
   { title: 'Comparação', url: '/comparacao', icon: GitCompareArrows },
   { title: 'Promoções', url: '/promocoes', icon: Tag },
   { title: 'Preço de Mercado', url: '/preco-mercado', icon: DollarSign },
+  { title: 'Configurações', url: '/configuracoes', icon: Settings },
 ];
 
 export function AppSidebar() {
