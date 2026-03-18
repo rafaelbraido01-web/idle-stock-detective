@@ -252,17 +252,52 @@ async function searchGoogle(query: string): Promise<string[]> {
 }
 
 // ── Fallback: scrape product links directly from store search pages ──
+function extractProductLinksByStore(html: string, store: string): string[] {
+  const links = new Set<string>();
+
+  const addMatches = (regex: RegExp) => {
+    let match;
+    while ((match = regex.exec(html)) !== null) {
+      const raw = match[1].replace(/\\\//g, '/');
+      const decoded = decodeURIComponent(raw);
+      if (isValidProductUrl(decoded)) links.add(decoded);
+    }
+  };
+
+  switch (store) {
+    case 'kabum':
+      addMatches(/"(https?:\/\/www\.kabum\.com\.br\/(?:produto|p)\/[^"]+)"/g);
+      break;
+    case 'mercadolivre':
+      addMatches(/"(https?:\/\/(?:produto\.)?mercadolivre\.com\.br\/[^"]*MLB-[^"]+)"/g);
+      break;
+    case 'amazon':
+      addMatches(/"(https?:\/\/www\.amazon\.com\.br\/(?:gp\/product|dp)\/[A-Z0-9]{8,15}[^"]*)"/g);
+      break;
+    case 'magalu':
+      addMatches(/"(https?:\/\/www\.magazineluiza\.com\.br\/[^"]+\/p\/[^"]+)"/g);
+      break;
+    case 'pichau':
+      addMatches(/"(https?:\/\/www\.pichau\.com\.br\/(?:produto|product)\/[^"]+)"/g);
+      break;
+  }
+
+  return Array.from(links).slice(0, 3);
+}
+
 async function searchStoresDirectly(searchTerm: string): Promise<string[]> {
-  const storeSearchUrls = [
-    `https://www.kabum.com.br/busca/${encodeURIComponent(searchTerm)}`,
-    `https://lista.mercadolivre.com.br/${encodeURIComponent(searchTerm)}`,
-    `https://www.amazon.com.br/s?k=${encodeURIComponent(searchTerm)}`,
-    `https://www.magazineluiza.com.br/busca/${encodeURIComponent(searchTerm)}`,
-    `https://www.pichau.com.br/search?q=${encodeURIComponent(searchTerm)}`,
+  const stores = [
+    { name: 'kabum', url: `https://www.kabum.com.br/busca/${encodeURIComponent(searchTerm)}` },
+    { name: 'mercadolivre', url: `https://lista.mercadolivre.com.br/${encodeURIComponent(searchTerm)}` },
+    { name: 'amazon', url: `https://www.amazon.com.br/s?k=${encodeURIComponent(searchTerm)}` },
+    { name: 'magalu', url: `https://www.magazineluiza.com.br/busca/${encodeURIComponent(searchTerm)}` },
+    { name: 'pichau', url: `https://www.pichau.com.br/search?q=${encodeURIComponent(searchTerm)}` },
   ];
 
-  const pages = await Promise.all(
-    storeSearchUrls.map(async (url) => {
+  const urls = new Set<string>();
+
+  await Promise.all(
+    stores.map(async ({ name, url }) => {
       try {
         const response = await fetch(url, {
           headers: {
@@ -272,20 +307,16 @@ async function searchStoresDirectly(searchTerm: string): Promise<string[]> {
           },
           signal: AbortSignal.timeout(5000),
         });
-        if (!response.ok) return '';
-        return await response.text();
+
+        if (!response.ok) return;
+        const html = await response.text();
+        const extracted = extractProductLinksByStore(html, name);
+        extracted.forEach((u) => urls.add(u));
       } catch {
-        return '';
+        // silent
       }
     })
   );
-
-  const urls = new Set<string>();
-  for (const html of pages) {
-    if (!html) continue;
-    const extracted = extractTrustedUrlsFromHtml(html);
-    for (const url of extracted) urls.add(url);
-  }
 
   return Array.from(urls).slice(0, 8);
 }
