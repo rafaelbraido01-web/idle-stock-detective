@@ -17,14 +17,15 @@ function getCategoriaEstoque(dias: number): CategoriaEstoque {
 function parseExcelDate(value: any): string | null {
   if (!value) return null;
 
-  // Excel serial date number
   if (typeof value === 'number') {
     try {
       const date = XLSX.SSF.parse_date_code(value);
       if (date && date.y > 1900) {
         return `${date.y}-${String(date.m).padStart(2, '0')}-${String(date.d).padStart(2, '0')}`;
       }
-    } catch { /* fall through */ }
+    } catch {
+      /* fall through */
+    }
     return null;
   }
 
@@ -39,8 +40,7 @@ function parseExcelDate(value: any): string | null {
     const trimmed = value.trim();
     if (!trimmed) return null;
 
-    // Try dd/mm/yyyy, dd-mm-yyyy, dd.mm.yyyy
-    const match = trimmed.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
+    const match = trimmed.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
     if (match) {
       const day = match[1].padStart(2, '0');
       const month = match[2].padStart(2, '0');
@@ -49,13 +49,11 @@ function parseExcelDate(value: any): string | null {
       return `${year}-${month}-${day}`;
     }
 
-    // Try yyyy-mm-dd or yyyy/mm/dd
     const isoMatch = trimmed.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
     if (isoMatch) {
       return `${isoMatch[1]}-${isoMatch[2].padStart(2, '0')}-${isoMatch[3].padStart(2, '0')}`;
     }
 
-    // Try parsing as Date
     const parsed = new Date(trimmed);
     if (!isNaN(parsed.getTime()) && parsed.getFullYear() > 1900) {
       return parsed.toISOString().split('T')[0];
@@ -65,8 +63,25 @@ function parseExcelDate(value: any): string | null {
   return null;
 }
 
+function parseNumericValue(value: unknown): number {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  if (typeof value !== 'string') return 0;
+
+  const trimmed = value.trim();
+  if (!trimmed) return 0;
+
+  const normalized = trimmed
+    .replace(/\s+/g, '')
+    .replace(/R\$/gi, '')
+    .replace(/\.(?=\d{3}(?:\D|$))/g, '')
+    .replace(',', '.');
+
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 function calcDiasSemVenda(dataUltimaVenda: string | null, referenceDate: Date): number {
-  if (!dataUltimaVenda) return -1; // -1 = sem registro
+  if (!dataUltimaVenda) return -1;
   const lastSale = new Date(dataUltimaVenda);
   if (isNaN(lastSale.getTime())) return -1;
   const diff = referenceDate.getTime() - lastSale.getTime();
@@ -98,7 +113,7 @@ export function processExcelFile(file: File, existingProdutos: Produto[], refere
 
         const now = referenceDate || new Date();
         const snapshotId = generateId();
-        const existingMap = new Map(existingProdutos.map(p => [p.codigo, p]));
+        const existingMap = new Map(existingProdutos.map((p) => [p.codigo, p]));
 
         const snapshot: EstoqueSnapshot = {
           id: snapshotId,
@@ -113,10 +128,8 @@ export function processExcelFile(file: File, existingProdutos: Produto[], refere
         const produtos: Produto[] = [];
         const produtoSnapshots: EstoqueProdutoSnapshot[] = [];
 
-        // Auto-detect columns
         const sampleKeys = Object.keys(rows[0]);
         const findKey = (candidates: string[]): string => {
-          // First try exact match (case-insensitive)
           for (const k of sampleKeys) {
             const kl = k.toLowerCase().replace(/[_.\s]+/g, '');
             for (const c of candidates) {
@@ -124,10 +137,10 @@ export function processExcelFile(file: File, existingProdutos: Produto[], refere
               if (kl === cl) return k;
             }
           }
-          // Then try includes
-          return sampleKeys.find(k => {
+
+          return sampleKeys.find((k) => {
             const kl = k.toLowerCase().replace(/[_.\s]+/g, '');
-            return candidates.some(c => kl.includes(c.toLowerCase().replace(/[_.\s]+/g, '')));
+            return candidates.some((c) => kl.includes(c.toLowerCase().replace(/[_.\s]+/g, '')));
           }) || '';
         };
 
@@ -136,7 +149,20 @@ export function processExcelFile(file: File, existingProdutos: Produto[], refere
         const colGrupo = findKey(['grupo', 'group', 'categoria', 'nmgrupo', 'nm_grupo']);
         const colSubgrupo = findKey(['subgrupo', 'sub_grupo', 'sub grupo', 'subcategoria', 'nmsubgrupo']);
         const colMarca = findKey(['marca', 'brand', 'fabricante', 'nmmarca']);
-        const colQuantidade = findKey(['quantidadeestoque', 'qtdestoque', 'qtd_estoque', 'qtd', 'quantidade', 'qtde', 'quant', 'saldo', 'qt']);
+        const colQuantidade = findKey([
+          'quantidadeestoque',
+          'quantidade_estoque',
+          'quantidade estoque',
+          'qtdestoque',
+          'qtd_estoque',
+          'saldo',
+          'unidades',
+          'qtd',
+          'quantidade',
+          'qtde',
+          'quant',
+          'qt',
+        ]);
         const colValorUnit = findKey(['valorunit', 'valor_unit', 'preco', 'preço', 'unitario', 'unitário', 'vlr_unit', 'vlrunit', 'precovenda', 'preco_venda']);
         const colValorTotal = findKey(['valorestoque', 'valor_estoque', 'vlrestoque', 'vlr_estoque', 'valortotal', 'valor_total', 'vlr_total', 'vlrtotal', 'total']);
         const colUltimaVenda = findKey([
@@ -179,10 +205,6 @@ export function processExcelFile(file: File, existingProdutos: Produto[], refere
           'Valor Venda Total': colValorVendaTotal || '—',
         };
 
-        console.log('[DEBUG Import] Colunas do arquivo:', sampleKeys);
-        console.log('[DEBUG Import] colQuantidade mapeada para:', colQuantidade);
-        console.log('[DEBUG Import] Primeiras 3 linhas - quantidade raw:', rows.slice(0, 3).map(r => ({ col: colQuantidade, val: r[colQuantidade] })));
-
         const warnings: string[] = [];
         if (!colCodigo) warnings.push('Coluna de código não encontrada');
         if (!colQuantidade) warnings.push('Coluna de quantidade não encontrada');
@@ -194,8 +216,7 @@ export function processExcelFile(file: File, existingProdutos: Produto[], refere
           const codigo = String(row[colCodigo] || '').trim();
           if (!codigo) continue;
 
-          // Skip rows where ValorEstoque = 0 (irrelevant)
-          const valorEstoqueCheck = Number(row[colValorTotal]) || 0;
+          const valorEstoqueCheck = parseNumericValue(row[colValorTotal]);
           if (colValorTotal && valorEstoqueCheck === 0) continue;
 
           const existing = existingMap.get(codigo);
@@ -215,9 +236,9 @@ export function processExcelFile(file: File, existingProdutos: Produto[], refere
             existingMap.set(codigo, produto);
           }
 
-          const quantidade = Number(row[colQuantidade]) || 0;
-          const valorUnit = Number(row[colValorUnit]) || 0;
-          const valorTotalRow = Number(row[colValorTotal]) || (quantidade * valorUnit);
+          const quantidade = parseNumericValue(row[colQuantidade]);
+          const valorUnit = parseNumericValue(row[colValorUnit]);
+          const valorTotalRow = parseNumericValue(row[colValorTotal]) || (quantidade * valorUnit);
           const dataUltimaVenda = parseExcelDate(row[colUltimaVenda]);
           const dataUltimaCompra = parseExcelDate(row[colUltimaCompra]);
           const diasSemVenda = calcDiasSemVenda(dataUltimaVenda, now);
@@ -226,14 +247,13 @@ export function processExcelFile(file: File, existingProdutos: Produto[], refere
           totalEstoque += valorTotalRow;
 
           const nomeComissao = String(row[colNomeComissao] || '').trim();
-          const comissao = Number(row[colComissao]) || 0;
-          const precoTabela = colPrecoTabela ? (Number(row[colPrecoTabela]) || 0) : 0;
-          const valorPromocaoRaw = colValorPromocao ? Number(row[colValorPromocao]) : null;
+          const comissao = parseNumericValue(row[colComissao]);
+          const precoTabela = colPrecoTabela ? parseNumericValue(row[colPrecoTabela]) : 0;
+          const valorPromocaoRaw = colValorPromocao ? parseNumericValue(row[colValorPromocao]) : null;
           const valorPromocao = valorPromocaoRaw && valorPromocaoRaw > 0 ? valorPromocaoRaw : null;
           const dataFimPromocao = colDataFimPromocao ? parseExcelDate(row[colDataFimPromocao]) : null;
-          const valorVendaTotal = colValorVendaTotal ? (Number(row[colValorVendaTotal]) || 0) : 0;
+          const valorVendaTotal = colValorVendaTotal ? parseNumericValue(row[colValorVendaTotal]) : 0;
 
-          // Calculate discount percentage
           let percentualDesconto: number | null = null;
           if (valorPromocao && precoTabela > 0) {
             percentualDesconto = Math.round(((precoTabela - valorPromocao) / precoTabela) * 10000) / 100;
