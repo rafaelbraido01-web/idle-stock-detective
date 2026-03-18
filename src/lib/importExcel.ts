@@ -223,6 +223,24 @@ export function processExcelFile(file: File, existingProdutos: Produto[], refere
         let skippedNoCodigo = 0;
         let skippedZeroValue = 0;
 
+        // First pass: aggregate rows by product code
+        interface AggregatedRow {
+          produtoId: string;
+          quantidade: number;
+          valorUnit: number;
+          valorTotal: number;
+          dataUltimaVenda: string | null;
+          dataUltimaCompra: string | null;
+          nomeComissao: string;
+          comissao: number;
+          precoTabela: number;
+          valorPromocao: number | null;
+          dataFimPromocao: string | null;
+          valorVendaTotal: number;
+        }
+
+        const aggregatedMap = new Map<string, AggregatedRow>();
+
         for (const row of rows) {
           const codigo = String(row[colCodigo] || '').trim();
           if (!codigo) { skippedNoCodigo++; continue; }
@@ -252,11 +270,6 @@ export function processExcelFile(file: File, existingProdutos: Produto[], refere
           const valorTotalRow = parseNumericValue(row[colValorTotal]) || (quantidade * valorUnit);
           const dataUltimaVenda = parseExcelDate(row[colUltimaVenda]);
           const dataUltimaCompra = parseExcelDate(row[colUltimaCompra]);
-          const diasSemVenda = calcDiasSemVenda(dataUltimaVenda, now);
-          const diasSemCompra = calcDiasSemVenda(dataUltimaCompra, now);
-
-          totalEstoque += valorTotalRow;
-
           const nomeComissao = String(row[colNomeComissao] || '').trim();
           const comissao = parseNumericValue(row[colComissao]);
           const precoTabela = colPrecoTabela ? parseNumericValue(row[colPrecoTabela]) : 0;
@@ -265,30 +278,78 @@ export function processExcelFile(file: File, existingProdutos: Produto[], refere
           const dataFimPromocao = colDataFimPromocao ? parseExcelDate(row[colDataFimPromocao]) : null;
           const valorVendaTotal = colValorVendaTotal ? parseNumericValue(row[colValorVendaTotal]) : 0;
 
+          const prev = aggregatedMap.get(codigo);
+          if (prev) {
+            // Aggregate: sum quantities and values, keep most recent dates, keep highest promo price
+            prev.quantidade += quantidade;
+            prev.valorTotal += valorTotalRow;
+            prev.valorVendaTotal += valorVendaTotal;
+            // Keep the most recent sale date
+            if (dataUltimaVenda && (!prev.dataUltimaVenda || dataUltimaVenda > prev.dataUltimaVenda)) {
+              prev.dataUltimaVenda = dataUltimaVenda;
+            }
+            // Keep the most recent purchase date
+            if (dataUltimaCompra && (!prev.dataUltimaCompra || dataUltimaCompra > prev.dataUltimaCompra)) {
+              prev.dataUltimaCompra = dataUltimaCompra;
+            }
+            // Keep the latest promo end date
+            if (dataFimPromocao && (!prev.dataFimPromocao || dataFimPromocao > prev.dataFimPromocao)) {
+              prev.dataFimPromocao = dataFimPromocao;
+            }
+            // Keep promo values if present
+            if (valorPromocao && (!prev.valorPromocao || valorPromocao > prev.valorPromocao)) {
+              prev.valorPromocao = valorPromocao;
+            }
+            if (precoTabela > prev.precoTabela) prev.precoTabela = precoTabela;
+          } else {
+            aggregatedMap.set(codigo, {
+              produtoId,
+              quantidade,
+              valorUnit,
+              valorTotal: valorTotalRow,
+              dataUltimaVenda,
+              dataUltimaCompra,
+              nomeComissao,
+              comissao,
+              precoTabela,
+              valorPromocao,
+              dataFimPromocao,
+              valorVendaTotal,
+            });
+          }
+        }
+
+        // Second pass: create snapshots from aggregated data
+        for (const [, agg] of aggregatedMap) {
+          const diasSemVenda = calcDiasSemVenda(agg.dataUltimaVenda, now);
+          const diasSemCompra = calcDiasSemVenda(agg.dataUltimaCompra, now);
+
+          totalEstoque += agg.valorTotal;
+
           let percentualDesconto: number | null = null;
-          if (valorPromocao && precoTabela > 0) {
-            percentualDesconto = Math.round(((precoTabela - valorPromocao) / precoTabela) * 10000) / 100;
+          if (agg.valorPromocao && agg.precoTabela > 0) {
+            percentualDesconto = Math.round(((agg.precoTabela - agg.valorPromocao) / agg.precoTabela) * 10000) / 100;
           }
 
           produtoSnapshots.push({
             id: generateId(),
             snapshot_id: snapshotId,
-            produto_id: produtoId,
-            quantidade,
-            valor_unitario: valorUnit,
-            valor_total: valorTotalRow,
-            data_ultima_venda: dataUltimaVenda,
-            data_ultima_compra: dataUltimaCompra,
+            produto_id: agg.produtoId,
+            quantidade: agg.quantidade,
+            valor_unitario: agg.valorUnit,
+            valor_total: agg.valorTotal,
+            data_ultima_venda: agg.dataUltimaVenda,
+            data_ultima_compra: agg.dataUltimaCompra,
             dias_sem_venda: diasSemVenda,
             dias_sem_compra: diasSemCompra,
             categoria_estoque: getCategoriaEstoque(diasSemVenda),
-            nome_comissao: nomeComissao,
-            comissao,
-            preco_tabela: precoTabela,
-            valor_promocao: valorPromocao,
+            nome_comissao: agg.nomeComissao,
+            comissao: agg.comissao,
+            preco_tabela: agg.precoTabela,
+            valor_promocao: agg.valorPromocao,
             percentual_desconto: percentualDesconto,
-            data_fim_promocao: dataFimPromocao,
-            valor_venda_total: valorVendaTotal,
+            data_fim_promocao: agg.dataFimPromocao,
+            valor_venda_total: agg.valorVendaTotal,
           });
         }
 
