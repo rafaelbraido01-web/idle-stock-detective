@@ -9,7 +9,7 @@ import { KPICard } from '@/components/KPICard';
 import { Tag, TrendingDown, Minus, ArrowUpRight, PackageSearch } from 'lucide-react';
 
 type StatusFilter = 'todos' | 'vendeu' | 'sem-movimento' | 'reposicao';
-type PromoFilter = 'todas' | 'ativa' | 'expirada';
+type PromoFilter = 'todas' | 'ativa' | 'expirada' | 'recem-expirada';
 
 interface PromoComparison {
   produtoId: string;
