@@ -415,8 +415,9 @@ async function scrapePage(url: string, productCode: string, productName: string)
       return null;
     }
     
-    // Use the lowest price (usually the main/promotional price)
-    const price = Math.min(...prices);
+    // Use the median price (avoids picking installment values or inflated prices)
+    const sorted = [...prices].sort((a, b) => a - b);
+    const price = sorted[Math.floor(sorted.length / 2)];
     
     return {
       source: getSourceName(url),
