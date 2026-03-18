@@ -161,9 +161,13 @@ export default function PrecoMercado() {
                 {filtered.map((p) => {
                   const isLoading = loadingProducts[p.id];
                   const hasResult = !!priceResults[p.id];
+                  const hasActivePromo = !!(
+                    p.snap.data_fim_promocao &&
+                    new Date(p.snap.data_fim_promocao + 'T23:59:59') >= new Date()
+                  );
 
                   return (
-                    <TableRow key={p.id}>
+                    <TableRow key={p.id} className={hasActivePromo ? 'bg-orange-50' : ''}>
                       <TableCell className="font-mono text-xs">{p.codigo}</TableCell>
                       <TableCell className="font-medium text-sm">{p.descricao}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{p.marca}</TableCell>
