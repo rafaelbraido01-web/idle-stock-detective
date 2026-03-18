@@ -489,8 +489,28 @@ async function withConcurrencyLimit<T>(tasks: (() => Promise<T>)[], limit: numbe
   return results;
 }
 
+// ── Blocked/invalid title patterns ──
+const INVALID_TITLE_PATTERNS = [
+  'recaptcha', 'captcha', 'ícone facebook', 'icon facebook', 'acesse para continuar',
+  'just a moment', 'checking your browser', 'access denied', 'forbidden',
+  'page not found', '404', 'erro', 'error', 'blocked',
+];
+
+function isValidTitle(title: string): boolean {
+  if (!title || title.length < 5) return false;
+  const lower = title.toLowerCase().trim();
+  // Reject known invalid titles
+  if (INVALID_TITLE_PATTERNS.some(p => lower.includes(p))) return false;
+  // Reject generic store-only titles
+  if (/^magazine luiza\s*\|?\s*pra voc/i.test(lower)) return false;
+  if (/^kabum\s*$/i.test(lower)) return false;
+  if (/^amazon\.com\.br/i.test(lower)) return false;
+  if (/^pichau/i.test(lower)) return false;
+  return true;
+}
+
 // ── Firecrawl scraping (JS rendering) ──
-async function scrapeWithFirecrawl(url: string): Promise<{ html: string; markdown: string } | null> {
+async function scrapeWithFirecrawl(url: string): Promise<{ html: string; markdown: string; metadataTitle: string } | null> {
   const apiKey = Deno.env.get('FIRECRAWL_API_KEY');
   if (!apiKey) {
     console.log('[Firecrawl] No API key configured, skipping');
@@ -529,9 +549,10 @@ async function scrapeWithFirecrawl(url: string): Promise<{ html: string; markdow
     const data = await response.json();
     const html = data?.data?.html || data?.html || '';
     const markdown = data?.data?.markdown || data?.markdown || '';
+    const metadataTitle = data?.data?.metadata?.title || data?.metadata?.title || '';
 
-    console.log(`[Firecrawl] OK ${url} (${elapsed}ms) html=${html.length}b md=${markdown.length}b`);
-    return { html, markdown };
+    console.log(`[Firecrawl] OK ${url} (${elapsed}ms) html=${html.length}b md=${markdown.length}b title="${metadataTitle.substring(0, 60)}"`);
+    return { html, markdown, metadataTitle };
   } catch (err) {
     const elapsed = Date.now() - startTime;
     console.log(`[Firecrawl] Error ${url} (${elapsed}ms): ${err instanceof Error ? err.message : err}`);
@@ -576,11 +597,13 @@ async function scrapePageWithFirecrawl(
     // 1. Try Firecrawl first (JS rendering)
     let html = '';
     let markdown = '';
+    let metadataTitle = '';
     const firecrawlResult = await scrapeWithFirecrawl(url);
 
     if (firecrawlResult) {
       html = firecrawlResult.html;
       markdown = firecrawlResult.markdown;
+      metadataTitle = firecrawlResult.metadataTitle;
     } else {
       // 2. Fallback to simple fetch
       console.log(`[Scrape] Falling back to simple fetch for ${url}`);
@@ -590,7 +613,6 @@ async function scrapePageWithFirecrawl(
       }
     }
 
-    // Use html primarily, markdown as fallback content for title extraction
     const content = html || markdown;
     if (!content || content.length < 100) {
       console.log(`[Scrape] No usable content for ${url} (${content.length}b)`);
@@ -602,15 +624,61 @@ async function scrapePageWithFirecrawl(
       return null;
     }
 
-    // Extract title from HTML, or try markdown heading
-    let title = extractTitle(html);
+    // ── Title extraction: prioritize Firecrawl metadata → og:title → HTML title → markdown heading ──
+    let title = '';
+
+    // 1. Firecrawl metadata title (most reliable, from rendered page)
+    if (metadataTitle && isValidTitle(metadataTitle)) {
+      title = metadataTitle.substring(0, 200);
+      console.log(`[Title] Using Firecrawl metadata: "${title.substring(0, 60)}"`);
+    }
+
+    // 2. og:title from HTML
+    if (!title && html) {
+      const ogMatch = html.match(/property="og:title"\s+content="([^"]+)"/i)
+        || html.match(/content="([^"]+)"\s+property="og:title"/i);
+      if (ogMatch && isValidTitle(ogMatch[1])) {
+        title = ogMatch[1].trim().substring(0, 200);
+        console.log(`[Title] Using og:title: "${title.substring(0, 60)}"`);
+      }
+    }
+
+    // 3. HTML <title> tag
+    if (!title && html) {
+      const htmlTitle = extractTitle(html);
+      if (htmlTitle && isValidTitle(htmlTitle)) {
+        title = htmlTitle;
+        console.log(`[Title] Using HTML title: "${title.substring(0, 60)}"`);
+      }
+    }
+
+    // 4. First markdown heading
     if (!title && markdown) {
       const mdHeading = markdown.match(/^#\s+(.+)/m);
-      if (mdHeading) title = mdHeading[1].trim().substring(0, 200);
+      if (mdHeading && isValidTitle(mdHeading[1])) {
+        title = mdHeading[1].trim().substring(0, 200);
+        console.log(`[Title] Using markdown heading: "${title.substring(0, 60)}"`);
+      }
+    }
+
+    // 5. Try product name from JSON-LD
+    if (!title && html) {
+      const jsonLdBlocks = html.match(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi) || [];
+      for (const block of jsonLdBlocks) {
+        try {
+          const data = JSON.parse(block.replace(/<\/?script[^>]*>/gi, ''));
+          const name = data?.name || (Array.isArray(data) ? data.find((d: any) => d.name)?.name : '');
+          if (name && isValidTitle(name)) {
+            title = name.substring(0, 200);
+            console.log(`[Title] Using JSON-LD name: "${title.substring(0, 60)}"`);
+            break;
+          }
+        } catch { /* ignore */ }
+      }
     }
 
     if (!title) {
-      console.log(`[Scrape] No title at ${url}`);
+      console.log(`[Scrape] No valid title at ${url}`);
       if (perplexityPrice && perplexityPrice > 50) {
         const source = getSourceName(url);
         console.log(`[Scrape] Using Perplexity price R$${perplexityPrice} for ${source} (no title)`);
@@ -619,9 +687,21 @@ async function scrapePageWithFirecrawl(
       return null;
     }
 
+    // ── Availability check: HTML structured data + text patterns + markdown ──
     if (!isProductAvailable(content)) {
-      console.log(`[Scrape] Unavailable: ${url}`);
+      console.log(`[Scrape] Unavailable (HTML): ${url}`);
       return null;
+    }
+    // Also check markdown for availability signals
+    if (markdown) {
+      const mdLower = markdown.toLowerCase();
+      const unavailMd = ['produto indisponível', 'produto esgotado', 'out of stock',
+        'item indisponível', 'não disponível', 'este produto está esgotado',
+        'avise-me quando chegar', 'produto não encontrado'];
+      if (unavailMd.some(p => mdLower.includes(p))) {
+        console.log(`[Scrape] Unavailable (markdown): ${url}`);
+        return null;
+      }
     }
 
     const { score, details } = calculateRelevanceScore(title, productCode, productName);
@@ -638,15 +718,21 @@ async function scrapePageWithFirecrawl(
       return null;
     }
 
-    // Extract prices from HTML content (richer for JSON-LD), then try markdown
+    // ── Price extraction: HTML JSON-LD/text → markdown R$ patterns ──
     let prices = extractPrices(content);
     if (prices.length === 0 && markdown) {
-      // Try extracting R$ prices from markdown text
       const rPattern = /R\$\s?(\d{1,3}(?:\.\d{3})*,\d{2})/g;
       let match;
       while ((match = rPattern.exec(markdown)) !== null) {
         const val = parseFloat(match[1].replace(/\./g, '').replace(',', '.'));
-        if (val > 50 && val < 100000) prices.push(val);
+        if (val > 50 && val < 100000) {
+          // Check context for installment in markdown
+          const contextStart = Math.max(0, match.index - 40);
+          const context = markdown.substring(contextStart, match.index).toLowerCase();
+          if (!/\d+x\s*(?:de|sem)/.test(context) && !/parcela/.test(context)) {
+            prices.push(val);
+          }
+        }
       }
     }
 
@@ -660,9 +746,10 @@ async function scrapePageWithFirecrawl(
     }
 
     const sorted = [...prices].sort((a, b) => a - b);
-    const price = sorted[Math.floor(sorted.length / 2)];
+    // Use lowest non-outlier price (likely the discounted/à vista price)
+    const price = sorted[0];
 
-    console.log(`[Scoring] ACCEPTED: score=${score} (${details}) "${title.substring(0, 60)}" R$${price}`);
+    console.log(`[Scoring] ACCEPTED: score=${score} (${details}) "${title.substring(0, 60)}" R$${price} (${sorted.length} prices found: ${sorted.slice(0, 4).join(', ')})`);
     return { source: getSourceName(url), productName: title, price, url, score };
   } catch (err) {
     console.error(`[Scrape] Error ${url}:`, err);
