@@ -1,15 +1,22 @@
-import { useState, useEffect } from 'react';
-import { Settings, Check, Zap, Brain } from 'lucide-react';
+import { useState } from 'react';
+import { Check, Zap, Brain, Globe } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 
-type Provider = 'perplexity' | 'chatgpt';
+type Provider = 'scraper' | 'perplexity' | 'chatgpt';
 
 const STORAGE_KEY = 'preco-mercado-provider';
 
 const providers = [
+  {
+    id: 'scraper' as Provider,
+    name: 'Scraper (Recomendado)',
+    description: 'Busca direta via HTTP scraping no Google + extração de preços das páginas. Usa IA apenas para formatar o resultado final. Custo ≈ R$0,002 por busca.',
+    icon: Globe,
+    pros: ['Custo extremamente baixo', 'Preços reais extraídos das páginas', 'Sem dependência de APIs pagas', 'Links diretos verificáveis'],
+  },
   {
     id: 'perplexity' as Provider,
     name: 'Perplexity (Sonar)',
@@ -20,7 +27,7 @@ const providers = [
   {
     id: 'chatgpt' as Provider,
     name: 'ChatGPT',
-    description: 'Usa o modelo GPT-4o via sua chave OpenAI. Mais consistente na estrutura de resposta.',
+    description: 'Usa o modelo GPT-4o via chave OpenAI. Mais consistente na estrutura de resposta.',
     icon: Brain,
     pros: ['Resposta mais estruturada e consistente', 'Controle próprio de custos', 'Melhor interpretação de contexto'],
   },
@@ -29,7 +36,7 @@ const providers = [
 export default function Configuracoes() {
   const { toast } = useToast();
   const [activeProvider, setActiveProvider] = useState<Provider>(() => {
-    return (localStorage.getItem(STORAGE_KEY) as Provider) || 'perplexity';
+    return (localStorage.getItem(STORAGE_KEY) as Provider) || 'scraper';
   });
 
   const handleSelect = (provider: Provider) => {
@@ -56,7 +63,7 @@ export default function Configuracoes() {
           Escolha qual serviço será usado para pesquisar preços online dos produtos.
         </p>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3">
           {providers.map((provider) => {
             const isActive = activeProvider === provider.id;
             const Icon = provider.icon;
