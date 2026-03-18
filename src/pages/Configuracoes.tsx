@@ -20,10 +20,10 @@ const providers = [
   },
   {
     id: 'chatgpt' as Provider,
-    name: 'ChatGPT (via Lovable AI)',
-    description: 'Usa o modelo GPT via Lovable AI Gateway. Mais consistente na estrutura de resposta, mas links podem não ser reais.',
+    name: 'ChatGPT',
+    description: 'Usa o modelo GPT-4o via sua chave OpenAI. Mais consistente na estrutura de resposta, mas links podem não ser reais.',
     icon: Brain,
-    pros: ['Resposta mais estruturada e consistente', 'Incluído no Lovable AI', 'Melhor interpretação de contexto'],
+    pros: ['Resposta mais estruturada e consistente', 'Controle próprio de custos', 'Melhor interpretação de contexto'],
     cons: ['Links podem não ser verificáveis', 'Sem busca web real'],
   },
 ];
