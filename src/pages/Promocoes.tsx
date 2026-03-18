@@ -66,6 +66,8 @@ export default function Promocoes() {
     const anteriorMap = new Map(anteriorItems.map(i => [i.produto_id, i]));
     const produtoMap = new Map(produtos.map(p => [p.id, p]));
     const now = new Date();
+    console.log('[Promo Debug] now:', now.toISOString());
+    console.log('[Promo Debug] sample data_fim_promocao:', atualItems.slice(0, 5).map(i => i.data_fim_promocao));
 
     const results: PromoComparison[] = [];
 
