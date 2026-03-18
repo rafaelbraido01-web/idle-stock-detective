@@ -199,9 +199,11 @@ function codeMatchesExact(title: string, code: string): boolean {
 function extractModelCodes(productName: string): string[] {
   const models: string[] = [];
   const patterns = [
-    /[A-Z0-9]{2,}[-][A-Z0-9]+(?:[-\.][A-Z0-9]+)*/gi,
-    /[A-Z]{2,}\d+[A-Z0-9\/\-]*/gi,
-    /i[3579]-?\d{4,5}[A-Z]*/gi,
+    /[A-Z0-9]{2,}[-][A-Z0-9]+(?:[-\.][A-Z0-9]+)*/gi,  // SA400S37-480G, SWG256G-412H
+    /[A-Z]{2,}\d+[A-Z0-9\/\-]*/gi,                      // DDR4, MK120, LS24D300GALMZD
+    /[A-Z]\d{3,}[A-Z][A-Z0-9]*/gi,                      // B760M, H610M, Z790, B550M
+    /i[3579]-?\d{4,5}[A-Z]*/gi,                          // i5-12400, i7-13700K
+    /[A-Z]{1,2}\d{2,}[A-Z]\d+[A-Z0-9]*/gi,              // ST8000VE001, BX8071512400
   ];
   for (const p of patterns) {
     const matches = productName.match(p);
