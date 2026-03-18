@@ -100,17 +100,6 @@ export default function Configuracoes() {
                       ))}
                     </ul>
                   </div>
-                  <div>
-                    <p className="text-xs font-medium text-orange-600 mb-1">Limitações</p>
-                    <ul className="space-y-0.5">
-                      {provider.cons.map((con, i) => (
-                        <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
-                          <span className="text-orange-500 mt-0.5">⚠</span>
-                          {con}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
 
                   <Button
                     variant={isActive ? 'default' : 'outline'}
