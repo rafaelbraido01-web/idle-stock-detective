@@ -110,6 +110,19 @@ function isLikelyFabricatedMLB(digits: string): boolean {
   return false;
 }
 
+// Kabum URLs must have numeric product IDs: /produto/123456/slug
+function isValidKabumUrl(url: string): boolean {
+  try {
+    const path = new URL(url).pathname;
+    // Valid: /produto/186763/... or /produto/186763
+    if (/\/produto\/\d+/.test(path)) return true;
+    console.log(`[Kabum URL] Rejected non-numeric ID: ${url}`);
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 function getSourceName(url: string): string {
   try {
     const hostname = new URL(url).hostname.replace('www.', '');
