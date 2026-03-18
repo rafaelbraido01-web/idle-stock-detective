@@ -167,7 +167,7 @@ export default function PrecoMercado() {
                   );
 
                   return (
-                    <TableRow key={p.id} className={hasActivePromo ? 'bg-orange-50' : ''}>
+                    <TableRow key={p.id} className={hasActivePromo ? 'bg-orange-100' : ''}>
                       <TableCell className="font-mono text-xs">{p.codigo}</TableCell>
                       <TableCell className="font-medium text-sm">{p.descricao}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{p.marca}</TableCell>
