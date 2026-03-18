@@ -58,14 +58,21 @@ export default function PrecoMercado() {
   }, [latestSnapshots, produtos]);
 
   const filtered = useMemo(() => {
-    if (!searchTerm) return productsWithSnapshot;
+    let items = productsWithSnapshot;
+    if (onlyActivePromo) {
+      items = items.filter(p =>
+        p.snap.data_fim_promocao &&
+        new Date(p.snap.data_fim_promocao + 'T23:59:59') >= new Date()
+      );
+    }
+    if (!searchTerm) return items;
     const term = searchTerm.toLowerCase();
-    return productsWithSnapshot.filter(p =>
+    return items.filter(p =>
       p.descricao.toLowerCase().includes(term) ||
       p.codigo.toLowerCase().includes(term) ||
       p.marca.toLowerCase().includes(term)
     );
-  }, [productsWithSnapshot, searchTerm]);
+  }, [productsWithSnapshot, searchTerm, onlyActivePromo]);
 
   const getProvider = () => localStorage.getItem('preco-mercado-provider') || 'scraper';
 
