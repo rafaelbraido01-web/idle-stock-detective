@@ -171,9 +171,9 @@ export default function PrecoMercado() {
                 <TableRow>
                   <TableHead className="w-[100px]">Código</TableHead>
                   <TableHead>Descrição</TableHead>
-                  <TableHead className="w-[120px]">Marca</TableHead>
                   <TableHead className="w-[100px] text-right">Qtd</TableHead>
                   <TableHead className="w-[130px] text-right">Preço Tabela</TableHead>
+                  <TableHead className="w-[130px] text-right">Preço Promoção</TableHead>
                   <TableHead className="w-[180px] text-center">Ação</TableHead>
                 </TableRow>
               </TableHeader>
