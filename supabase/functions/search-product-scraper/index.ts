@@ -519,6 +519,12 @@ async function searchKabumAPI(searchTerm: string, productName: string, productCo
         if (!name || price <= 50 || price > 100000) continue;
         if (product.available === false || product.quantity === 0) continue;
 
+        // Kabum product IDs must be numeric
+        if (!code || !/^\d+$/.test(String(code))) {
+          console.log(`[KabumAPI] Skipping non-numeric code: "${code}" for "${name}"`);
+          continue;
+        }
+
         const url = slug
           ? `https://www.kabum.com.br/produto/${code}/${slug}`
           : `https://www.kabum.com.br/produto/${code}`;
