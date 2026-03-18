@@ -50,10 +50,60 @@ function isValidProductUrl(url: string): boolean {
     const path = parsed.pathname.toLowerCase();
     if (BLOCKED_PATH_PATTERNS.some(p => path.includes(p))) return false;
     if (path === '/' || path === '') return false;
+    // Mercado Livre: reject likely fabricated URLs
+    if (hostname.includes('mercadolivre') || hostname.includes('mercadolibre')) {
+      if (!isValidMercadoLivreUrl(url)) return false;
+    }
     return true;
   } catch {
     return false;
   }
+}
+
+// Mercado Livre URLs must match real patterns:
+// - produto.mercadolivre.com.br/MLB-XXXXXXXXX-description-...
+// - www.mercadolivre.com.br/produto-nome/p/MLBXXXXXXXXX
+// Reject: /p/MLB1234567890 (sequential digits = fabricated by AI)
+function isValidMercadoLivreUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const path = parsed.pathname;
+    
+    // Pattern 1: produto.mercadolivre.com.br/MLB-XXXXXXX-...
+    if (parsed.hostname.includes('produto.') && /\/MLB-?\d{6,}/.test(path)) {
+      // Reject sequential/round numbers (likely fabricated)
+      const mlbMatch = path.match(/MLB-?(\d+)/);
+      if (mlbMatch && isLikelyFabricatedMLB(mlbMatch[1])) return false;
+      return true;
+    }
+    
+    // Pattern 2: mercadolivre.com.br/.../p/MLBXXXXXXX
+    if (/\/p\/MLB\d{6,}/.test(path)) {
+      const mlbMatch = path.match(/MLB(\d+)/);
+      if (mlbMatch && isLikelyFabricatedMLB(mlbMatch[1])) return false;
+      return true;
+    }
+    
+    // Pattern 3: mercadolivre.com.br/product-slug (with meaningful slug)
+    if (path.split('/').filter(Boolean).length >= 1 && path.length > 20) {
+      return true;
+    }
+    
+    console.log(`[ML URL] Rejected non-matching pattern: ${url}`);
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+function isLikelyFabricatedMLB(digits: string): boolean {
+  // Round numbers like 1234567890 or 1000000000 are AI hallucinations
+  if (/^(\d)\1+$/.test(digits)) return true; // all same digit
+  if (/^1234567/.test(digits)) return true; // sequential
+  if (/0{4,}$/.test(digits)) return true; // ends in many zeros
+  // Check if it looks too "clean" - real MLB IDs are random-ish
+  if (/^\d{10}$/.test(digits) && digits.endsWith('0000')) return true;
+  return false;
 }
 
 function getSourceName(url: string): string {
