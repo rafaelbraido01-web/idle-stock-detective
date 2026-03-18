@@ -472,13 +472,75 @@ async function searchKabumAPI(searchTerm: string, productName: string, productCo
   return results;
 }
 
-// ── Scrape a product page ──
-async function scrapePage(
-  url: string,
-  productCode: string,
-  productName: string,
-  perplexityPrice?: number,
-): Promise<{ source: string; productName: string; price: number; url: string; score: number } | null> {
+// ── Concurrency limiter ──
+async function withConcurrencyLimit<T>(tasks: (() => Promise<T>)[], limit: number): Promise<T[]> {
+  const results: T[] = [];
+  let index = 0;
+
+  async function runNext(): Promise<void> {
+    while (index < tasks.length) {
+      const currentIndex = index++;
+      results[currentIndex] = await tasks[currentIndex]();
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(limit, tasks.length) }, () => runNext());
+  await Promise.all(workers);
+  return results;
+}
+
+// ── Firecrawl scraping (JS rendering) ──
+async function scrapeWithFirecrawl(url: string): Promise<{ html: string; markdown: string } | null> {
+  const apiKey = Deno.env.get('FIRECRAWL_API_KEY');
+  if (!apiKey) {
+    console.log('[Firecrawl] No API key configured, skipping');
+    return null;
+  }
+
+  const startTime = Date.now();
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
+
+    const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url,
+        formats: ['html', 'markdown'],
+        onlyMainContent: false,
+        waitFor: 2000,
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
+    const elapsed = Date.now() - startTime;
+
+    if (!response.ok) {
+      const body = await response.text();
+      console.log(`[Firecrawl] Failed ${url}: ${response.status} (${elapsed}ms) ${body.substring(0, 100)}`);
+      return null;
+    }
+
+    const data = await response.json();
+    const html = data?.data?.html || data?.html || '';
+    const markdown = data?.data?.markdown || data?.markdown || '';
+
+    console.log(`[Firecrawl] OK ${url} (${elapsed}ms) html=${html.length}b md=${markdown.length}b`);
+    return { html, markdown };
+  } catch (err) {
+    const elapsed = Date.now() - startTime;
+    console.log(`[Firecrawl] Error ${url} (${elapsed}ms): ${err instanceof Error ? err.message : err}`);
+    return null;
+  }
+}
+
+// ── Fallback: simple fetch scraping ──
+async function scrapeWithFetch(url: string): Promise<string | null> {
   try {
     const response = await fetch(url, {
       headers: {
@@ -491,17 +553,64 @@ async function scrapePage(
     });
 
     if (!response.ok) {
-      console.log(`[Scrape] Failed ${url}: ${response.status}`);
+      console.log(`[Fetch Fallback] Failed ${url}: ${response.status}`);
       await response.text();
       return null;
     }
 
-    const html = await response.text();
-    const title = extractTitle(html);
+    return await response.text();
+  } catch (err) {
+    console.log(`[Fetch Fallback] Error ${url}: ${err instanceof Error ? err.message : err}`);
+    return null;
+  }
+}
+
+// ── Scrape a product page (Firecrawl + fallback) ──
+async function scrapePageWithFirecrawl(
+  url: string,
+  productCode: string,
+  productName: string,
+  perplexityPrice?: number,
+): Promise<{ source: string; productName: string; price: number; url: string; score: number } | null> {
+  try {
+    // 1. Try Firecrawl first (JS rendering)
+    let html = '';
+    let markdown = '';
+    const firecrawlResult = await scrapeWithFirecrawl(url);
+
+    if (firecrawlResult) {
+      html = firecrawlResult.html;
+      markdown = firecrawlResult.markdown;
+    } else {
+      // 2. Fallback to simple fetch
+      console.log(`[Scrape] Falling back to simple fetch for ${url}`);
+      const fetchHtml = await scrapeWithFetch(url);
+      if (fetchHtml) {
+        html = fetchHtml;
+      }
+    }
+
+    // Use html primarily, markdown as fallback content for title extraction
+    const content = html || markdown;
+    if (!content || content.length < 100) {
+      console.log(`[Scrape] No usable content for ${url} (${content.length}b)`);
+      if (perplexityPrice && perplexityPrice > 50) {
+        const source = getSourceName(url);
+        console.log(`[Scrape] Using Perplexity price R$${perplexityPrice} for ${source} (no content)`);
+        return { source, productName: productName.substring(0, 100), price: perplexityPrice, url, score: 50 };
+      }
+      return null;
+    }
+
+    // Extract title from HTML, or try markdown heading
+    let title = extractTitle(html);
+    if (!title && markdown) {
+      const mdHeading = markdown.match(/^#\s+(.+)/m);
+      if (mdHeading) title = mdHeading[1].trim().substring(0, 200);
+    }
 
     if (!title) {
       console.log(`[Scrape] No title at ${url}`);
-      // If we have Perplexity data, use it as fallback
       if (perplexityPrice && perplexityPrice > 50) {
         const source = getSourceName(url);
         console.log(`[Scrape] Using Perplexity price R$${perplexityPrice} for ${source} (no title)`);
@@ -510,7 +619,7 @@ async function scrapePage(
       return null;
     }
 
-    if (!isProductAvailable(html)) {
+    if (!isProductAvailable(content)) {
       console.log(`[Scrape] Unavailable: ${url}`);
       return null;
     }
@@ -518,9 +627,8 @@ async function scrapePage(
     const { score, details } = calculateRelevanceScore(title, productCode, productName);
     if (score < 60) {
       console.log(`[Scoring] REJECTED: score=${score} (${details}) "${title.substring(0, 80)}" @ ${url}`);
-      // If Perplexity found it and score is >= 30, accept with perplexity price as hint
       if (score >= 30 && perplexityPrice && perplexityPrice > 50) {
-        const prices = extractPrices(html);
+        const prices = extractPrices(content);
         const finalPrice = prices.length > 0
           ? prices.sort((a, b) => a - b)[Math.floor(prices.length / 2)]
           : perplexityPrice;
@@ -530,9 +638,19 @@ async function scrapePage(
       return null;
     }
 
-    const prices = extractPrices(html);
+    // Extract prices from HTML content (richer for JSON-LD), then try markdown
+    let prices = extractPrices(content);
+    if (prices.length === 0 && markdown) {
+      // Try extracting R$ prices from markdown text
+      const rPattern = /R\$\s?(\d{1,3}(?:\.\d{3})*,\d{2})/g;
+      let match;
+      while ((match = rPattern.exec(markdown)) !== null) {
+        const val = parseFloat(match[1].replace(/\./g, '').replace(',', '.'));
+        if (val > 50 && val < 100000) prices.push(val);
+      }
+    }
+
     if (prices.length === 0) {
-      // Use Perplexity price as fallback
       if (perplexityPrice && perplexityPrice > 50) {
         console.log(`[Scrape] No price extracted, using Perplexity price R$${perplexityPrice}`);
         return { source: getSourceName(url), productName: title, price: perplexityPrice, url, score };
@@ -677,11 +795,12 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── Scrape all Perplexity URLs to validate prices ──
-    const scrapePromises = perplexityData.urls.map(url =>
-      scrapePage(url, productCode, productName, perplexityPriceMap.get(url))
+    // ── Scrape Perplexity URLs with Firecrawl (max 2 URLs, max 3 concurrent) ──
+    const urlsToScrape = perplexityData.urls.slice(0, 2);
+    const scrapeTasks = urlsToScrape.map(url => () =>
+      scrapePageWithFirecrawl(url, productCode, productName, perplexityPriceMap.get(url))
     );
-    const scraped = await Promise.all(scrapePromises);
+    const scraped = await withConcurrencyLimit(scrapeTasks, 3);
     const validScraped = scraped.filter(Boolean) as Array<{ source: string; productName: string; price: number; url: string; score: number }>;
 
     console.log(`[Scraper] Scraped ${perplexityData.urls.length} URLs → ${validScraped.length} valid results`);
