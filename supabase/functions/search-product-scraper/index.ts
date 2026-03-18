@@ -50,10 +50,60 @@ function isValidProductUrl(url: string): boolean {
     const path = parsed.pathname.toLowerCase();
     if (BLOCKED_PATH_PATTERNS.some(p => path.includes(p))) return false;
     if (path === '/' || path === '') return false;
+    // Mercado Livre: reject likely fabricated URLs
+    if (hostname.includes('mercadolivre') || hostname.includes('mercadolibre')) {
+      if (!isValidMercadoLivreUrl(url)) return false;
+    }
     return true;
   } catch {
     return false;
   }
+}
+
+// Mercado Livre URLs must match real patterns:
+// - produto.mercadolivre.com.br/MLB-XXXXXXXXX-description-...
+// - www.mercadolivre.com.br/produto-nome/p/MLBXXXXXXXXX
+// Reject: /p/MLB1234567890 (sequential digits = fabricated by AI)
+function isValidMercadoLivreUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const path = parsed.pathname;
+    
+    // Pattern 1: produto.mercadolivre.com.br/MLB-XXXXXXX-...
+    if (parsed.hostname.includes('produto.') && /\/MLB-?\d{6,}/.test(path)) {
+      // Reject sequential/round numbers (likely fabricated)
+      const mlbMatch = path.match(/MLB-?(\d+)/);
+      if (mlbMatch && isLikelyFabricatedMLB(mlbMatch[1])) return false;
+      return true;
+    }
+    
+    // Pattern 2: mercadolivre.com.br/.../p/MLBXXXXXXX
+    if (/\/p\/MLB\d{6,}/.test(path)) {
+      const mlbMatch = path.match(/MLB(\d+)/);
+      if (mlbMatch && isLikelyFabricatedMLB(mlbMatch[1])) return false;
+      return true;
+    }
+    
+    // Pattern 3: mercadolivre.com.br/product-slug (with meaningful slug)
+    if (path.split('/').filter(Boolean).length >= 1 && path.length > 20) {
+      return true;
+    }
+    
+    console.log(`[ML URL] Rejected non-matching pattern: ${url}`);
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+function isLikelyFabricatedMLB(digits: string): boolean {
+  // Round numbers like 1234567890 or 1000000000 are AI hallucinations
+  if (/^(\d)\1+$/.test(digits)) return true; // all same digit
+  if (/^1234567/.test(digits)) return true; // sequential
+  if (/0{4,}$/.test(digits)) return true; // ends in many zeros
+  // Check if it looks too "clean" - real MLB IDs are random-ish
+  if (/^\d{10}$/.test(digits) && digits.endsWith('0000')) return true;
+  return false;
 }
 
 function getSourceName(url: string): string {
@@ -779,7 +829,100 @@ function deduplicateBySource(results: Array<{ source: string; productName: strin
   return Array.from(seen.values());
 }
 
-// ── Format with AI ──
+// ── Mercado Livre direct search via Firecrawl ──
+async function searchMercadoLivre(
+  searchTerm: string,
+  productName: string,
+  productCode: string,
+): Promise<Array<{ source: string; productName: string; price: number; url: string; score: number }>> {
+  const apiKey = Deno.env.get('FIRECRAWL_API_KEY');
+  if (!apiKey) return [];
+
+  try {
+    console.log(`[ML Search] Searching: "${searchTerm}"`);
+    
+    const response = await fetch('https://api.firecrawl.dev/v1/search', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        query: `${searchTerm} site:mercadolivre.com.br`,
+        limit: 5,
+        lang: 'pt-br',
+        country: 'br',
+        scrapeOptions: { formats: ['markdown'] },
+      }),
+      signal: AbortSignal.timeout(10000),
+    });
+
+    if (!response.ok) {
+      const body = await response.text();
+      console.error(`[ML Search] Failed: ${response.status} ${body.substring(0, 100)}`);
+      return [];
+    }
+
+    const data = await response.json();
+    const searchResults = data?.data || [];
+    const results: Array<{ source: string; productName: string; price: number; url: string; score: number }> = [];
+
+    for (const item of searchResults) {
+      const url = item.url || '';
+      const title = item.title || item.metadata?.title || '';
+      const markdown = item.markdown || '';
+
+      if (!url || !url.includes('mercadolivre.com.br')) continue;
+      // Skip search/listing pages
+      if (url.includes('/busca') || url.includes('/search') || url.includes('/categoria')) continue;
+      
+      if (!title || !isValidTitle(title)) continue;
+
+      const { score, details } = calculateRelevanceScore(title, productCode, productName);
+      if (score < 60) {
+        console.log(`[ML Search] REJECTED: score=${score} (${details}) "${title.substring(0, 60)}"`);
+        continue;
+      }
+
+      // Extract price from markdown
+      let price = 0;
+      const priceMatches: number[] = [];
+      const rPattern = /R\$\s?(\d{1,3}(?:\.\d{3})*,\d{2})/g;
+      let match;
+      while ((match = rPattern.exec(markdown)) !== null) {
+        const val = parseFloat(match[1].replace(/\./g, '').replace(',', '.'));
+        if (val > 50 && val < 100000) {
+          const ctxStart = Math.max(0, match.index - 40);
+          const ctx = markdown.substring(ctxStart, match.index).toLowerCase();
+          if (!/\d+x\s*(?:de|sem)/.test(ctx) && !/parcela/.test(ctx)) {
+            priceMatches.push(val);
+          }
+        }
+      }
+
+      if (priceMatches.length > 0) {
+        price = Math.min(...priceMatches);
+      }
+
+      if (price <= 50) {
+        console.log(`[ML Search] No valid price for "${title.substring(0, 60)}"`);
+        continue;
+      }
+
+      console.log(`[ML Search] ACCEPTED: score=${score} (${details}) "${title.substring(0, 60)}" R$${price}`);
+      results.push({ source: 'Mercado Livre', productName: title, price, url, score });
+      
+      if (results.length >= 1) break; // Only need best ML result
+    }
+
+    return results;
+  } catch (err) {
+    console.error('[ML Search] Error:', err);
+    return [];
+  }
+}
+
+
 async function formatWithAI(rawResults: any[]): Promise<any> {
   const apiKey = Deno.env.get('LOVABLE_API_KEY');
   if (!apiKey || rawResults.length === 0) return { results: rawResults };
@@ -868,13 +1011,19 @@ Deno.serve(async (req) => {
       || (productCode && isManufacturerCode(productCode) ? productCode : '')
       || (attrs.brand ? `${attrs.brand} ${attrs.capacity} ${attrs.types[0] || ''}`.trim() : productName.split(/\s+/).slice(0, 4).join(' '));
 
-    // ── Run Perplexity + Kabum API in parallel ──
-    const [perplexityData, kabumResults] = await Promise.all([
+    // ── Run Perplexity + Kabum API + ML Search in parallel ──
+    const mlSearchTerm = bestModel
+      || (productCode && isManufacturerCode(productCode) ? productCode : '')
+      || `${attrs.brand} ${attrs.capacity} ${attrs.types[0] || ''}`.trim()
+      || productName.split(/\s+/).slice(0, 5).join(' ');
+
+    const [perplexityData, kabumResults, mlResults] = await Promise.all([
       searchWithPerplexity(productName, productCode),
       searchKabumAPI(kabumTerm, productName, productCode),
+      searchMercadoLivre(mlSearchTerm, productName, productCode),
     ]);
 
-    console.log(`[Scraper] Perplexity: ${perplexityData.urls.length} URLs, ${perplexityData.perplexityResults.length} structured. Kabum API: ${kabumResults.length} results`);
+    console.log(`[Scraper] Perplexity: ${perplexityData.urls.length} URLs, ${perplexityData.perplexityResults.length} structured. Kabum API: ${kabumResults.length} results. ML: ${mlResults.length} results`);
 
     // ── Build price map from Perplexity structured results ──
     const perplexityPriceMap = new Map<string, number>();
@@ -884,24 +1033,33 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── Scrape Perplexity URLs with Firecrawl (max 2 URLs, max 3 concurrent) ──
-    const urlsToScrape = perplexityData.urls.slice(0, 2);
+    // ── Filter out ML URLs from Perplexity (they're usually fabricated) ──
+    const nonMlUrls = perplexityData.urls.filter(u => {
+      const hostname = new URL(u).hostname.replace('www.', '');
+      return !hostname.includes('mercadolivre') && !hostname.includes('mercadolibre');
+    });
+
+    // ── Scrape non-ML Perplexity URLs with Firecrawl (max 2 URLs, max 3 concurrent) ──
+    const urlsToScrape = nonMlUrls.slice(0, 2);
     const scrapeTasks = urlsToScrape.map(url => () =>
       scrapePageWithFirecrawl(url, productCode, productName, perplexityPriceMap.get(url))
     );
     const scraped = await withConcurrencyLimit(scrapeTasks, 3);
     const validScraped = scraped.filter(Boolean) as Array<{ source: string; productName: string; price: number; url: string; score: number }>;
 
-    console.log(`[Scraper] Scraped ${perplexityData.urls.length} URLs → ${validScraped.length} valid results`);
+    console.log(`[Scraper] Scraped ${urlsToScrape.length} non-ML URLs → ${validScraped.length} valid results`);
 
     // ── Combine all results ──
-    let allResults = [...kabumResults, ...validScraped];
+    let allResults = [...kabumResults, ...mlResults, ...validScraped];
 
-    // If scraping yielded nothing but Perplexity gave structured results, use them directly
+    // If scraping yielded nothing but Perplexity gave structured results (non-ML), use them
     if (validScraped.length === 0 && perplexityData.perplexityResults.length > 0) {
-      console.log(`[Scraper] Scraping failed, using Perplexity structured results as fallback`);
+      console.log(`[Scraper] Scraping failed, using non-ML Perplexity structured results as fallback`);
       for (const pr of perplexityData.perplexityResults) {
         if (pr.price > 50 && pr.price < 100000 && pr.url) {
+          const hostname = new URL(pr.url).hostname.replace('www.', '');
+          // Skip ML results from Perplexity - we have our own ML search
+          if (hostname.includes('mercadolivre') || hostname.includes('mercadolibre')) continue;
           const { score, details } = calculateRelevanceScore(pr.name || productName, productCode, productName);
           if (score >= 30) {
             allResults.push({
