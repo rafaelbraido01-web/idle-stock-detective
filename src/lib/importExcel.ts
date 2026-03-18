@@ -220,12 +220,15 @@ export function processExcelFile(file: File, existingProdutos: Produto[], refere
 
         let totalEstoque = 0;
 
+        let skippedNoCodigo = 0;
+        let skippedZeroValue = 0;
+
         for (const row of rows) {
           const codigo = String(row[colCodigo] || '').trim();
-          if (!codigo) continue;
+          if (!codigo) { skippedNoCodigo++; continue; }
 
           const valorEstoqueCheck = parseNumericValue(row[colValorTotal]);
-          if (colValorTotal && valorEstoqueCheck === 0) continue;
+          if (colValorTotal && valorEstoqueCheck === 0) { skippedZeroValue++; continue; }
 
           const existing = existingMap.get(codigo);
           const produtoId = existing?.id || generateId();
