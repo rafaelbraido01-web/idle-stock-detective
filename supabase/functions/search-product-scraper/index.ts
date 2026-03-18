@@ -56,33 +56,80 @@ function getSourceName(url: string): string {
 
 // ── Price extraction ──
 function extractPrices(html: string): number[] {
-  const prices: number[] = [];
-  
-  // Pattern 1: R$ 1.234,56 or R$1234,56
-  const patterns = [
-    /R\$\s?(\d{1,3}(?:\.\d{3})*,\d{2})/g,
-    /"price":\s*(\d+\.?\d*)/g,
-    /"lowPrice":\s*(\d+\.?\d*)/g,
-    /"offers?"[^}]*"price":\s*(\d+\.?\d*)/g,
-    /data-price="(\d+\.?\d*)"/g,
-  ];
-  
-  // R$ format
-  const rPattern = /R\$\s?(\d{1,3}(?:\.\d{3})*,\d{2})/g;
+  const structuredPrices: number[] = [];
+  const textPrices: number[] = [];
   let match;
+
+  // 1. JSON-LD / structured data (most reliable — represents the actual product price)
+  // Try to extract from full JSON-LD blocks first
+  const jsonLdBlocks = html.match(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi) || [];
+  for (const block of jsonLdBlocks) {
+    const content = block.replace(/<\/?script[^>]*>/gi, '');
+    try {
+      const data = JSON.parse(content);
+      const extractFromObj = (obj: any) => {
+        if (!obj) return;
+        const price = obj?.offers?.price ?? obj?.offers?.lowPrice ?? obj?.offers?.highPrice;
+        if (price) {
+          const val = parseFloat(String(price));
+          if (val > 50 && val < 100000) structuredPrices.push(val);
+        }
+        // Check array of offers
+        if (Array.isArray(obj?.offers)) {
+          for (const offer of obj.offers) {
+            const p = offer?.price ?? offer?.lowPrice;
+            if (p) {
+              const val = parseFloat(String(p));
+              if (val > 50 && val < 100000) structuredPrices.push(val);
+            }
+          }
+        }
+      };
+      if (Array.isArray(data)) {
+        data.forEach(extractFromObj);
+      } else {
+        extractFromObj(data);
+      }
+    } catch {
+      // Fallback: regex on JSON-LD content
+      const priceMatch = content.match(/"price":\s*"?(\d+\.?\d*)"?/);
+      if (priceMatch) {
+        const val = parseFloat(priceMatch[1]);
+        if (val > 50 && val < 100000) structuredPrices.push(val);
+      }
+    }
+  }
+
+  // 2. data-price attributes
+  const dataPricePattern = /data-price="(\d+\.?\d*)"/g;
+  while ((match = dataPricePattern.exec(html)) !== null) {
+    const val = parseFloat(match[1]);
+    if (val > 50 && val < 100000) structuredPrices.push(val);
+  }
+
+  // If we got structured prices, prefer those (they represent the actual product price, not installments)
+  if (structuredPrices.length > 0) {
+    return structuredPrices;
+  }
+
+  // 3. Fallback: R$ text prices — but filter out installment values
+  // We look for R$ prices that are NOT preceded by installment context (e.g., "10x de", "12x de")
+  const rPattern = /R\$\s?(\d{1,3}(?:\.\d{3})*,\d{2})/g;
   while ((match = rPattern.exec(html)) !== null) {
     const val = parseFloat(match[1].replace(/\./g, '').replace(',', '.'));
-    if (val > 10 && val < 100000) prices.push(val);
+    if (val < 50 || val > 100000) continue;
+
+    // Check context around the match — skip if it looks like an installment
+    const contextStart = Math.max(0, match.index - 30);
+    const context = html.substring(contextStart, match.index).toLowerCase();
+    const isInstallment = /\d+x\s*(?:de|sem)/.test(context) || /parcela/.test(context);
+    
+    if (!isInstallment) {
+      textPrices.push(val);
+    }
   }
-  
-  // JSON-LD / structured data price
-  const jsonPricePattern = /"price":\s*"?(\d+\.?\d*)"?/g;
-  while ((match = jsonPricePattern.exec(html)) !== null) {
-    const val = parseFloat(match[1]);
-    if (val > 10 && val < 100000) prices.push(val);
-  }
-  
-  return prices;
+
+  return textPrices;
 }
 
 // ── Title extraction ──
@@ -368,8 +415,9 @@ async function scrapePage(url: string, productCode: string, productName: string)
       return null;
     }
     
-    // Use the lowest price (usually the main/promotional price)
-    const price = Math.min(...prices);
+    // Use the median price (avoids picking installment values or inflated prices)
+    const sorted = [...prices].sort((a, b) => a - b);
+    const price = sorted[Math.floor(sorted.length / 2)];
     
     return {
       source: getSourceName(url),
