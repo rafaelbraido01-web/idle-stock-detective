@@ -16,6 +16,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -218,11 +219,11 @@ export default function PrecoMercado() {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-lg">Resultados da Pesquisa</DialogTitle>
-            {selectedProduto && (
-              <p className="text-sm text-muted-foreground mt-1">
-                {selectedProduto.descricao} — {selectedProduto.marca}
-              </p>
-            )}
+            <DialogDescription className="text-sm text-muted-foreground mt-1">
+              {selectedProduto
+                ? `${selectedProduto.descricao} — ${selectedProduto.marca}`
+                : 'Resultados encontrados para o produto selecionado.'}
+            </DialogDescription>
           </DialogHeader>
 
           {selectedData?.results && selectedData.results.length > 0 ? (
