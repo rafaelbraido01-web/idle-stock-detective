@@ -42,6 +42,7 @@ export default function PrecoMercado() {
   const { toast } = useToast();
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [onlyActivePromo, setOnlyActivePromo] = useState(false);
   const [loadingProducts, setLoadingProducts] = useState<Record<string, boolean>>({});
   const [priceResults, setPriceResults] = useState<Record<string, ProductPriceData>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
