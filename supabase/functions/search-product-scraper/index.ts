@@ -201,7 +201,7 @@ function isRelevantProduct(title: string, code: string, productName: string): bo
   const titleLower = title.toLowerCase();
   const modelCodes = extractModelCodes(productName);
 
-  // For manufacturer codes, require exact match in title
+  // For manufacturer codes in the code field, require exact match in title
   if (code && isManufacturerCode(code)) {
     if (!codeMatchesExact(titleLower, code)) {
       console.log(`[Validation] REJECTED: manufacturer code "${code}" not in title "${title.substring(0, 80)}"`);
@@ -210,9 +210,55 @@ function isRelevantProduct(title: string, code: string, productName: string): bo
     return true;
   }
 
-  // For internal numeric codes, rely on name/model matching
+  // For internal numeric codes, check model codes extracted from product name
+  // Use EXACT matching to avoid variant confusion (PBE240 vs PBE120)
   if (modelCodes.length > 0) {
-    const hasModelMatch = modelCodes.some(m => titleLower.includes(m.toLowerCase()));
+    const genericModelTokens = new Set(['DDR3', 'DDR4', 'DDR5', 'SSD', 'NVME', 'PCIE', 'IPS', 'LED', 'SATA', 'SATA3']);
+    const sortedModels = [...modelCodes]
+      .filter(m => !genericModelTokens.has(m.toUpperCase()))
+      .sort((a, b) => b.length - a.length);
+
+    const primaryModel = sortedModels[0];
+
+    if (primaryModel && primaryModel.length >= 6) {
+      // Try exact match first
+      if (codeMatchesExact(titleLower, primaryModel)) return true;
+
+      // Fallback: if model not in title (common for stores), validate by extracting
+      // key specs from the product name (brand, capacity, type) and ensuring they all match
+      // Extract numeric specs (like 240GB, 8GB, 24") from both strings
+      const nameSpecs = productName.match(/\d+\s*(?:GB|TB|MB|GHZ|MHZ|W|"|\')/gi) || [];
+      const titleSpecs = title.match(/\d+\s*(?:GB|TB|MB|GHZ|MHZ|W|"|\')/gi) || [];
+
+      if (nameSpecs.length > 0) {
+        const nameSpecsNorm = nameSpecs.map(s => s.replace(/\s+/g, '').toLowerCase());
+        const titleSpecsNorm = titleSpecs.map(s => s.replace(/\s+/g, '').toLowerCase());
+
+        // ALL numeric specs from the name must appear in the title
+        const allSpecsMatch = nameSpecsNorm.every(spec => titleSpecsNorm.some(ts => ts === spec));
+
+        if (!allSpecsMatch) {
+          console.log(`[Validation] REJECTED: specs mismatch name=${nameSpecsNorm} vs title=${titleSpecsNorm} for "${title.substring(0, 80)}"`);
+          return false;
+        }
+
+        // Also need brand match
+        const brandWords = productName.toLowerCase().split(/\s+/).filter(w =>
+          w.length >= 3 && !['ssd', 'ddr4', 'ddr5', 'led', 'ips', 'sata', 'sata3', 'nvme', 'pcie', 'para', 'com'].includes(w)
+        );
+        const brandMatch = brandWords.filter(w => titleLower.includes(w)).length;
+        if (brandMatch >= 2) return true;
+
+        console.log(`[Validation] REJECTED: not enough brand overlap for "${title.substring(0, 80)}"`);
+        return false;
+      }
+
+      console.log(`[Validation] REJECTED: primary model "${primaryModel}" not in "${title.substring(0, 80)}"`);
+      return false;
+    }
+
+    // For shorter models, just check exact presence
+    const hasModelMatch = sortedModels.some(m => codeMatchesExact(titleLower, m));
     if (hasModelMatch) return true;
   }
 
