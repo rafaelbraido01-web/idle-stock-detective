@@ -490,7 +490,12 @@ Deno.serve(async (req) => {
     
     // Extract model codes from name for better search queries
     const modelCodes = extractModelCodes(productName);
-    const searchTerm = modelCodes.length > 0 ? modelCodes[0] : productName.split(' ').slice(0, 4).join(' ');
+    const genericModelTokens = new Set(['DDR3', 'DDR4', 'DDR5', 'SSD', 'NVME', 'M2', 'PCIE', 'IPS', 'LED']);
+    const bestModel = modelCodes
+      .filter((m) => !genericModelTokens.has(m.toUpperCase()))
+      .sort((a, b) => b.length - a.length)[0];
+
+    const searchTerm = bestModel || productName.split(' ').slice(0, 5).join(' ');
     const isInternalCode = productCode && !isManufacturerCode(productCode);
     
     // Step 1: Generate search queries - use product name for internal codes
