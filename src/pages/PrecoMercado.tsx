@@ -63,12 +63,14 @@ export default function PrecoMercado() {
     );
   }, [productsWithSnapshot, searchTerm]);
 
+  const getProvider = () => localStorage.getItem('preco-mercado-provider') || 'perplexity';
+
   const handleSearch = async (productId: string, productName: string, productCode: string) => {
     setLoadingProducts(prev => ({ ...prev, [productId]: true }));
 
     try {
       const { data, error } = await supabase.functions.invoke('search-product-price', {
-        body: { productName, productCode },
+        body: { productName, productCode, provider: getProvider() },
       });
 
       if (error) throw error;
