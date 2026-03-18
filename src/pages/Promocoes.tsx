@@ -220,6 +220,7 @@ export default function Promocoes() {
           <SelectContent>
             <SelectItem value="todas">Todas promoções</SelectItem>
             <SelectItem value="ativa">Promoção ativa</SelectItem>
+            <SelectItem value="recem-expirada">Recém expirada (30 dias)</SelectItem>
             <SelectItem value="expirada">Promoção expirada</SelectItem>
           </SelectContent>
         </Select>
