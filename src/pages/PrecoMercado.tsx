@@ -3,6 +3,8 @@ import { useInventory } from '@/store/InventoryContext';
 import { formatCurrency } from '@/types/inventory';
 import { supabase } from '@/integrations/supabase/client';
 import { Search, ExternalLink, Loader2, CheckCircle2, ShoppingCart } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
