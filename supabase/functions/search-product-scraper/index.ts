@@ -829,7 +829,100 @@ function deduplicateBySource(results: Array<{ source: string; productName: strin
   return Array.from(seen.values());
 }
 
-// ── Format with AI ──
+// ── Mercado Livre direct search via Firecrawl ──
+async function searchMercadoLivre(
+  searchTerm: string,
+  productName: string,
+  productCode: string,
+): Promise<Array<{ source: string; productName: string; price: number; url: string; score: number }>> {
+  const apiKey = Deno.env.get('FIRECRAWL_API_KEY');
+  if (!apiKey) return [];
+
+  try {
+    console.log(`[ML Search] Searching: "${searchTerm}"`);
+    
+    const response = await fetch('https://api.firecrawl.dev/v1/search', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        query: `${searchTerm} site:mercadolivre.com.br`,
+        limit: 5,
+        lang: 'pt-br',
+        country: 'br',
+        scrapeOptions: { formats: ['markdown'] },
+      }),
+      signal: AbortSignal.timeout(10000),
+    });
+
+    if (!response.ok) {
+      const body = await response.text();
+      console.error(`[ML Search] Failed: ${response.status} ${body.substring(0, 100)}`);
+      return [];
+    }
+
+    const data = await response.json();
+    const searchResults = data?.data || [];
+    const results: Array<{ source: string; productName: string; price: number; url: string; score: number }> = [];
+
+    for (const item of searchResults) {
+      const url = item.url || '';
+      const title = item.title || item.metadata?.title || '';
+      const markdown = item.markdown || '';
+
+      if (!url || !url.includes('mercadolivre.com.br')) continue;
+      // Skip search/listing pages
+      if (url.includes('/busca') || url.includes('/search') || url.includes('/categoria')) continue;
+      
+      if (!title || !isValidTitle(title)) continue;
+
+      const { score, details } = calculateRelevanceScore(title, productCode, productName);
+      if (score < 60) {
+        console.log(`[ML Search] REJECTED: score=${score} (${details}) "${title.substring(0, 60)}"`);
+        continue;
+      }
+
+      // Extract price from markdown
+      let price = 0;
+      const priceMatches: number[] = [];
+      const rPattern = /R\$\s?(\d{1,3}(?:\.\d{3})*,\d{2})/g;
+      let match;
+      while ((match = rPattern.exec(markdown)) !== null) {
+        const val = parseFloat(match[1].replace(/\./g, '').replace(',', '.'));
+        if (val > 50 && val < 100000) {
+          const ctxStart = Math.max(0, match.index - 40);
+          const ctx = markdown.substring(ctxStart, match.index).toLowerCase();
+          if (!/\d+x\s*(?:de|sem)/.test(ctx) && !/parcela/.test(ctx)) {
+            priceMatches.push(val);
+          }
+        }
+      }
+
+      if (priceMatches.length > 0) {
+        price = Math.min(...priceMatches);
+      }
+
+      if (price <= 50) {
+        console.log(`[ML Search] No valid price for "${title.substring(0, 60)}"`);
+        continue;
+      }
+
+      console.log(`[ML Search] ACCEPTED: score=${score} (${details}) "${title.substring(0, 60)}" R$${price}`);
+      results.push({ source: 'Mercado Livre', productName: title, price, url, score });
+      
+      if (results.length >= 1) break; // Only need best ML result
+    }
+
+    return results;
+  } catch (err) {
+    console.error('[ML Search] Error:', err);
+    return [];
+  }
+}
+
+
 async function formatWithAI(rawResults: any[]): Promise<any> {
   const apiKey = Deno.env.get('LOVABLE_API_KEY');
   if (!apiKey || rawResults.length === 0) return { results: rawResults };
