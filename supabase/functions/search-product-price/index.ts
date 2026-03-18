@@ -83,17 +83,17 @@ async function searchWithPerplexity(productName: string, productCode: string) {
 }
 
 async function searchWithChatGPT(productName: string, productCode: string) {
-  const apiKey = Deno.env.get('LOVABLE_API_KEY');
-  if (!apiKey) throw new Error('LOVABLE_API_KEY não está configurado');
+  const apiKey = Deno.env.get('OPENAI_API_KEY');
+  if (!apiKey) throw new Error('Chave da OpenAI não está configurada');
 
-  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'openai/gpt-5',
+      model: 'gpt-4o',
       messages: [
         { role: 'system', content: 'Você é um assistente de pesquisa de preços no Brasil. Retorne APENAS JSON válido, sem markdown, sem explicações. Forneça URLs reais de produtos quando possível.' },
         { role: 'user', content: SEARCH_PROMPT(productName, productCode) },
@@ -104,10 +104,10 @@ async function searchWithChatGPT(productName: string, productCode: string) {
 
   if (!response.ok) {
     const errText = await response.text();
-    console.error('Lovable AI error:', response.status, errText);
-    if (response.status === 402) throw new Error('Créditos insuficientes. Adicione fundos ao workspace.');
+    console.error('OpenAI API error:', response.status, errText);
+    if (response.status === 402) throw new Error('Créditos insuficientes na OpenAI.');
     if (response.status === 429) throw new Error('Limite de requisições excedido. Tente novamente.');
-    throw new Error(`Erro na API: ${response.status}`);
+    throw new Error(`Erro na API OpenAI: ${response.status}`);
   }
 
   const data = await response.json();
