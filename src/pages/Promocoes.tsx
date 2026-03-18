@@ -109,10 +109,18 @@ export default function Promocoes() {
   }, [atualId, anteriorId, produtoSnapshots, produtos]);
 
   const filtered = useMemo(() => {
+    const now = new Date();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(now.getDate() - 30);
+
     return comparisons.filter(c => {
       if (statusFilter !== 'todos' && c.status !== statusFilter) return false;
       if (promoFilter === 'ativa' && !c.promoAtiva) return false;
       if (promoFilter === 'expirada' && c.promoAtiva) return false;
+      if (promoFilter === 'recem-expirada') {
+        const promoDate = new Date(c.dataFimPromocao + 'T23:59:59');
+        if (c.promoAtiva || promoDate < thirtyDaysAgo) return false;
+      }
       return true;
     });
   }, [comparisons, statusFilter, promoFilter]);
