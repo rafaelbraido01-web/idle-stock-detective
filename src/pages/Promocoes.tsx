@@ -79,7 +79,7 @@ export default function Promocoes() {
       const qtdAnterior = anterior?.quantidade ?? item.quantidade;
       const qtdAtual = item.quantidade;
       const delta = qtdAnterior - qtdAtual;
-      const promoDate = new Date(item.data_fim_promocao);
+      const promoDate = new Date(item.data_fim_promocao + 'T23:59:59');
 
       let status: PromoComparison['status'];
       if (delta > 0) status = 'vendeu';
