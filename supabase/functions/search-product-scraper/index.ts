@@ -489,8 +489,28 @@ async function withConcurrencyLimit<T>(tasks: (() => Promise<T>)[], limit: numbe
   return results;
 }
 
+// ── Blocked/invalid title patterns ──
+const INVALID_TITLE_PATTERNS = [
+  'recaptcha', 'captcha', 'ícone facebook', 'icon facebook', 'acesse para continuar',
+  'just a moment', 'checking your browser', 'access denied', 'forbidden',
+  'page not found', '404', 'erro', 'error', 'blocked',
+];
+
+function isValidTitle(title: string): boolean {
+  if (!title || title.length < 5) return false;
+  const lower = title.toLowerCase().trim();
+  // Reject known invalid titles
+  if (INVALID_TITLE_PATTERNS.some(p => lower.includes(p))) return false;
+  // Reject generic store-only titles
+  if (/^magazine luiza\s*\|?\s*pra voc/i.test(lower)) return false;
+  if (/^kabum\s*$/i.test(lower)) return false;
+  if (/^amazon\.com\.br/i.test(lower)) return false;
+  if (/^pichau/i.test(lower)) return false;
+  return true;
+}
+
 // ── Firecrawl scraping (JS rendering) ──
-async function scrapeWithFirecrawl(url: string): Promise<{ html: string; markdown: string } | null> {
+async function scrapeWithFirecrawl(url: string): Promise<{ html: string; markdown: string; metadataTitle: string } | null> {
   const apiKey = Deno.env.get('FIRECRAWL_API_KEY');
   if (!apiKey) {
     console.log('[Firecrawl] No API key configured, skipping');
@@ -529,9 +549,10 @@ async function scrapeWithFirecrawl(url: string): Promise<{ html: string; markdow
     const data = await response.json();
     const html = data?.data?.html || data?.html || '';
     const markdown = data?.data?.markdown || data?.markdown || '';
+    const metadataTitle = data?.data?.metadata?.title || data?.metadata?.title || '';
 
-    console.log(`[Firecrawl] OK ${url} (${elapsed}ms) html=${html.length}b md=${markdown.length}b`);
-    return { html, markdown };
+    console.log(`[Firecrawl] OK ${url} (${elapsed}ms) html=${html.length}b md=${markdown.length}b title="${metadataTitle.substring(0, 60)}"`);
+    return { html, markdown, metadataTitle };
   } catch (err) {
     const elapsed = Date.now() - startTime;
     console.log(`[Firecrawl] Error ${url} (${elapsed}ms): ${err instanceof Error ? err.message : err}`);
