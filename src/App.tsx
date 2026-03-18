@@ -9,6 +9,7 @@ import Products from "./pages/Products";
 import Imports from "./pages/Imports";
 import Comparacao from "./pages/Comparacao";
 import Promocoes from "./pages/Promocoes";
+import PrecoMercado from "./pages/PrecoMercado";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
