@@ -201,7 +201,7 @@ function isRelevantProduct(title: string, code: string, productName: string): bo
   const titleLower = title.toLowerCase();
   const modelCodes = extractModelCodes(productName);
 
-  // For manufacturer codes, require exact match in title
+  // For manufacturer codes in the code field, require exact match in title
   if (code && isManufacturerCode(code)) {
     if (!codeMatchesExact(titleLower, code)) {
       console.log(`[Validation] REJECTED: manufacturer code "${code}" not in title "${title.substring(0, 80)}"`);
@@ -210,9 +210,25 @@ function isRelevantProduct(title: string, code: string, productName: string): bo
     return true;
   }
 
-  // For internal numeric codes, rely on name/model matching
+  // For internal numeric codes, check model codes extracted from product name
+  // Use EXACT matching to avoid variant confusion (PBE240 vs PBE120)
   if (modelCodes.length > 0) {
-    const hasModelMatch = modelCodes.some(m => titleLower.includes(m.toLowerCase()));
+    // Find the longest model code (most specific, e.g., PBE240GS25SSDR over SSD)
+    const sortedModels = [...modelCodes].sort((a, b) => b.length - a.length);
+    const primaryModel = sortedModels[0];
+    
+    // The primary (longest) model MUST match exactly
+    if (primaryModel.length >= 6) {
+      if (codeMatchesExact(titleLower, primaryModel)) {
+        return true;
+      } else {
+        console.log(`[Validation] REJECTED: primary model "${primaryModel}" not found exactly in "${title.substring(0, 80)}"`);
+        return false;
+      }
+    }
+    
+    // For shorter models, just check presence
+    const hasModelMatch = sortedModels.some(m => codeMatchesExact(titleLower, m));
     if (hasModelMatch) return true;
   }
 
