@@ -215,6 +215,12 @@ async function scrapePage(url: string, productCode: string, productName: string)
   url: string;
 } | null> {
   try {
+    // VALIDATION: URL must be relevant to the product
+    if (!isUrlRelevant(url, productCode, productName)) {
+      console.log(`[Validation] URL rejected (no relevance): ${url}`);
+      return null;
+    }
+    
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -233,8 +239,12 @@ async function scrapePage(url: string, productCode: string, productName: string)
     const html = await response.text();
     const title = extractTitle(html);
     
-    if (!title || !isRelevantProduct(title, productCode, productName)) {
-      console.log(`Irrelevant product at ${url}: "${title}"`);
+    if (!title) {
+      console.log(`[Validation] No title found at ${url}`);
+      return null;
+    }
+    
+    if (!isRelevantProduct(title, productCode, productName)) {
       return null;
     }
     
