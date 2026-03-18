@@ -572,6 +572,9 @@ const INVALID_TITLE_PATTERNS = [
   'recaptcha', 'captcha', 'ícone facebook', 'icon facebook', 'acesse para continuar',
   'just a moment', 'checking your browser', 'access denied', 'forbidden',
   'page not found', '404', 'erro', 'error', 'blocked',
+  'não foi possível encontrar', 'nao foi possivel encontrar',
+  'página não encontrada', 'pagina nao encontrada',
+  'sacola de compras',
 ];
 
 function isValidTitle(title: string): boolean {
