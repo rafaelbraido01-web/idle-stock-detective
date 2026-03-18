@@ -1,4 +1,4 @@
-import { BarChart3, Box, FileSpreadsheet, GitCompareArrows, LayoutDashboard, Tag } from 'lucide-react';
+import { BarChart3, Box, DollarSign, FileSpreadsheet, GitCompareArrows, LayoutDashboard, Tag } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import {
@@ -19,6 +19,7 @@ const navItems = [
   { title: 'Importações', url: '/importacoes', icon: FileSpreadsheet },
   { title: 'Comparação', url: '/comparacao', icon: GitCompareArrows },
   { title: 'Promoções', url: '/promocoes', icon: Tag },
+  { title: 'Preço de Mercado', url: '/preco-mercado', icon: DollarSign },
 ];
 
 export function AppSidebar() {
