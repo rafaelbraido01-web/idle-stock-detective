@@ -14,10 +14,7 @@ const TRUSTED_DOMAINS = [
   'pichau.com.br',
 ];
 
-// Search pages allowed for link extraction but NOT as final results
-const SEARCH_PATH_PATTERNS = ['/busca', '/search', '/listing', '/s?k='];
-const BLOCKED_PATH_PATTERNS = ['/categoria', '/b/'];
-
+const BLOCKED_PATH_PATTERNS = ['/categoria', '/b/', '/busca', '/search', '/listing', '/s?k='];
 const FETCH_TIMEOUT = 8000;
 
 // ── Known brands for relevance scoring ──
@@ -30,6 +27,8 @@ const KNOWN_BRANDS = [
   'deepcool', 'cooler master', 'nzxt', 'thermaltake', 'gamemax', 'aerocool',
   'tp-link', 'intelbras', 'mercusys', 'tenda', 'dlink', 'edifier', 'jbl',
   'epson', 'brother', 'hp', 'lenovo', 'acer', 'positivo', 'vaio',
+  'hiksemi', 'hikvision', 'duex', 'brazil pc', 'bluecase', 'knup', 'vinik',
+  'elgin', 'bematech', 'toshiba', 'hbuster', 'philco',
 ];
 
 // ── Product types/categories ──
@@ -42,15 +41,6 @@ const PRODUCT_TYPES = [
 ];
 
 // ── URL helpers ──
-function isSearchPage(url: string): boolean {
-  try {
-    const path = new URL(url).pathname.toLowerCase();
-    return SEARCH_PATH_PATTERNS.some(p => path.includes(p));
-  } catch {
-    return false;
-  }
-}
-
 function isValidProductUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
@@ -64,10 +54,6 @@ function isValidProductUrl(url: string): boolean {
   } catch {
     return false;
   }
-}
-
-function isValidFinalUrl(url: string): boolean {
-  return isValidProductUrl(url) && !isSearchPage(url);
 }
 
 function getSourceName(url: string): string {
@@ -161,8 +147,6 @@ function extractTitle(html: string): string {
 
 // ── Availability detection ──
 function isProductAvailable(html: string): boolean {
-  const htmlLower = html.toLowerCase();
-  // Check JSON-LD availability
   const jsonLdBlocks = html.match(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi) || [];
   for (const block of jsonLdBlocks) {
     const content = block.replace(/<\/?script[^>]*>/gi, '');
@@ -184,21 +168,16 @@ function isProductAvailable(html: string): boolean {
     } catch { /* ignore */ }
   }
 
-  // Check common unavailability patterns in HTML
   const unavailPatterns = [
     'produto indisponível', 'produto esgotado', 'out of stock',
     'item indisponível', 'não disponível', 'produto não encontrado',
     'este produto está esgotado', 'avise-me quando chegar',
   ];
-  // Only flag if these appear prominently (not in random script tags)
   const bodyMatch = html.match(/<body[\s\S]*<\/body>/i);
   if (bodyMatch) {
     const bodyLower = bodyMatch[0].toLowerCase();
     for (const pattern of unavailPatterns) {
-      if (bodyLower.includes(pattern)) {
-        console.log(`[Availability] Product unavailable: found "${pattern}"`);
-        return false;
-      }
+      if (bodyLower.includes(pattern)) return false;
     }
   }
 
@@ -234,23 +213,14 @@ function extractModelCodes(productName: string): string[] {
 // ── Extract product attributes from name ──
 function extractProductAttributes(productName: string) {
   const nameLower = productName.toLowerCase();
-
-  // Extract brand
   const brand = KNOWN_BRANDS.find(b => nameLower.includes(b)) || '';
-
-  // Extract capacity/size specs (256GB, 8TB, 16GB, etc.)
   const capacityMatch = nameLower.match(/(\d+\s*(?:gb|tb|mb))/i);
   const capacity = capacityMatch ? capacityMatch[1].replace(/\s+/g, '') : '';
-
-  // Extract type/technology
   const typeMatches: string[] = [];
   for (const t of PRODUCT_TYPES) {
     if (nameLower.includes(t)) typeMatches.push(t);
   }
-
-  // Extract numeric specs (frequencies, sizes)
   const specMatches = nameLower.match(/\d+\s*(?:ghz|mhz|w|"|\'|mm)/gi) || [];
-
   return { brand, capacity, types: typeMatches, specs: specMatches };
 }
 
@@ -261,11 +231,9 @@ function calculateRelevanceScore(
   productName: string,
 ): { score: number; details: string } {
   const titleLower = title.toLowerCase();
-  const nameLower = productName.toLowerCase();
   let score = 0;
   const reasons: string[] = [];
 
-  // +50: exact manufacturer code match
   const modelCodes = extractModelCodes(productName);
   const genericTokens = new Set(['DDR3', 'DDR4', 'DDR5', 'SSD', 'NVME', 'M2', 'PCIE', 'IPS', 'LED', 'SATA', 'SATA3']);
   const significantModels = modelCodes.filter(m => !genericTokens.has(m.toUpperCase()));
@@ -278,27 +246,25 @@ function calculateRelevanceScore(
     reasons.push(`+50 model match`);
   }
 
-  // +30: brand match
   const attrs = extractProductAttributes(productName);
   if (attrs.brand && titleLower.includes(attrs.brand)) {
     score += 30;
     reasons.push(`+30 brand="${attrs.brand}"`);
   }
 
-  // +20: capacity match
   if (attrs.capacity && titleLower.includes(attrs.capacity)) {
     score += 20;
     reasons.push(`+20 capacity="${attrs.capacity}"`);
   }
 
-  // +10: type match (at least one product type)
   const typeMatch = attrs.types.filter(t => titleLower.includes(t));
   if (typeMatch.length > 0) {
     score += 10;
     reasons.push(`+10 type="${typeMatch[0]}"`);
   }
 
-  // PENALTY: spec mismatch (e.g., 12400 vs 12400F, 256GB vs 512GB)
+  // PENALTY: spec mismatch
+  const nameLower = productName.toLowerCase();
   const nameSpecs = nameLower.match(/\d+\s*(?:gb|tb|ghz|mhz|w)/gi) || [];
   const titleSpecs = titleLower.match(/\d+\s*(?:gb|tb|ghz|mhz|w)/gi) || [];
   if (nameSpecs.length > 0) {
@@ -314,137 +280,132 @@ function calculateRelevanceScore(
   return { score, details: reasons.join(' | ') };
 }
 
-// ── FALLBACK QUERY BUILDER ──
-function buildFallbackQueries(productName: string, productCode: string, level: number): string[] {
+// ── PERPLEXITY SEARCH (PRIMARY) ──
+async function searchWithPerplexity(
+  productName: string,
+  productCode: string,
+): Promise<{ urls: string[]; perplexityResults: Array<{ url: string; price: number; name: string }> }> {
+  const apiKey = Deno.env.get('PERPLEXITY_API_KEY');
+  if (!apiKey) {
+    console.log('[Perplexity] No API key configured');
+    return { urls: [], perplexityResults: [] };
+  }
+
   const attrs = extractProductAttributes(productName);
   const modelCodes = extractModelCodes(productName);
   const genericTokens = new Set(['DDR3', 'DDR4', 'DDR5', 'SSD', 'NVME', 'M2', 'PCIE', 'IPS', 'LED', 'SATA', 'SATA3']);
-  const bestModel = modelCodes
-    .filter(m => !genericTokens.has(m.toUpperCase()))
-    .sort((a, b) => b.length - a.length)[0];
+  const bestModel = modelCodes.filter(m => !genericTokens.has(m.toUpperCase())).sort((a, b) => b.length - a.length)[0] || '';
 
-  const isInternal = productCode && !isManufacturerCode(productCode);
-  const codeOrModel = isInternal ? bestModel : productCode;
-
-  switch (level) {
-    case 1: {
-      // Level 1: exact code/model
-      if (!codeOrModel) return []; // skip to level 2
-      return [
-        `${codeOrModel} site:kabum.com.br`,
-        `${codeOrModel} site:mercadolivre.com.br`,
-        `${codeOrModel} site:amazon.com.br`,
-        `${productName} ${codeOrModel} preço`,
-      ];
-    }
-    case 2: {
-      // Level 2: brand + capacity + type
-      const parts: string[] = [];
-      if (attrs.brand) parts.push(attrs.brand.toUpperCase());
-      if (attrs.capacity) parts.push(attrs.capacity.toUpperCase());
-      if (attrs.types.length > 0) parts.push(attrs.types[0].toUpperCase());
-      if (parts.length < 2) {
-        // Use first 4 words of product name if we can't extract enough
-        parts.length = 0;
-        parts.push(...productName.split(/\s+/).slice(0, 4));
-      }
-      const term = parts.join(' ');
-      return [
-        `${term} site:kabum.com.br`,
-        `${term} site:mercadolivre.com.br`,
-        `${term} preço comprar`,
-      ];
-    }
-    case 3: {
-      // Level 3: generic category
-      const parts: string[] = [];
-      if (attrs.types.length > 0) parts.push(attrs.types[0].toUpperCase());
-      if (attrs.capacity) parts.push(attrs.capacity.toUpperCase());
-      // Add more type context
-      if (attrs.types.length > 1) parts.push(attrs.types[1].toUpperCase());
-      // Fallback: first 5 words of name
-      if (parts.length < 2) {
-        parts.length = 0;
-        parts.push(...productName.split(/\s+/).slice(0, 5));
-      }
-      const term = parts.join(' ');
-      return [
-        `${term} preço comprar`,
-        `${term} site:kabum.com.br`,
-      ];
-    }
-    default:
-      return [];
-  }
-}
-
-// ── URL extraction from search HTML ──
-function extractTrustedUrlsFromHtml(html: string): string[] {
-  const urls: string[] = [];
-  const patterns = [
-    /href="\/url\?q=(https?[^&"]+)/g,
-    /href="(https?:\/\/(?:www\.)?(?:kabum|mercadolivre|amazon|magazineluiza|pichau)[^"]+)"/g,
-    /"url":"(https?:\\\/\\\/(?:www\\\.)?(?:kabum|mercadolivre|amazon|magazineluiza|pichau)[^"]+)"/g,
-  ];
-
-  for (const pattern of patterns) {
-    let match;
-    while ((match = pattern.exec(html)) !== null) {
-      const raw = match[1].replace(/\\\//g, '/');
-      const decoded = decodeURIComponent(raw);
-      // Allow search pages here — they'll be used for link extraction
-      if (isValidProductUrl(decoded) && !urls.includes(decoded)) {
-        urls.push(decoded);
-      }
-    }
+  // Build search query with fallback terms
+  const codeOrModel = (productCode && isManufacturerCode(productCode)) ? productCode : bestModel;
+  let searchQuery = productName;
+  if (codeOrModel) {
+    searchQuery = `${codeOrModel} ${productName}`;
   }
 
-  return urls.slice(0, 8);
-}
+  const prompt = `Encontre o produto "${searchQuery}" para comprar no Brasil.
 
-// ── Search engines ──
-async function searchEngine(url: string, query: string, source: string): Promise<string[]> {
+INSTRUÇÕES:
+- Retorne URLs REAIS de páginas de produto (NÃO de busca/listagem) com o preço atual
+- Priorize: KaBuM, Mercado Livre, Amazon Brasil, Magazine Luiza, Pichau
+- Para cada resultado, forneça: url, nome do produto na loja, preço em reais
+- Retorne apenas produtos DISPONÍVEIS para compra
+- Se não encontrar o modelo exato, busque variantes similares da mesma marca e especificação
+${attrs.brand ? `- Marca: ${attrs.brand.toUpperCase()}` : ''}
+${attrs.capacity ? `- Especificação: ${attrs.capacity.toUpperCase()}` : ''}
+${codeOrModel ? `- Código/Modelo: ${codeOrModel}` : ''}
+
+FORMATO JSON (retorne APENAS o JSON, sem markdown):
+{"products": [{"url": "https://...", "name": "Nome do Produto", "price": 299.90}]}`;
+
   try {
-    const response = await fetch(url, {
+    console.log(`[Perplexity] Searching: "${searchQuery.substring(0, 80)}"`);
+
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml',
-        'Accept-Language': 'pt-BR,pt;q=0.9',
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
       },
-      signal: AbortSignal.timeout(FETCH_TIMEOUT),
+      body: JSON.stringify({
+        model: 'sonar',
+        messages: [
+          { role: 'system', content: 'Você é um assistente de pesquisa de preços de produtos de tecnologia no Brasil. Retorne APENAS JSON válido sem markdown.' },
+          { role: 'user', content: prompt },
+        ],
+        temperature: 0.1,
+        search_domain_filter: [
+          'kabum.com.br',
+          'mercadolivre.com.br',
+          'amazon.com.br',
+          'magazineluiza.com.br',
+          'pichau.com.br',
+        ],
+      }),
+      signal: AbortSignal.timeout(15000),
     });
 
     if (!response.ok) {
-      console.error(`${source} search failed: ${response.status}`);
-      await response.text(); // consume body
-      return [];
+      const body = await response.text();
+      console.error(`[Perplexity] API error ${response.status}: ${body.substring(0, 200)}`);
+      return { urls: [], perplexityResults: [] };
     }
 
-    const html = await response.text();
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || '';
+    const citations = data.citations || [];
 
-    if (source === 'Google' && (html.includes('/sorry/index') || html.includes('g-recaptcha'))) {
-      console.log(`[Search] Google CAPTCHA detected`);
-      return [];
+    console.log(`[Perplexity] Response length: ${content.length}, citations: ${citations.length}`);
+
+    // Extract URLs from citations
+    const citationUrls = (citations as string[]).filter(u => isValidProductUrl(u));
+
+    // Try to parse JSON response for structured data
+    const perplexityResults: Array<{ url: string; price: number; name: string }> = [];
+    try {
+      let jsonStr = content;
+      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (jsonMatch) jsonStr = jsonMatch[1].trim();
+      const objMatch = jsonStr.match(/\{[\s\S]*\}/);
+      if (objMatch) jsonStr = objMatch[0];
+      
+      const parsed = JSON.parse(jsonStr);
+      const products = parsed.products || parsed.results || [];
+      
+      for (const p of products) {
+        if (p.url && p.price && typeof p.price === 'number' && p.price > 50 && p.price < 100000) {
+          perplexityResults.push({
+            url: p.url,
+            price: p.price,
+            name: p.name || '',
+          });
+        }
+      }
+      console.log(`[Perplexity] Parsed ${perplexityResults.length} structured results`);
+    } catch {
+      console.log(`[Perplexity] Could not parse structured JSON, using citations only`);
     }
 
-    return extractTrustedUrlsFromHtml(html);
+    // Also extract URLs from the text content
+    const urlPattern = /https?:\/\/(?:www\.)?(?:kabum|mercadolivre|produto\.mercadolivre|amazon|magazineluiza|pichau)[^\s\)\"',\]]+/gi;
+    const textUrls = (content.match(urlPattern) || []).filter(u => isValidProductUrl(u));
+
+    // Merge all URLs
+    const allUrls = new Set<string>();
+    citationUrls.forEach(u => allUrls.add(u));
+    textUrls.forEach(u => allUrls.add(u));
+    perplexityResults.forEach(p => { if (isValidProductUrl(p.url)) allUrls.add(p.url); });
+
+    console.log(`[Perplexity] Total unique URLs: ${allUrls.size} (citations: ${citationUrls.length}, text: ${textUrls.length}, structured: ${perplexityResults.length})`);
+
+    return {
+      urls: Array.from(allUrls),
+      perplexityResults,
+    };
   } catch (err) {
-    console.error(`${source} search error for "${query}":`, err);
-    return [];
+    console.error('[Perplexity] Error:', err);
+    return { urls: [], perplexityResults: [] };
   }
-}
-
-async function searchAllEngines(query: string): Promise<string[]> {
-  // Try all engines in parallel, merge results
-  const [google, duck, bing] = await Promise.all([
-    searchEngine(`https://www.google.com/search?q=${encodeURIComponent(query)}&hl=pt-BR&gl=br&num=5`, query, 'Google'),
-    searchEngine(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`, query, 'DuckDuckGo'),
-    searchEngine(`https://www.bing.com/search?q=${encodeURIComponent(query)}&count=5&setlang=pt-BR`, query, 'Bing'),
-  ]);
-
-  const all = new Set<string>();
-  for (const u of [...google, ...duck, ...bing]) all.add(u);
-  return Array.from(all);
 }
 
 // ── Kabum API search ──
@@ -453,123 +414,62 @@ async function searchKabumAPI(searchTerm: string, productName: string, productCo
 }>> {
   const results: Array<{ source: string; productName: string; price: number; url: string; score: number }> = [];
 
-  try {
-    const response = await fetch(
-      `https://servicespub.prod.api.aws.grupokabum.com.br/catalog/v2/products?query=${encodeURIComponent(searchTerm)}&page_size=5&page_number=1`,
-      {
+  // Try multiple endpoints
+  const endpoints = [
+    `https://servicespub.prod.api.aws.grupokabum.com.br/catalog/v2/products?query=${encodeURIComponent(searchTerm)}&page_size=5&page_number=1`,
+    `https://servicespub.prod.api.aws.grupokabum.com.br/catalog/v1/products?query=${encodeURIComponent(searchTerm)}&page_size=5`,
+  ];
+
+  for (const endpoint of endpoints) {
+    try {
+      const response = await fetch(endpoint, {
         headers: {
           'Accept': 'application/json',
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Origin': 'https://www.kabum.com.br',
+          'Referer': 'https://www.kabum.com.br/',
         },
         signal: AbortSignal.timeout(6000),
+      });
+
+      if (!response.ok) {
+        console.log(`[KabumAPI] ${endpoint.includes('v2') ? 'v2' : 'v1'} failed: ${response.status}`);
+        await response.text();
+        continue;
       }
-    );
 
-    if (!response.ok) {
-      console.log(`[KabumAPI] Failed: ${response.status}`);
-      await response.text();
-      return [];
-    }
+      const data = await response.json();
+      const products = data?.data || data?.products || data?.items || [];
 
-    const data = await response.json();
-    const products = data?.data || [];
+      for (const product of products) {
+        const name = product.name || product.title || '';
+        const price = parseFloat(product.priceWithDiscount || product.price || product.oldPrice || product.offer_price || '0');
+        const code = product.code || product.id || '';
+        const slug = product.slug || '';
 
-    for (const product of products) {
-      const name = product.name || product.title || '';
-      const price = parseFloat(product.priceWithDiscount || product.price || product.oldPrice || '0');
-      const code = product.code || product.id || '';
-      const slug = product.slug || '';
+        if (!name || price <= 50 || price > 100000) continue;
+        if (product.available === false || product.quantity === 0) continue;
 
-      if (!name || price <= 50 || price > 100000) continue;
+        const url = slug
+          ? `https://www.kabum.com.br/produto/${code}/${slug}`
+          : `https://www.kabum.com.br/produto/${code}`;
+        const { score, details } = calculateRelevanceScore(name, productCode, productName);
 
-      // Check availability
-      if (product.available === false || product.quantity === 0) continue;
-
-      const url = `https://www.kabum.com.br/produto/${code}/${slug}`;
-      const { score, details } = calculateRelevanceScore(name, productCode, productName);
-
-      if (score >= 60) {
-        console.log(`[KabumAPI] ACCEPTED: "${name}" R$${price} score=${score} (${details})`);
-        results.push({ source: 'Kabum', productName: name, price, url, score });
-      } else {
-        console.log(`[KabumAPI] REJECTED: "${name}" score=${score} (${details})`);
+        if (score >= 60) {
+          console.log(`[KabumAPI] ACCEPTED: "${name}" R$${price} score=${score} (${details})`);
+          results.push({ source: 'Kabum', productName: name, price, url, score });
+        } else {
+          console.log(`[KabumAPI] REJECTED: "${name}" score=${score} (${details})`);
+        }
       }
+
+      if (results.length > 0) break; // Got results from this endpoint
+    } catch (err) {
+      console.error('[KabumAPI] Error:', err);
     }
-  } catch (err) {
-    console.error('[KabumAPI] Error:', err);
   }
 
   return results;
-}
-
-// ── Direct store search (extract product links from search pages) ──
-function extractProductLinksByStore(html: string, store: string): string[] {
-  const links = new Set<string>();
-
-  const addMatches = (regex: RegExp) => {
-    let match;
-    while ((match = regex.exec(html)) !== null) {
-      const raw = match[1].replace(/\\\//g, '/');
-      const decoded = decodeURIComponent(raw);
-      if (isValidFinalUrl(decoded)) links.add(decoded);
-    }
-  };
-
-  switch (store) {
-    case 'kabum':
-      addMatches(/"(https?:\/\/www\.kabum\.com\.br\/(?:produto|p)\/[^"]+)"/g);
-      break;
-    case 'mercadolivre':
-      addMatches(/"(https?:\/\/(?:produto\.)?mercadolivre\.com\.br\/[^"]*MLB-[^"]+)"/g);
-      break;
-    case 'amazon':
-      addMatches(/"(https?:\/\/www\.amazon\.com\.br\/(?:gp\/product|dp)\/[A-Z0-9]{8,15}[^"]*)"/g);
-      break;
-    case 'magalu':
-      addMatches(/"(https?:\/\/www\.magazineluiza\.com\.br\/[^"]+\/p\/[^"]+)"/g);
-      break;
-    case 'pichau':
-      addMatches(/"(https?:\/\/www\.pichau\.com\.br\/(?!search)[^"]+)"/g);
-      break;
-  }
-
-  return Array.from(links).slice(0, 3);
-}
-
-async function searchStoresDirectly(searchTerm: string): Promise<string[]> {
-  const stores = [
-    { name: 'mercadolivre', url: `https://lista.mercadolivre.com.br/${encodeURIComponent(searchTerm)}` },
-    { name: 'amazon', url: `https://www.amazon.com.br/s?k=${encodeURIComponent(searchTerm)}` },
-    { name: 'magalu', url: `https://www.magazineluiza.com.br/busca/${encodeURIComponent(searchTerm)}` },
-    { name: 'pichau', url: `https://www.pichau.com.br/search?q=${encodeURIComponent(searchTerm)}` },
-  ];
-
-  const urls = new Set<string>();
-
-  await Promise.all(
-    stores.map(async ({ name, url }) => {
-      try {
-        const response = await fetch(url, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml',
-            'Accept-Language': 'pt-BR,pt;q=0.9',
-          },
-          signal: AbortSignal.timeout(FETCH_TIMEOUT),
-        });
-
-        if (!response.ok) {
-          await response.text();
-          return;
-        }
-        const html = await response.text();
-        const extracted = extractProductLinksByStore(html, name);
-        extracted.forEach(u => urls.add(u));
-      } catch { /* silent */ }
-    })
-  );
-
-  return Array.from(urls).slice(0, 8);
 }
 
 // ── Scrape a product page ──
@@ -577,14 +477,9 @@ async function scrapePage(
   url: string,
   productCode: string,
   productName: string,
+  perplexityPrice?: number,
 ): Promise<{ source: string; productName: string; price: number; url: string; score: number } | null> {
   try {
-    // Reject search pages as final results
-    if (isSearchPage(url)) {
-      console.log(`[Scraper] Skipping search page: ${url}`);
-      return null;
-    }
-
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -596,7 +491,7 @@ async function scrapePage(
     });
 
     if (!response.ok) {
-      console.log(`Failed to fetch ${url}: ${response.status}`);
+      console.log(`[Scrape] Failed ${url}: ${response.status}`);
       await response.text();
       return null;
     }
@@ -605,26 +500,44 @@ async function scrapePage(
     const title = extractTitle(html);
 
     if (!title) {
-      console.log(`[Scraper] No title at ${url}`);
+      console.log(`[Scrape] No title at ${url}`);
+      // If we have Perplexity data, use it as fallback
+      if (perplexityPrice && perplexityPrice > 50) {
+        const source = getSourceName(url);
+        console.log(`[Scrape] Using Perplexity price R$${perplexityPrice} for ${source} (no title)`);
+        return { source, productName: productName.substring(0, 100), price: perplexityPrice, url, score: 50 };
+      }
       return null;
     }
 
-    // Availability check
     if (!isProductAvailable(html)) {
-      console.log(`[Scraper] Product unavailable at ${url}`);
+      console.log(`[Scrape] Unavailable: ${url}`);
       return null;
     }
 
-    // Relevance score
     const { score, details } = calculateRelevanceScore(title, productCode, productName);
     if (score < 60) {
-      console.log(`[Scoring] REJECTED: score=${score} (${details}) for "${title.substring(0, 80)}" @ ${url}`);
+      console.log(`[Scoring] REJECTED: score=${score} (${details}) "${title.substring(0, 80)}" @ ${url}`);
+      // If Perplexity found it and score is >= 30, accept with perplexity price as hint
+      if (score >= 30 && perplexityPrice && perplexityPrice > 50) {
+        const prices = extractPrices(html);
+        const finalPrice = prices.length > 0
+          ? prices.sort((a, b) => a - b)[Math.floor(prices.length / 2)]
+          : perplexityPrice;
+        console.log(`[Scoring] SOFT ACCEPT via Perplexity hint: score=${score}, price=R$${finalPrice}`);
+        return { source: getSourceName(url), productName: title, price: finalPrice, url, score: Math.max(score, 40) };
+      }
       return null;
     }
 
     const prices = extractPrices(html);
     if (prices.length === 0) {
-      console.log(`[Scraper] No price at ${url}`);
+      // Use Perplexity price as fallback
+      if (perplexityPrice && perplexityPrice > 50) {
+        console.log(`[Scrape] No price extracted, using Perplexity price R$${perplexityPrice}`);
+        return { source: getSourceName(url), productName: title, price: perplexityPrice, url, score };
+      }
+      console.log(`[Scrape] No price at ${url}`);
       return null;
     }
 
@@ -632,10 +545,9 @@ async function scrapePage(
     const price = sorted[Math.floor(sorted.length / 2)];
 
     console.log(`[Scoring] ACCEPTED: score=${score} (${details}) "${title.substring(0, 60)}" R$${price}`);
-
     return { source: getSourceName(url), productName: title, price, url, score };
   } catch (err) {
-    console.error(`Scrape error for ${url}:`, err);
+    console.error(`[Scrape] Error ${url}:`, err);
     return null;
   }
 }
@@ -653,7 +565,6 @@ function deduplicateBySource(results: Array<{ source: string; productName: strin
   const seen = new Map<string, typeof results[0]>();
   for (const r of results) {
     const existing = seen.get(r.source);
-    // Keep highest score; tie-break by lowest price
     if (!existing || r.score > existing.score || (r.score === existing.score && r.price < existing.price)) {
       seen.set(r.source, r);
     }
@@ -745,93 +656,64 @@ Deno.serve(async (req) => {
       .filter(m => !genericTokens.has(m.toUpperCase()))
       .sort((a, b) => b.length - a.length)[0] || '';
 
-    let allResults: Array<{ source: string; productName: string; price: number; url: string; score: number }> = [];
+    // Build Kabum search term
+    const kabumTerm = bestModel
+      || (productCode && isManufacturerCode(productCode) ? productCode : '')
+      || (attrs.brand ? `${attrs.brand} ${attrs.capacity} ${attrs.types[0] || ''}`.trim() : productName.split(/\s+/).slice(0, 4).join(' '));
 
-    // ── 3-LEVEL FALLBACK LOOP ──
-    for (let level = 1; level <= 3; level++) {
-      const queries = buildFallbackQueries(productName, productCode, level);
-      if (queries.length === 0) continue;
+    // ── Run Perplexity + Kabum API in parallel ──
+    const [perplexityData, kabumResults] = await Promise.all([
+      searchWithPerplexity(productName, productCode),
+      searchKabumAPI(kabumTerm, productName, productCode),
+    ]);
 
-      const searchTerm = level === 1
-        ? (bestModel || (productCode && isManufacturerCode(productCode) ? productCode : ''))
-        : attrs.brand ? `${attrs.brand} ${attrs.capacity}` : productName.split(/\s+/).slice(0, 4).join(' ');
+    console.log(`[Scraper] Perplexity: ${perplexityData.urls.length} URLs, ${perplexityData.perplexityResults.length} structured. Kabum API: ${kabumResults.length} results`);
 
-      console.log(`[Scraper] Level ${level}: ${queries.length} queries, searchTerm="${searchTerm}"`);
-
-      // Run search engines + Kabum API + direct stores in parallel
-      const [searchUrls, kabumResults, directUrls] = await Promise.all([
-        Promise.all(queries.map(q => searchAllEngines(q))).then(results => {
-          const s = new Set<string>();
-          results.flat().forEach(u => s.add(u));
-          return Array.from(s).slice(0, 10);
-        }),
-        searchTerm ? searchKabumAPI(searchTerm, productName, productCode) : Promise.resolve([]),
-        searchTerm ? searchStoresDirectly(searchTerm) : Promise.resolve([]),
-      ]);
-
-      // Merge URLs (search engines + direct stores, excluding search pages for scraping)
-      const allUrls = new Set<string>();
-      for (const u of [...searchUrls, ...directUrls]) {
-        if (isValidFinalUrl(u)) allUrls.add(u);
+    // ── Build price map from Perplexity structured results ──
+    const perplexityPriceMap = new Map<string, number>();
+    for (const pr of perplexityData.perplexityResults) {
+      if (pr.url && pr.price) {
+        perplexityPriceMap.set(pr.url, pr.price);
       }
+    }
 
-      // Also extract product links FROM search pages found by search engines
-      for (const u of searchUrls) {
-        if (isSearchPage(u)) {
-          try {
-            const resp = await fetch(u, {
-              headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'Accept': 'text/html',
-              },
-              signal: AbortSignal.timeout(FETCH_TIMEOUT),
+    // ── Scrape all Perplexity URLs to validate prices ──
+    const scrapePromises = perplexityData.urls.map(url =>
+      scrapePage(url, productCode, productName, perplexityPriceMap.get(url))
+    );
+    const scraped = await Promise.all(scrapePromises);
+    const validScraped = scraped.filter(Boolean) as Array<{ source: string; productName: string; price: number; url: string; score: number }>;
+
+    console.log(`[Scraper] Scraped ${perplexityData.urls.length} URLs → ${validScraped.length} valid results`);
+
+    // ── Combine all results ──
+    let allResults = [...kabumResults, ...validScraped];
+
+    // If scraping yielded nothing but Perplexity gave structured results, use them directly
+    if (validScraped.length === 0 && perplexityData.perplexityResults.length > 0) {
+      console.log(`[Scraper] Scraping failed, using Perplexity structured results as fallback`);
+      for (const pr of perplexityData.perplexityResults) {
+        if (pr.price > 50 && pr.price < 100000 && pr.url) {
+          const { score, details } = calculateRelevanceScore(pr.name || productName, productCode, productName);
+          if (score >= 30) {
+            allResults.push({
+              source: getSourceName(pr.url),
+              productName: pr.name || productName,
+              price: pr.price,
+              url: pr.url,
+              score,
             });
-            if (resp.ok) {
-              const html = await resp.text();
-              const hostname = new URL(u).hostname;
-              let store = '';
-              if (hostname.includes('kabum')) store = 'kabum';
-              else if (hostname.includes('mercadolivre')) store = 'mercadolivre';
-              else if (hostname.includes('amazon')) store = 'amazon';
-              else if (hostname.includes('magazineluiza')) store = 'magalu';
-              else if (hostname.includes('pichau')) store = 'pichau';
-              if (store) {
-                const links = extractProductLinksByStore(html, store);
-                links.forEach(l => allUrls.add(l));
-              }
-            } else {
-              await resp.text();
-            }
-          } catch { /* silent */ }
+            console.log(`[Perplexity Fallback] Added: "${pr.name}" R$${pr.price} score=${score} (${details})`);
+          }
         }
       }
-
-      const uniqueUrls = Array.from(allUrls).slice(0, 10);
-      console.log(`[Scraper] Level ${level}: ${uniqueUrls.length} product URLs + ${kabumResults.length} Kabum API results`);
-
-      // Scrape product pages
-      const scraped = await Promise.all(
-        uniqueUrls.map(url => scrapePage(url, productCode, productName))
-      );
-      const validScraped = scraped.filter(Boolean) as typeof allResults;
-
-      // Combine with Kabum API results
-      const levelResults = [...kabumResults, ...validScraped];
-
-      if (levelResults.length > 0) {
-        allResults.push(...levelResults);
-        console.log(`[Scraper] Level ${level}: ${levelResults.length} results found. Stopping fallback.`);
-        break; // Stop fallback — we have results
-      }
-
-      console.log(`[Scraper] Level ${level}: 0 results. Trying next level...`);
     }
 
     // ── Post-processing ──
     allResults = deduplicateBySource(allResults);
     allResults = removeOutliers(allResults);
 
-    // Sort by priority (Kabum > ML > Amazon > Magalu > Pichau), then by score
+    // Sort by priority then score
     const priority: Record<string, number> = {
       'Kabum': 1, 'Mercado Livre': 2, 'Amazon': 3, 'Magazine Luiza': 4, 'Pichau': 5,
     };
@@ -843,7 +725,6 @@ Deno.serve(async (req) => {
     });
 
     const finalResults = allResults.slice(0, 4).map(({ score, ...rest }) => rest);
-
     console.log(`[Scraper] Final: ${finalResults.length} results`);
 
     const formatted = await formatWithAI(finalResults);
