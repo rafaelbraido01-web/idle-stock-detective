@@ -3,28 +3,44 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+const SYSTEM_PROMPT = `Você é um assistente de pesquisa de preços no Brasil.
+
+REGRAS ABSOLUTAS:
+- NÃO inventar links
+- NÃO inventar preços
+- NÃO preencher dados incertos
+- Priorizar Mercado Livre e Kabum quando disponíveis
+- Incluir outras lojas confiáveis como complemento
+- Se houver dúvida, deixar campos vazios ou omitir resultado
+
+Retorne APENAS JSON válido.`;
+
 const SEARCH_PROMPT = (productName: string, productCode: string) =>
-  `Pesquise o preço do produto "${productName}" (código: ${productCode}) nos sites Mercado Livre (mercadolivre.com.br) e Kabum (kabum.com.br).
+  `Pesquise o preço do produto "${productName}" (código: ${productCode}) em lojas brasileiras confiáveis.
 
-REGRAS IMPORTANTES:
-- O produto encontrado DEVE ser IDÊNTICO ou MUITO similar ao pesquisado
-- Retorne o produto mais barato de cada site
-- Se não encontrar em um dos sites, use outra fonte confiável brasileira (Amazon.com.br, Magazine Luiza, etc.)
-- Retorne EXATAMENTE 2 resultados, um de cada fonte diferente
-- Os links DEVEM ser URLs reais e funcionais dos produtos
+REGRAS CRÍTICAS:
+- Buscar APENAS produtos idênticos ou extremamente similares
+- Priorizar: Mercado Livre e Kabum
+- Incluir uma terceira ou quarta opção de outra loja confiável (Amazon, Magazine Luiza, etc.), se possível
+- Retornar entre 2 e 4 resultados, de fontes diferentes
+- SEMPRE priorizar páginas de produto (não categorias ou busca)
+- NÃO inventar links
+- Se não tiver certeza da URL, retornar "url": ""
+- NÃO inventar preços
+- NÃO retornar produtos genéricos ou diferentes
+- Se não encontrar com segurança, retornar lista vazia
 
-Retorne APENAS um JSON válido neste formato exato, sem texto adicional:
+VALIDAÇÃO DE LINK (OBRIGATÓRIO):
+- O link deve ser direto do produto
+- Evitar "/busca", "/search", "/categoria"
+- Preferir URLs com identificador de produto (ex: /dp/, /p/, /item)
+
+FORMATO DE SAÍDA (JSON PURO):
 {
   "results": [
     {
-      "source": "Mercado Livre",
-      "productName": "nome exato do produto encontrado",
-      "price": 0.00,
-      "url": "https://..."
-    },
-    {
-      "source": "Kabum",
-      "productName": "nome exato do produto encontrado",
+      "source": "Nome da loja",
+      "productName": "nome exato do produto",
       "price": 0.00,
       "url": "https://..."
     }
@@ -57,7 +73,7 @@ async function searchWithPerplexity(productName: string, productCode: string) {
     body: JSON.stringify({
       model: 'sonar',
       messages: [
-        { role: 'system', content: 'Você é um assistente de pesquisa de preços. Retorne APENAS JSON válido, sem markdown, sem explicações.' },
+        { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: SEARCH_PROMPT(productName, productCode) },
       ],
       search_domain_filter: ['mercadolivre.com.br', 'kabum.com.br', 'amazon.com.br', 'magazineluiza.com.br'],
@@ -95,7 +111,7 @@ async function searchWithChatGPT(productName: string, productCode: string) {
     body: JSON.stringify({
       model: 'gpt-4o',
       messages: [
-        { role: 'system', content: 'Você é um assistente de pesquisa de preços no Brasil. Retorne APENAS JSON válido, sem markdown, sem explicações. Forneça URLs reais de produtos quando possível.' },
+        { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: SEARCH_PROMPT(productName, productCode) },
       ],
       temperature: 0.1,
