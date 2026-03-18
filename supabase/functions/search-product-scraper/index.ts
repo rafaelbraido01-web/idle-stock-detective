@@ -397,13 +397,26 @@ Deno.serve(async (req) => {
     
     console.log(`[Scraper] Searching: "${productName}" (${productCode})`);
     
-    // Step 1: Generate search queries
-    const queries = [
-      `${productCode} site:kabum.com.br`,
-      `${productCode} site:mercadolivre.com.br`,
-      `${productCode} site:amazon.com.br`,
-      `${productName} ${productCode} preço`,
-    ].filter(q => q.trim());
+    // Extract model codes from name for better search queries
+    const modelCodes = extractModelCodes(productName);
+    const searchTerm = modelCodes.length > 0 ? modelCodes[0] : productName.split(' ').slice(0, 4).join(' ');
+    const isInternalCode = productCode && !isManufacturerCode(productCode);
+    
+    // Step 1: Generate search queries - use product name for internal codes
+    const queries = isInternalCode
+      ? [
+          `${searchTerm} site:kabum.com.br`,
+          `${searchTerm} site:mercadolivre.com.br`,
+          `${searchTerm} site:amazon.com.br`,
+          `${productName} preço comprar`,
+        ]
+      : [
+          `${productCode} site:kabum.com.br`,
+          `${productCode} site:mercadolivre.com.br`,
+          `${productCode} site:amazon.com.br`,
+          `${productName} ${productCode} preço`,
+        ];
+    const filteredQueries = queries.filter(q => q.trim());
     
     // Step 2: Search Google in parallel
     console.log(`[Scraper] Running ${queries.length} searches...`);
