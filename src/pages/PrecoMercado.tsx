@@ -276,10 +276,15 @@ export default function PrecoMercado() {
               ))}
 
               {selectedProduto && (
-                <div className="border-t pt-3 mt-3">
+                <div className="border-t pt-3 mt-3 space-y-1">
                   <p className="text-xs text-muted-foreground">
                     Preço tabela atual: <strong>{formatCurrency(selectedProduto.snap.preco_tabela)}</strong>
                   </p>
+                  {selectedProduto.snap.valor_promocao ? (
+                    <p className="text-xs text-orange-600 font-medium">
+                      Preço promoção: <strong>{formatCurrency(selectedProduto.snap.valor_promocao)}</strong>
+                    </p>
+                  ) : null}
                 </div>
               )}
             </div>
