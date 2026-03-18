@@ -419,8 +419,8 @@ Deno.serve(async (req) => {
     const filteredQueries = queries.filter(q => q.trim());
     
     // Step 2: Search Google in parallel
-    console.log(`[Scraper] Running ${queries.length} searches...`);
-    const searchResults = await Promise.all(queries.map(q => searchGoogle(q)));
+    console.log(`[Scraper] Running ${filteredQueries.length} searches (internal=${isInternalCode}, searchTerm="${searchTerm}")...`);
+    const searchResults = await Promise.all(filteredQueries.map(q => searchGoogle(q)));
     
     // Flatten and deduplicate URLs
     const allUrls = new Set<string>();
