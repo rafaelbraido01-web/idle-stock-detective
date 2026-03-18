@@ -236,9 +236,6 @@ export default function PrecoMercado() {
                 <div key={idx} className="border rounded-lg p-4 space-y-2">
                   <div className="flex items-center justify-between">
                     <Badge variant="secondary">{result.source}</Badge>
-                    <span className="text-lg font-bold text-foreground">
-                      {formatCurrency(result.price)}
-                    </span>
                   </div>
                   <p className="text-sm text-muted-foreground line-clamp-2">
                     {result.productName}
