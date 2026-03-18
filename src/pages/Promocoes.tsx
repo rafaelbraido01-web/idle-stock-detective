@@ -246,7 +246,7 @@ export default function Promocoes() {
                 {filtered.map(item => {
                   const cfg = STATUS_CONFIG[item.status];
                   return (
-                    <TableRow key={item.produtoId}>
+                    <TableRow key={item.produtoId} className={item.promoAtiva ? 'bg-orange-50 dark:bg-orange-950/20' : ''}>
                       <TableCell className="font-mono text-sm">{item.codigo}</TableCell>
                       <TableCell className="max-w-[250px] truncate">{item.descricao}</TableCell>
                       <TableCell className="text-center">
