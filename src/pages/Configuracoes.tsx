@@ -16,15 +16,13 @@ const providers = [
     description: 'Busca web real com links verificáveis via API Perplexity Sonar. Retorna citações reais de sites.',
     icon: Zap,
     pros: ['Links verificáveis com citações', 'Filtro por domínio (ML, Kabum)', 'Busca web em tempo real'],
-    cons: ['Pode retornar formatação inconsistente', 'Créditos pagos necessários'],
   },
   {
     id: 'chatgpt' as Provider,
     name: 'ChatGPT',
-    description: 'Usa o modelo GPT-4o via sua chave OpenAI. Mais consistente na estrutura de resposta, mas links podem não ser reais.',
+    description: 'Usa o modelo GPT-4o via sua chave OpenAI. Mais consistente na estrutura de resposta.',
     icon: Brain,
     pros: ['Resposta mais estruturada e consistente', 'Controle próprio de custos', 'Melhor interpretação de contexto'],
-    cons: ['Links podem não ser verificáveis', 'Sem busca web real'],
   },
 ];
 
@@ -98,17 +96,6 @@ export default function Configuracoes() {
                         <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
                           <span className="text-green-500 mt-0.5">✓</span>
                           {pro}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-orange-600 mb-1">Limitações</p>
-                    <ul className="space-y-0.5">
-                      {provider.cons.map((con, i) => (
-                        <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
-                          <span className="text-orange-500 mt-0.5">⚠</span>
-                          {con}
                         </li>
                       ))}
                     </ul>
