@@ -295,7 +295,16 @@ export function processExcelFile(file: File, existingProdutos: Produto[], refere
         snapshot.total_produtos = produtoSnapshots.length;
         snapshot.valor_total = totalEstoque;
 
-        resolve({ snapshot, produtos, produtoSnapshots, detectedColumns, warnings });
+        const diagnostics: ImportDiagnostics = {
+          totalLinhasArquivo: rows.length,
+          linhasSemCodigo: skippedNoCodigo,
+          linhasValorZero: skippedZeroValue,
+          linhasProcessadas: produtoSnapshots.length,
+        };
+
+        console.log('[Import Diagnostics]', diagnostics);
+
+        resolve({ snapshot, produtos, produtoSnapshots, detectedColumns, warnings, diagnostics });
       } catch (err) {
         reject(err);
       }
