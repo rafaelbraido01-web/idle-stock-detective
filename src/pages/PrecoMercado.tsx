@@ -3,6 +3,8 @@ import { useInventory } from '@/store/InventoryContext';
 import { formatCurrency } from '@/types/inventory';
 import { supabase } from '@/integrations/supabase/client';
 import { Search, ExternalLink, Loader2, CheckCircle2, ShoppingCart } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -42,6 +44,7 @@ export default function PrecoMercado() {
   const { toast } = useToast();
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [onlyActivePromo, setOnlyActivePromo] = useState(false);
   const [loadingProducts, setLoadingProducts] = useState<Record<string, boolean>>({});
   const [priceResults, setPriceResults] = useState<Record<string, ProductPriceData>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -55,14 +58,21 @@ export default function PrecoMercado() {
   }, [latestSnapshots, produtos]);
 
   const filtered = useMemo(() => {
-    if (!searchTerm) return productsWithSnapshot;
+    let items = productsWithSnapshot;
+    if (onlyActivePromo) {
+      items = items.filter(p =>
+        p.snap.data_fim_promocao &&
+        new Date(p.snap.data_fim_promocao + 'T23:59:59') >= new Date()
+      );
+    }
+    if (!searchTerm) return items;
     const term = searchTerm.toLowerCase();
-    return productsWithSnapshot.filter(p =>
+    return items.filter(p =>
       p.descricao.toLowerCase().includes(term) ||
       p.codigo.toLowerCase().includes(term) ||
       p.marca.toLowerCase().includes(term)
     );
-  }, [productsWithSnapshot, searchTerm]);
+  }, [productsWithSnapshot, searchTerm, onlyActivePromo]);
 
   const getProvider = () => localStorage.getItem('preco-mercado-provider') || 'scraper';
 
@@ -133,7 +143,7 @@ export default function PrecoMercado() {
         </div>
       ) : (
         <>
-          <div className="flex items-center gap-3 max-w-md">
+          <div className="flex items-center gap-4 max-w-lg">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -142,6 +152,16 @@ export default function PrecoMercado() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="promo-filter"
+                checked={onlyActivePromo}
+                onCheckedChange={(v) => setOnlyActivePromo(!!v)}
+              />
+              <Label htmlFor="promo-filter" className="text-sm whitespace-nowrap cursor-pointer">
+                Promoção ativa
+              </Label>
             </div>
           </div>
 
