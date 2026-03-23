@@ -1,9 +1,12 @@
 import { useState } from 'react';
-import { Check, Zap, Brain, Globe } from 'lucide-react';
+import { Check, Zap, Brain, Globe, Eye, EyeOff } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { usePageVisibility, type ToggleablePage } from '@/store/PageVisibilityContext';
 
 type Provider = 'scraper' | 'perplexity' | 'chatgpt';
 
@@ -33,8 +36,15 @@ const providers = [
   },
 ];
 
+const toggleablePages: Array<{ key: ToggleablePage; label: string }> = [
+  { key: 'produtos', label: 'Produtos' },
+  { key: 'comparacao', label: 'Comparação de Snapshots' },
+  { key: 'preco-mercado', label: 'Preço de Mercado' },
+];
+
 export default function Configuracoes() {
   const { toast } = useToast();
+  const { isPageVisible, togglePage } = usePageVisibility();
   const [activeProvider, setActiveProvider] = useState<Provider>(() => {
     return (localStorage.getItem(STORAGE_KEY) as Provider) || 'scraper';
   });
@@ -49,14 +59,40 @@ export default function Configuracoes() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Configurações</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Gerencie as integrações de pesquisa de preço de mercado.
+          Gerencie as configurações da plataforma.
         </p>
       </div>
 
+      {/* Page visibility */}
+      <div>
+        <h2 className="text-lg font-semibold text-foreground mb-1">Páginas Visíveis</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Oculte ou exiba páginas do menu lateral.
+        </p>
+        <Card>
+          <CardContent className="pt-6 space-y-4">
+            {toggleablePages.map(({ key, label }) => (
+              <div key={key} className="flex items-center justify-between">
+                <Label htmlFor={`toggle-${key}`} className="flex items-center gap-2 text-sm cursor-pointer">
+                  {isPageVisible(key) ? <Eye className="h-4 w-4 text-primary" /> : <EyeOff className="h-4 w-4 text-muted-foreground" />}
+                  {label}
+                </Label>
+                <Switch
+                  id={`toggle-${key}`}
+                  checked={isPageVisible(key)}
+                  onCheckedChange={() => togglePage(key)}
+                />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Provider selection */}
       <div>
         <h2 className="text-lg font-semibold text-foreground mb-1">Provedor de Pesquisa de Preço</h2>
         <p className="text-sm text-muted-foreground mb-4">

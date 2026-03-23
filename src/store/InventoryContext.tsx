@@ -30,6 +30,7 @@ interface InventoryState {
 interface InventoryContextType extends InventoryState {
   addImport: (snapshot: EstoqueSnapshot, produtos: Produto[], produtoSnapshots: EstoqueProdutoSnapshot[]) => Promise<void>;
   clearData: () => Promise<void>;
+  deleteSnapshot: (snapshotId: string) => Promise<void>;
   getLatestSnapshot: () => EstoqueSnapshot | null;
   getLatestProdutoSnapshots: () => EstoqueProdutoSnapshot[];
   getProdutoHistory: (produtoId: string) => Array<EstoqueProdutoSnapshot & { data_importacao: string }>;
@@ -213,6 +214,13 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     await loadAll();
   }, [loadAll, state.produtos]);
 
+  const deleteSnapshot = useCallback(async (snapshotId: string) => {
+    // Delete produto_snapshots for this snapshot, then the snapshot itself
+    await supabase.from('estoque_produto_snapshots').delete().eq('snapshot_id', snapshotId);
+    await supabase.from('estoque_snapshots').delete().eq('id', snapshotId);
+    await loadAll();
+  }, [loadAll]);
+
   const clearData = useCallback(async () => {
     // Delete in order: produto_snapshots → snapshots → produtos
     await supabase.from('estoque_produto_snapshots').delete().neq('id', '00000000-0000-0000-0000-000000000000');
@@ -253,6 +261,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
       ...state,
       addImport,
       clearData,
+      deleteSnapshot,
       getLatestSnapshot,
       getLatestProdutoSnapshots,
       getProdutoHistory,

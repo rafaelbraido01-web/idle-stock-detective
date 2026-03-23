@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { InventoryProvider } from "@/store/InventoryContext";
+import { PageVisibilityProvider } from "@/store/PageVisibilityContext";
 import { Layout } from "@/components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
@@ -19,6 +20,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
+      <PageVisibilityProvider>
       <InventoryProvider>
         <BrowserRouter>
           <Layout>
@@ -35,6 +37,7 @@ const App = () => (
           </Layout>
         </BrowserRouter>
       </InventoryProvider>
+      </PageVisibilityProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

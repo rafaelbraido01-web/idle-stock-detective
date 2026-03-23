@@ -1,11 +1,23 @@
 import { motion } from 'framer-motion';
-import { FileSpreadsheet } from 'lucide-react';
+import { FileSpreadsheet, Trash2 } from 'lucide-react';
 import { useInventory } from '@/store/InventoryContext';
-import { formatCurrency, formatNumber, formatDate } from '@/types/inventory';
+import { formatCurrency, formatNumber } from '@/types/inventory';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 export default function Imports() {
-  const { snapshots } = useInventory();
+  const { snapshots, deleteSnapshot } = useInventory();
   const sorted = [...snapshots].reverse();
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!window.confirm(`Excluir a importação "${name}"? Os dados de estoque vinculados também serão removidos.`)) return;
+    try {
+      await deleteSnapshot(id);
+      toast.success('Importação excluída com sucesso');
+    } catch {
+      toast.error('Erro ao excluir importação');
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -38,6 +50,14 @@ export default function Imports() {
                 <p className="text-sm font-mono font-medium text-foreground">{formatNumber(snap.total_produtos)} produtos</p>
                 <p className="text-xs font-mono text-muted-foreground">{formatCurrency(snap.valor_total)}</p>
               </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={() => handleDelete(snap.id, snap.nome_arquivo)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
             </motion.div>
           ))}
         </div>
