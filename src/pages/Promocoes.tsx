@@ -332,7 +332,7 @@ export default function Promocoes() {
               <TableBody>
                 {filtered.map(item => {
                   const cfg = STATUS_CONFIG[item.status];
-                  const hasMercado = precosMercado.has(item.produtoId);
+                  const hasMercado = precosMercado.has(item.codigo);
                   return (
                     <TableRow
                       key={item.produtoId}
