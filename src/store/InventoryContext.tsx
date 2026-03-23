@@ -2,6 +2,24 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import type { Produto, EstoqueSnapshot, EstoqueProdutoSnapshot } from '@/types/inventory';
 import { supabase } from '@/integrations/supabase/client';
 
+async function fetchAllRows(table: 'produtos' | 'estoque_snapshots' | 'estoque_produto_snapshots', orderBy?: { column: string; ascending: boolean }): Promise<any[]> {
+  const PAGE = 1000;
+  let allData: any[] = [];
+  let from = 0;
+  let hasMore = true;
+  while (hasMore) {
+    let query = supabase.from(table).select('*').range(from, from + PAGE - 1);
+    if (orderBy) query = query.order(orderBy.column, { ascending: orderBy.ascending });
+    const { data, error } = await query;
+    if (error) throw error;
+    const rows = data || [];
+    allData = allData.concat(rows);
+    hasMore = rows.length === PAGE;
+    from += PAGE;
+  }
+  return allData;
+}
+
 interface InventoryState {
   produtos: Produto[];
   snapshots: EstoqueSnapshot[];
@@ -31,13 +49,13 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
   const loadAll = useCallback(async () => {
     setState(prev => ({ ...prev, loading: true }));
     try {
-      const [prodRes, snapRes, psRes] = await Promise.all([
-        supabase.from('produtos').select('*'),
-        supabase.from('estoque_snapshots').select('*').order('data_importacao', { ascending: true }),
-        supabase.from('estoque_produto_snapshots').select('*'),
+      const [prodData, snapData, psData] = await Promise.all([
+        fetchAllRows('produtos'),
+        fetchAllRows('estoque_snapshots', { column: 'data_importacao', ascending: true }),
+        fetchAllRows('estoque_produto_snapshots'),
       ]);
 
-      const produtos: Produto[] = (prodRes.data || []).map((p: any) => ({
+      const produtos: Produto[] = (prodData).map((p: any) => ({
         id: p.id,
         codigo: p.codigo,
         descricao: p.descricao,
@@ -47,7 +65,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
         data_criacao: p.data_criacao,
       }));
 
-      const snapshots: EstoqueSnapshot[] = (snapRes.data || []).map((s: any) => ({
+      const snapshots: EstoqueSnapshot[] = (snapData).map((s: any) => ({
         id: s.id,
         data_importacao: s.data_importacao,
         nome_arquivo: s.nome_arquivo,
@@ -57,7 +75,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
         valor_total: Number(s.valor_total),
       }));
 
-      const produtoSnapshots: EstoqueProdutoSnapshot[] = (psRes.data || []).map((ps: any) => ({
+      const produtoSnapshots: EstoqueProdutoSnapshot[] = (psData).map((ps: any) => ({
         id: ps.id,
         snapshot_id: ps.snapshot_id,
         produto_id: ps.produto_id,
@@ -118,8 +136,17 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Fetch all produtos to get correct IDs (upsert may have kept existing IDs)
-    const { data: allProdutos } = await supabase.from('produtos').select('id, codigo');
-    const codigoToId = new Map((allProdutos || []).map((p: any) => [p.codigo, p.id]));
+    const allProdutosPages: any[] = [];
+    let pgFrom = 0;
+    let pgHasMore = true;
+    while (pgHasMore) {
+      const { data } = await supabase.from('produtos').select('id, codigo').range(pgFrom, pgFrom + 999);
+      const rows = data || [];
+      allProdutosPages.push(...rows);
+      pgHasMore = rows.length === 1000;
+      pgFrom += 1000;
+    }
+    const codigoToId = new Map(allProdutosPages.map((p: any) => [p.codigo, p.id]));
 
     // 2. Insert snapshot
     const { error: snapError } = await supabase
