@@ -2,6 +2,24 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import type { Produto, EstoqueSnapshot, EstoqueProdutoSnapshot } from '@/types/inventory';
 import { supabase } from '@/integrations/supabase/client';
 
+async function fetchAll<T>(table: string, orderBy?: { column: string; ascending: boolean }): Promise<T[]> {
+  const PAGE = 1000;
+  let allData: T[] = [];
+  let from = 0;
+  let hasMore = true;
+  while (hasMore) {
+    let query = supabase.from(table).select('*').range(from, from + PAGE - 1);
+    if (orderBy) query = query.order(orderBy.column, { ascending: orderBy.ascending });
+    const { data, error } = await query;
+    if (error) throw error;
+    const rows = (data || []) as T[];
+    allData = allData.concat(rows);
+    hasMore = rows.length === PAGE;
+    from += PAGE;
+  }
+  return allData;
+}
+
 interface InventoryState {
   produtos: Produto[];
   snapshots: EstoqueSnapshot[];
