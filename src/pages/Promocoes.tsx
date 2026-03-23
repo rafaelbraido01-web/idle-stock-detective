@@ -372,7 +372,7 @@ export default function Promocoes() {
                         {formatNumber(item.qtdAtual)}
                         {item.qtdAtual >= 100 && <span className="ml-1">🔥</span>}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums font-medium">
+                      <TableCell className="px-2 py-1.5 text-right tabular-nums font-medium">
                         <span className={item.delta > 0 ? 'text-emerald-600' : item.delta < 0 ? 'text-amber-600' : 'text-muted-foreground'}>
                           {item.delta > 0 ? `+${formatNumber(item.delta)}` : formatNumber(item.delta)}
                         </span>
