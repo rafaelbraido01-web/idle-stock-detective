@@ -375,7 +375,7 @@ export default function Promocoes() {
                           variant="ghost"
                           size="sm"
                           className={`text-xs px-2 py-1 h-auto ${hasMercado ? 'text-red-600 hover:text-red-700' : 'text-muted-foreground hover:text-foreground'}`}
-                          onClick={(e) => handleOpenMercado(e, item.produtoId)}
+                          onClick={(e) => handleOpenMercado(e, item.codigo)}
                         >
                           💲 Mercado
                         </Button>
