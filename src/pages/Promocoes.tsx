@@ -84,7 +84,7 @@ export default function Promocoes() {
     const loadPrecos = async () => {
       const { data, error } = await supabase
         .from('precos_mercado')
-        .select('produto_id, preco, updated_at');
+        .select('produto_id, preco, updated_at, fonte');
       if (!error && data) {
         const map = new Map<string, PrecoMercado>();
         data.forEach((d: any) => map.set(d.produto_id, d));
