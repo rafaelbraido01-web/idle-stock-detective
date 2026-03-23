@@ -32,10 +32,23 @@ interface PromoComparison {
   promoAtiva: boolean;
 }
 
+const FONTES_PRECO = [
+  'Mercado Livre',
+  'Kabum',
+  'Pichau',
+  'Amazon',
+  'Magazine Luiza',
+  'Netshoes',
+  'Outro',
+] as const;
+
+type FontePreco = typeof FONTES_PRECO[number];
+
 interface PrecoMercado {
   produto_id: string;
   preco: number;
   updated_at: string;
+  fonte: string;
 }
 
 const STATUS_CONFIG = {
