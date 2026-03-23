@@ -124,18 +124,21 @@ export type Database = {
       }
       precos_mercado: {
         Row: {
+          fonte: string
           id: string
           preco: number
           produto_id: string
           updated_at: string
         }
         Insert: {
+          fonte?: string
           id?: string
           preco: number
           produto_id: string
           updated_at?: string
         }
         Update: {
+          fonte?: string
           id?: string
           preco?: number
           produto_id?: string

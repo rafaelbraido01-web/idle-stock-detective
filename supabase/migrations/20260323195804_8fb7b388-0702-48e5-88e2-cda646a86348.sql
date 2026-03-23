@@ -1,0 +1,1 @@
+ALTER TABLE public.precos_mercado ADD COLUMN fonte text NOT NULL DEFAULT 'Outro';
