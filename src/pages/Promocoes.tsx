@@ -367,8 +367,8 @@ export default function Promocoes() {
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums">{formatNumber(item.qtdAnterior)}</TableCell>
-                      <TableCell className={`text-right tabular-nums font-medium ${item.qtdAtual >= 100 ? 'text-amber-600 dark:text-amber-400' : ''}`}>
+                      <TableCell className="px-2 py-1.5 text-right tabular-nums">{formatNumber(item.qtdAnterior)}</TableCell>
+                      <TableCell className={`px-2 py-1.5 text-right tabular-nums font-medium ${item.qtdAtual >= 100 ? 'text-amber-600 dark:text-amber-400' : ''}`}>
                         {formatNumber(item.qtdAtual)}
                         {item.qtdAtual >= 100 && <span className="ml-1">🔥</span>}
                       </TableCell>
