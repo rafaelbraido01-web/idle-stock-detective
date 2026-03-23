@@ -1,84 +1,203 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import type { Produto, EstoqueSnapshot, EstoqueProdutoSnapshot } from '@/types/inventory';
+import { supabase } from '@/integrations/supabase/client';
 
 interface InventoryState {
   produtos: Produto[];
   snapshots: EstoqueSnapshot[];
   produtoSnapshots: EstoqueProdutoSnapshot[];
+  loading: boolean;
 }
 
 interface InventoryContextType extends InventoryState {
-  addImport: (snapshot: EstoqueSnapshot, produtos: Produto[], produtoSnapshots: EstoqueProdutoSnapshot[]) => void;
-  clearData: () => void;
+  addImport: (snapshot: EstoqueSnapshot, produtos: Produto[], produtoSnapshots: EstoqueProdutoSnapshot[]) => Promise<void>;
+  clearData: () => Promise<void>;
   getLatestSnapshot: () => EstoqueSnapshot | null;
   getLatestProdutoSnapshots: () => EstoqueProdutoSnapshot[];
   getProdutoHistory: (produtoId: string) => Array<EstoqueProdutoSnapshot & { data_importacao: string }>;
+  reload: () => Promise<void>;
 }
 
 const InventoryContext = createContext<InventoryContextType | null>(null);
 
-const STORAGE_KEY = 'inventory_data';
-
-function loadFromStorage(): InventoryState {
-  try {
-    const data = localStorage.getItem(STORAGE_KEY);
-    if (data) return JSON.parse(data);
-  } catch {}
-  return { produtos: [], snapshots: [], produtoSnapshots: [] };
-}
-
-function saveToStorage(state: InventoryState) {
-  try {
-    const json = JSON.stringify(state);
-    localStorage.setItem(STORAGE_KEY, json);
-  } catch (e) {
-    console.error('Falha ao salvar dados no localStorage (possível limite de 5MB excedido):', e);
-    // Try to save a trimmed version - keep only latest snapshot data
-    try {
-      if (state.snapshots.length > 1) {
-        const latestSnap = state.snapshots[state.snapshots.length - 1];
-        const trimmed: InventoryState = {
-          produtos: state.produtos,
-          snapshots: [latestSnap],
-          produtoSnapshots: state.produtoSnapshots.filter(ps => ps.snapshot_id === latestSnap.id),
-        };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
-        console.warn('Dados antigos removidos para caber no localStorage. Apenas o último snapshot foi mantido.');
-      }
-    } catch (e2) {
-      console.error('Impossível salvar mesmo dados reduzidos:', e2);
-    }
-  }
-}
-
 export function InventoryProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<InventoryState>(loadFromStorage);
+  const [state, setState] = useState<InventoryState>({
+    produtos: [],
+    snapshots: [],
+    produtoSnapshots: [],
+    loading: true,
+  });
 
-  useEffect(() => { saveToStorage(state); }, [state]);
+  const loadAll = useCallback(async () => {
+    setState(prev => ({ ...prev, loading: true }));
+    try {
+      const [prodRes, snapRes, psRes] = await Promise.all([
+        supabase.from('produtos').select('*'),
+        supabase.from('estoque_snapshots').select('*').order('data_importacao', { ascending: true }),
+        supabase.from('estoque_produto_snapshots').select('*'),
+      ]);
 
-  const addImport = useCallback((snapshot: EstoqueSnapshot, newProdutos: Produto[], newProdutoSnapshots: EstoqueProdutoSnapshot[]) => {
-    setState(prev => {
-      const existingCodigos = new Set(prev.produtos.map(p => p.codigo));
-      const uniqueNewProdutos = newProdutos.filter(p => !existingCodigos.has(p.codigo));
-      
-      // Merge produtos - update existing, add new
-      const mergedProdutos = prev.produtos.map(existing => {
-        const updated = newProdutos.find(p => p.codigo === existing.codigo);
-        return updated ? { ...existing, ...updated, id: existing.id } : existing;
-      });
+      const produtos: Produto[] = (prodRes.data || []).map((p: any) => ({
+        id: p.id,
+        codigo: p.codigo,
+        descricao: p.descricao,
+        grupo: p.grupo,
+        subgrupo: p.subgrupo,
+        marca: p.marca,
+        data_criacao: p.data_criacao,
+      }));
 
-      return {
-        produtos: [...mergedProdutos, ...uniqueNewProdutos],
-        snapshots: [...prev.snapshots, snapshot],
-        produtoSnapshots: [...prev.produtoSnapshots, ...newProdutoSnapshots],
-      };
-    });
+      const snapshots: EstoqueSnapshot[] = (snapRes.data || []).map((s: any) => ({
+        id: s.id,
+        data_importacao: s.data_importacao,
+        nome_arquivo: s.nome_arquivo,
+        usuario: s.usuario,
+        data_criacao: s.data_criacao,
+        total_produtos: s.total_produtos,
+        valor_total: Number(s.valor_total),
+      }));
+
+      const produtoSnapshots: EstoqueProdutoSnapshot[] = (psRes.data || []).map((ps: any) => ({
+        id: ps.id,
+        snapshot_id: ps.snapshot_id,
+        produto_id: ps.produto_id,
+        quantidade: Number(ps.quantidade),
+        valor_unitario: Number(ps.valor_unitario),
+        valor_total: Number(ps.valor_total),
+        data_ultima_venda: ps.data_ultima_venda,
+        data_ultima_compra: ps.data_ultima_compra,
+        dias_sem_venda: ps.dias_sem_venda,
+        dias_sem_compra: ps.dias_sem_compra,
+        categoria_estoque: ps.categoria_estoque,
+        nome_comissao: ps.nome_comissao,
+        comissao: Number(ps.comissao),
+        preco_tabela: Number(ps.preco_tabela),
+        valor_promocao: ps.valor_promocao != null ? Number(ps.valor_promocao) : null,
+        percentual_desconto: ps.percentual_desconto != null ? Number(ps.percentual_desconto) : null,
+        data_fim_promocao: ps.data_fim_promocao,
+        valor_venda_total: Number(ps.valor_venda_total),
+      }));
+
+      setState({ produtos, snapshots, produtoSnapshots, loading: false });
+    } catch (err) {
+      console.error('Erro ao carregar dados:', err);
+      setState(prev => ({ ...prev, loading: false }));
+    }
   }, []);
 
-  const clearData = useCallback(() => {
-    const empty: InventoryState = { produtos: [], snapshots: [], produtoSnapshots: [] };
-    setState(empty);
-    localStorage.removeItem(STORAGE_KEY);
+  useEffect(() => { loadAll(); }, [loadAll]);
+
+  const addImport = useCallback(async (
+    snapshot: EstoqueSnapshot,
+    newProdutos: Produto[],
+    newProdutoSnapshots: EstoqueProdutoSnapshot[]
+  ) => {
+    // 1. Upsert produtos (by codigo)
+    if (newProdutos.length > 0) {
+      const produtoRows = newProdutos.map(p => ({
+        id: p.id,
+        codigo: p.codigo,
+        descricao: p.descricao,
+        grupo: p.grupo,
+        subgrupo: p.subgrupo,
+        marca: p.marca,
+        data_criacao: p.data_criacao,
+      }));
+
+      // Insert in batches of 500
+      for (let i = 0; i < produtoRows.length; i += 500) {
+        const batch = produtoRows.slice(i, i + 500);
+        const { error } = await supabase
+          .from('produtos')
+          .upsert(batch, { onConflict: 'codigo' });
+        if (error) {
+          console.error('Erro ao inserir produtos:', error);
+          throw error;
+        }
+      }
+    }
+
+    // Fetch all produtos to get correct IDs (upsert may have kept existing IDs)
+    const { data: allProdutos } = await supabase.from('produtos').select('id, codigo');
+    const codigoToId = new Map((allProdutos || []).map((p: any) => [p.codigo, p.id]));
+
+    // 2. Insert snapshot
+    const { error: snapError } = await supabase
+      .from('estoque_snapshots')
+      .insert({
+        id: snapshot.id,
+        data_importacao: snapshot.data_importacao,
+        nome_arquivo: snapshot.nome_arquivo,
+        usuario: snapshot.usuario,
+        data_criacao: snapshot.data_criacao,
+        total_produtos: snapshot.total_produtos,
+        valor_total: snapshot.valor_total,
+      });
+    if (snapError) {
+      console.error('Erro ao inserir snapshot:', snapError);
+      throw snapError;
+    }
+
+    // 3. Insert produto snapshots with correct produto IDs
+    if (newProdutoSnapshots.length > 0) {
+      // Build a map from old produto_id to codigo
+      const oldIdToCodigo = new Map(newProdutos.map(p => [p.id, p.codigo]));
+      // Also include existing produtos from context state
+      state.produtos.forEach(p => oldIdToCodigo.set(p.id, p.codigo));
+
+      const psRows = newProdutoSnapshots.map(ps => {
+        const codigo = oldIdToCodigo.get(ps.produto_id);
+        const dbProdutoId = codigo ? codigoToId.get(codigo) : ps.produto_id;
+        return {
+          id: ps.id,
+          snapshot_id: ps.snapshot_id,
+          produto_id: dbProdutoId || ps.produto_id,
+          quantidade: ps.quantidade,
+          valor_unitario: ps.valor_unitario,
+          valor_total: ps.valor_total,
+          data_ultima_venda: ps.data_ultima_venda,
+          data_ultima_compra: ps.data_ultima_compra,
+          dias_sem_venda: ps.dias_sem_venda,
+          dias_sem_compra: ps.dias_sem_compra,
+          categoria_estoque: ps.categoria_estoque,
+          nome_comissao: ps.nome_comissao,
+          comissao: ps.comissao,
+          preco_tabela: ps.preco_tabela,
+          valor_promocao: ps.valor_promocao,
+          percentual_desconto: ps.percentual_desconto,
+          data_fim_promocao: ps.data_fim_promocao,
+          valor_venda_total: ps.valor_venda_total,
+        };
+      });
+
+      for (let i = 0; i < psRows.length; i += 500) {
+        const batch = psRows.slice(i, i + 500);
+        const { error } = await supabase
+          .from('estoque_produto_snapshots')
+          .insert(batch);
+        if (error) {
+          console.error('Erro ao inserir produto snapshots:', error);
+          throw error;
+        }
+      }
+    }
+
+    // Reload all data from DB
+    await loadAll();
+  }, [loadAll, state.produtos]);
+
+  const clearData = useCallback(async () => {
+    // Delete in order: produto_snapshots → snapshots → produtos
+    await supabase.from('estoque_produto_snapshots').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await supabase.from('estoque_snapshots').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await supabase.from('produtos').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    // Also clear precos_mercado
+    await supabase.from('precos_mercado').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    
+    // Clear old localStorage data
+    localStorage.removeItem('inventory_data');
+
+    setState({ produtos: [], snapshots: [], produtoSnapshots: [], loading: false });
   }, []);
 
   const getLatestSnapshot = useCallback(() => {
@@ -103,7 +222,15 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
   }, [state.produtoSnapshots, state.snapshots]);
 
   return (
-    <InventoryContext.Provider value={{ ...state, addImport, clearData, getLatestSnapshot, getLatestProdutoSnapshots, getProdutoHistory }}>
+    <InventoryContext.Provider value={{
+      ...state,
+      addImport,
+      clearData,
+      getLatestSnapshot,
+      getLatestProdutoSnapshots,
+      getProdutoHistory,
+      reload: loadAll,
+    }}>
       {children}
     </InventoryContext.Provider>
   );
