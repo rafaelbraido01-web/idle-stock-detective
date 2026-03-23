@@ -342,8 +342,8 @@ export default function Promocoes() {
                       className={`cursor-pointer ${item.promoAtiva ? 'bg-orange-50 dark:bg-orange-950/20' : ''}`}
                       onClick={() => setDrawerProdutoId(item.produtoId)}
                     >
-                      <TableCell className="font-mono text-sm">{item.codigo}</TableCell>
-                      <TableCell className="max-w-[250px] truncate">
+                      <TableCell className="px-2 py-1.5 font-mono text-sm">{item.codigo}</TableCell>
+                      <TableCell className="px-2 py-1.5 max-w-[250px] truncate">
                         <span className="flex items-center gap-1.5">
                           {item.descricao}
                           {precoDesatualizado && (
