@@ -55,7 +55,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
         fetchAllRows('estoque_produto_snapshots'),
       ]);
 
-      const produtos: Produto[] = (prodRes.data || []).map((p: any) => ({
+      const produtos: Produto[] = (prodData).map((p: any) => ({
         id: p.id,
         codigo: p.codigo,
         descricao: p.descricao,
