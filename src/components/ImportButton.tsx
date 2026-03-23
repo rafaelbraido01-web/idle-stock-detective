@@ -41,7 +41,7 @@ export function ImportButton() {
     setLoading(true);
     try {
       const result = await processExcelFile(pendingFile, produtos, reportDate);
-      addImport(result.snapshot, result.produtos, result.produtoSnapshots);
+      await addImport(result.snapshot, result.produtos, result.produtoSnapshots);
 
       const colSummary = Object.entries(result.detectedColumns)
         .map(([label, col]) => `${label}: ${col}`)
