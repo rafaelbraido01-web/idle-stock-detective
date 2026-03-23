@@ -166,10 +166,10 @@ export default function Promocoes() {
     return { total, venderam, semMov, valorPromo, unidadesVendidas };
   }, [comparisons]);
 
-  const handleOpenMercado = (e: React.MouseEvent, produtoId: string) => {
+  const handleOpenMercado = (e: React.MouseEvent, codigo: string) => {
     e.stopPropagation();
-    setMercadoProdutoId(produtoId);
-    const existing = precosMercado.get(produtoId);
+    setMercadoProdutoId(codigo);
+    const existing = precosMercado.get(codigo);
     setMercadoPrecoInput(existing ? String(existing.preco) : '');
     setMercadoDialogOpen(true);
   };
