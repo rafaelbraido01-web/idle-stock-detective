@@ -185,6 +185,7 @@ export default function Promocoes() {
     setMercadoProdutoId(codigo);
     const existing = precosMercado.get(codigo);
     setMercadoPrecoInput(existing ? String(existing.preco) : '');
+    setMercadoFonte((existing?.fonte as FontePreco) || 'Outro');
     setMercadoDialogOpen(true);
   };
 
