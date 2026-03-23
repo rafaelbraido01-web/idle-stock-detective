@@ -198,10 +198,11 @@ export default function Promocoes() {
     }
 
     setMercadoSaving(true);
+    const now = new Date().toISOString();
     const { error } = await supabase
       .from('precos_mercado')
       .upsert(
-        { produto_id: mercadoProdutoId, preco, updated_at: new Date().toISOString() },
+        { produto_id: mercadoProdutoId, preco, updated_at: now, fonte: mercadoFonte },
         { onConflict: 'produto_id' }
       );
 
@@ -210,7 +211,7 @@ export default function Promocoes() {
     } else {
       setPrecosMercado(prev => {
         const next = new Map(prev);
-        next.set(mercadoProdutoId, { produto_id: mercadoProdutoId, preco, updated_at: new Date().toISOString() });
+        next.set(mercadoProdutoId, { produto_id: mercadoProdutoId, preco, updated_at: now, fonte: mercadoFonte });
         return next;
       });
       toast.success('Preço de mercado salvo!');
