@@ -49,10 +49,10 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
   const loadAll = useCallback(async () => {
     setState(prev => ({ ...prev, loading: true }));
     try {
-      const [prodRes, snapRes, psRes] = await Promise.all([
-        supabase.from('produtos').select('*'),
-        supabase.from('estoque_snapshots').select('*').order('data_importacao', { ascending: true }),
-        supabase.from('estoque_produto_snapshots').select('*'),
+      const [prodData, snapData, psData] = await Promise.all([
+        fetchAllRows('produtos'),
+        fetchAllRows('estoque_snapshots', { column: 'data_importacao', ascending: true }),
+        fetchAllRows('estoque_produto_snapshots'),
       ]);
 
       const produtos: Produto[] = (prodRes.data || []).map((p: any) => ({
