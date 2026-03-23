@@ -65,7 +65,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
         data_criacao: p.data_criacao,
       }));
 
-      const snapshots: EstoqueSnapshot[] = (snapRes.data || []).map((s: any) => ({
+      const snapshots: EstoqueSnapshot[] = (snapData).map((s: any) => ({
         id: s.id,
         data_importacao: s.data_importacao,
         nome_arquivo: s.nome_arquivo,
