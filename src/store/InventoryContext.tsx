@@ -75,7 +75,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
         valor_total: Number(s.valor_total),
       }));
 
-      const produtoSnapshots: EstoqueProdutoSnapshot[] = (psRes.data || []).map((ps: any) => ({
+      const produtoSnapshots: EstoqueProdutoSnapshot[] = (psData).map((ps: any) => ({
         id: ps.id,
         snapshot_id: ps.snapshot_id,
         produto_id: ps.produto_id,
