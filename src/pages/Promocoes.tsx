@@ -377,12 +377,12 @@ export default function Promocoes() {
                           {item.delta > 0 ? `+${formatNumber(item.delta)}` : formatNumber(item.delta)}
                         </span>
                       </TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="px-2 py-1.5 text-center">
                         <Badge variant={cfg.variant} className={cfg.className}>
                           {cfg.label}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="px-2 py-1.5 text-center">
                         <Button
                           variant="ghost"
                           size="sm"
