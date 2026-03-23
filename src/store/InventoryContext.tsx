@@ -261,6 +261,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
       ...state,
       addImport,
       clearData,
+      deleteSnapshot,
       getLatestSnapshot,
       getLatestProdutoSnapshots,
       getProdutoHistory,
