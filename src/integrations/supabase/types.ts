@@ -14,7 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      precos_mercado: {
+        Row: {
+          id: string
+          preco: number
+          produto_id: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          preco: number
+          produto_id: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          preco?: number
+          produto_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
