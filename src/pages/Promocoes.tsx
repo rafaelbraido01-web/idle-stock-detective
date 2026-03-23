@@ -202,7 +202,7 @@ export default function Promocoes() {
     const { error } = await supabase
       .from('precos_mercado')
       .upsert(
-        { produto_id: mercadoProdutoId, preco, updated_at: now, fonte: mercadoFonte },
+        { produto_id: mercadoProdutoId, preco, updated_at: now, fonte: mercadoFonte } as any,
         { onConflict: 'produto_id' }
       );
 
