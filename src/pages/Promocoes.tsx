@@ -353,14 +353,14 @@ export default function Promocoes() {
                           )}
                         </span>
                       </TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="px-2 py-1.5 text-center">
                         <span className={item.promoAtiva ? 'text-emerald-600 font-medium' : 'text-muted-foreground'}>
                           {formatDate(item.dataFimPromocao)}
                         </span>
                       </TableCell>
-                      <TableCell className="text-right tabular-nums">{formatCurrency(item.precoTabela)}</TableCell>
-                      <TableCell className="text-right tabular-nums">{formatCurrency(item.valorPromocao)}</TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="px-2 py-1.5 text-right tabular-nums">{formatCurrency(item.precoTabela)}</TableCell>
+                      <TableCell className="px-2 py-1.5 text-right tabular-nums">{formatCurrency(item.valorPromocao)}</TableCell>
+                      <TableCell className="px-2 py-1.5 text-center">
                         {item.percentualDesconto > 0 && (
                           <Badge variant="secondary" className="text-xs">
                             -{item.percentualDesconto.toFixed(0)}%
