@@ -14,6 +14,114 @@ export type Database = {
   }
   public: {
     Tables: {
+      estoque_produto_snapshots: {
+        Row: {
+          categoria_estoque: string
+          comissao: number
+          data_fim_promocao: string | null
+          data_ultima_compra: string | null
+          data_ultima_venda: string | null
+          dias_sem_compra: number
+          dias_sem_venda: number
+          id: string
+          nome_comissao: string
+          percentual_desconto: number | null
+          preco_tabela: number
+          produto_id: string
+          quantidade: number
+          snapshot_id: string
+          valor_promocao: number | null
+          valor_total: number
+          valor_unitario: number
+          valor_venda_total: number
+        }
+        Insert: {
+          categoria_estoque?: string
+          comissao?: number
+          data_fim_promocao?: string | null
+          data_ultima_compra?: string | null
+          data_ultima_venda?: string | null
+          dias_sem_compra?: number
+          dias_sem_venda?: number
+          id?: string
+          nome_comissao?: string
+          percentual_desconto?: number | null
+          preco_tabela?: number
+          produto_id: string
+          quantidade?: number
+          snapshot_id: string
+          valor_promocao?: number | null
+          valor_total?: number
+          valor_unitario?: number
+          valor_venda_total?: number
+        }
+        Update: {
+          categoria_estoque?: string
+          comissao?: number
+          data_fim_promocao?: string | null
+          data_ultima_compra?: string | null
+          data_ultima_venda?: string | null
+          dias_sem_compra?: number
+          dias_sem_venda?: number
+          id?: string
+          nome_comissao?: string
+          percentual_desconto?: number | null
+          preco_tabela?: number
+          produto_id?: string
+          quantidade?: number
+          snapshot_id?: string
+          valor_promocao?: number | null
+          valor_total?: number
+          valor_unitario?: number
+          valor_venda_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estoque_produto_snapshots_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estoque_produto_snapshots_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "estoque_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      estoque_snapshots: {
+        Row: {
+          data_criacao: string
+          data_importacao: string
+          id: string
+          nome_arquivo: string
+          total_produtos: number
+          usuario: string
+          valor_total: number
+        }
+        Insert: {
+          data_criacao?: string
+          data_importacao?: string
+          id?: string
+          nome_arquivo?: string
+          total_produtos?: number
+          usuario?: string
+          valor_total?: number
+        }
+        Update: {
+          data_criacao?: string
+          data_importacao?: string
+          id?: string
+          nome_arquivo?: string
+          total_produtos?: number
+          usuario?: string
+          valor_total?: number
+        }
+        Relationships: []
+      }
       precos_mercado: {
         Row: {
           id: string
@@ -32,6 +140,44 @@ export type Database = {
           preco?: number
           produto_id?: string
           updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_precos_mercado_produto"
+            columns: ["produto_id"]
+            isOneToOne: true
+            referencedRelation: "produtos"
+            referencedColumns: ["codigo"]
+          },
+        ]
+      }
+      produtos: {
+        Row: {
+          codigo: string
+          data_criacao: string
+          descricao: string
+          grupo: string
+          id: string
+          marca: string
+          subgrupo: string
+        }
+        Insert: {
+          codigo: string
+          data_criacao?: string
+          descricao?: string
+          grupo?: string
+          id?: string
+          marca?: string
+          subgrupo?: string
+        }
+        Update: {
+          codigo?: string
+          data_criacao?: string
+          descricao?: string
+          grupo?: string
+          id?: string
+          marca?: string
+          subgrupo?: string
         }
         Relationships: []
       }

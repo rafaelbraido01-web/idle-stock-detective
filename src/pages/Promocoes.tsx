@@ -166,10 +166,10 @@ export default function Promocoes() {
     return { total, venderam, semMov, valorPromo, unidadesVendidas };
   }, [comparisons]);
 
-  const handleOpenMercado = (e: React.MouseEvent, produtoId: string) => {
+  const handleOpenMercado = (e: React.MouseEvent, codigo: string) => {
     e.stopPropagation();
-    setMercadoProdutoId(produtoId);
-    const existing = precosMercado.get(produtoId);
+    setMercadoProdutoId(codigo);
+    const existing = precosMercado.get(codigo);
     setMercadoPrecoInput(existing ? String(existing.preco) : '');
     setMercadoDialogOpen(true);
   };
@@ -205,7 +205,7 @@ export default function Promocoes() {
   };
 
   const mercadoProduto = mercadoProdutoId
-    ? comparisons.find(c => c.produtoId === mercadoProdutoId)
+    ? comparisons.find(c => c.codigo === mercadoProdutoId)
     : null;
   const mercadoExisting = mercadoProdutoId ? precosMercado.get(mercadoProdutoId) : null;
 
@@ -332,7 +332,7 @@ export default function Promocoes() {
               <TableBody>
                 {filtered.map(item => {
                   const cfg = STATUS_CONFIG[item.status];
-                  const hasMercado = precosMercado.has(item.produtoId);
+                  const hasMercado = precosMercado.has(item.codigo);
                   return (
                     <TableRow
                       key={item.produtoId}
@@ -375,7 +375,7 @@ export default function Promocoes() {
                           variant="ghost"
                           size="sm"
                           className={`text-xs px-2 py-1 h-auto ${hasMercado ? 'text-red-600 hover:text-red-700' : 'text-muted-foreground hover:text-foreground'}`}
-                          onClick={(e) => handleOpenMercado(e, item.produtoId)}
+                          onClick={(e) => handleOpenMercado(e, item.codigo)}
                         >
                           💲 Mercado
                         </Button>
