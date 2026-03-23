@@ -1,12 +1,18 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useInventory } from '@/store/InventoryContext';
 import { formatCurrency, formatNumber, formatDate } from '@/types/inventory';
 import { KPICard } from '@/components/KPICard';
-import { Tag, TrendingDown, Minus, ArrowUpRight, PackageSearch } from 'lucide-react';
+import { ProductDrawer } from '@/components/ProductDrawer';
+import { Tag, PackageSearch } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 type StatusFilter = 'todos' | 'vendeu' | 'sem-movimento' | 'reposicao';
 type PromoFilter = 'todas' | 'ativa' | 'expirada' | 'recem-expirada';
@@ -24,6 +30,12 @@ interface PromoComparison {
   delta: number;
   status: 'vendeu' | 'sem-movimento' | 'reposicao';
   promoAtiva: boolean;
+}
+
+interface PrecoMercado {
+  produto_id: string;
+  preco: number;
+  updated_at: string;
 }
 
 const STATUS_CONFIG = {
@@ -44,6 +56,29 @@ export default function Promocoes() {
   const [atualId, setAtualId] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('todos');
   const [promoFilter, setPromoFilter] = useState<PromoFilter>('todas');
+  const [drawerProdutoId, setDrawerProdutoId] = useState<string | null>(null);
+
+  // Market price state
+  const [precosMercado, setPrecosMercado] = useState<Map<string, PrecoMercado>>(new Map());
+  const [mercadoDialogOpen, setMercadoDialogOpen] = useState(false);
+  const [mercadoProdutoId, setMercadoProdutoId] = useState<string | null>(null);
+  const [mercadoPrecoInput, setMercadoPrecoInput] = useState('');
+  const [mercadoSaving, setMercadoSaving] = useState(false);
+
+  // Load market prices
+  useEffect(() => {
+    const loadPrecos = async () => {
+      const { data, error } = await supabase
+        .from('precos_mercado')
+        .select('produto_id, preco, updated_at');
+      if (!error && data) {
+        const map = new Map<string, PrecoMercado>();
+        data.forEach((d: any) => map.set(d.produto_id, d));
+        setPrecosMercado(map);
+      }
+    };
+    loadPrecos();
+  }, []);
 
   // Auto-select last two snapshots
   useMemo(() => {
@@ -66,8 +101,6 @@ export default function Promocoes() {
     const anteriorMap = new Map(anteriorItems.map(i => [i.produto_id, i]));
     const produtoMap = new Map(produtos.map(p => [p.id, p]));
     const now = new Date();
-    console.log('[Promo Debug] now:', now.toISOString());
-    console.log('[Promo Debug] sample data_fim_promocao:', atualItems.slice(0, 5).map(i => i.data_fim_promocao));
 
     const results: PromoComparison[] = [];
 
@@ -104,7 +137,6 @@ export default function Promocoes() {
       });
     }
 
-    
     return results.sort((a, b) => b.delta - a.delta);
   }, [atualId, anteriorId, produtoSnapshots, produtos]);
 
@@ -133,6 +165,49 @@ export default function Promocoes() {
     const unidadesVendidas = comparisons.filter(c => c.delta > 0).reduce((sum, c) => sum + c.delta, 0);
     return { total, venderam, semMov, valorPromo, unidadesVendidas };
   }, [comparisons]);
+
+  const handleOpenMercado = (e: React.MouseEvent, produtoId: string) => {
+    e.stopPropagation();
+    setMercadoProdutoId(produtoId);
+    const existing = precosMercado.get(produtoId);
+    setMercadoPrecoInput(existing ? String(existing.preco) : '');
+    setMercadoDialogOpen(true);
+  };
+
+  const handleSaveMercado = async () => {
+    if (!mercadoProdutoId || !mercadoPrecoInput) return;
+    const preco = parseFloat(mercadoPrecoInput.replace(',', '.'));
+    if (isNaN(preco) || preco <= 0) {
+      toast.error('Informe um preço válido');
+      return;
+    }
+
+    setMercadoSaving(true);
+    const { error } = await supabase
+      .from('precos_mercado')
+      .upsert(
+        { produto_id: mercadoProdutoId, preco, updated_at: new Date().toISOString() },
+        { onConflict: 'produto_id' }
+      );
+
+    if (error) {
+      toast.error('Erro ao salvar preço de mercado');
+    } else {
+      setPrecosMercado(prev => {
+        const next = new Map(prev);
+        next.set(mercadoProdutoId, { produto_id: mercadoProdutoId, preco, updated_at: new Date().toISOString() });
+        return next;
+      });
+      toast.success('Preço de mercado salvo!');
+      setMercadoDialogOpen(false);
+    }
+    setMercadoSaving(false);
+  };
+
+  const mercadoProduto = mercadoProdutoId
+    ? comparisons.find(c => c.produtoId === mercadoProdutoId)
+    : null;
+  const mercadoExisting = mercadoProdutoId ? precosMercado.get(mercadoProdutoId) : null;
 
   if (sortedSnapshots.length === 0) {
     return (
@@ -251,13 +326,19 @@ export default function Promocoes() {
                   <TableHead className="text-right">Qtd Atual</TableHead>
                   <TableHead className="text-right">Diferença</TableHead>
                   <TableHead className="text-center">Status</TableHead>
+                  <TableHead className="text-center">Mercado</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.map(item => {
                   const cfg = STATUS_CONFIG[item.status];
+                  const hasMercado = precosMercado.has(item.produtoId);
                   return (
-                    <TableRow key={item.produtoId} className={item.promoAtiva ? 'bg-orange-50 dark:bg-orange-950/20' : ''}>
+                    <TableRow
+                      key={item.produtoId}
+                      className={`cursor-pointer ${item.promoAtiva ? 'bg-orange-50 dark:bg-orange-950/20' : ''}`}
+                      onClick={() => setDrawerProdutoId(item.produtoId)}
+                    >
                       <TableCell className="font-mono text-sm">{item.codigo}</TableCell>
                       <TableCell className="max-w-[250px] truncate">{item.descricao}</TableCell>
                       <TableCell className="text-center">
@@ -275,7 +356,10 @@ export default function Promocoes() {
                         )}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">{formatNumber(item.qtdAnterior)}</TableCell>
-                      <TableCell className="text-right tabular-nums">{formatNumber(item.qtdAtual)}</TableCell>
+                      <TableCell className={`text-right tabular-nums font-medium ${item.qtdAtual >= 100 ? 'text-amber-600 dark:text-amber-400' : ''}`}>
+                        {formatNumber(item.qtdAtual)}
+                        {item.qtdAtual >= 100 && <span className="ml-1">🔥</span>}
+                      </TableCell>
                       <TableCell className="text-right tabular-nums font-medium">
                         <span className={item.delta > 0 ? 'text-emerald-600' : item.delta < 0 ? 'text-amber-600' : 'text-muted-foreground'}>
                           {item.delta > 0 ? `+${formatNumber(item.delta)}` : formatNumber(item.delta)}
@@ -286,6 +370,16 @@ export default function Promocoes() {
                           {cfg.label}
                         </Badge>
                       </TableCell>
+                      <TableCell className="text-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={`text-xs px-2 py-1 h-auto ${hasMercado ? 'text-red-600 hover:text-red-700' : 'text-muted-foreground hover:text-foreground'}`}
+                          onClick={(e) => handleOpenMercado(e, item.produtoId)}
+                        >
+                          💲 Mercado
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   );
                 })}
@@ -294,6 +388,65 @@ export default function Promocoes() {
           )}
         </CardContent>
       </Card>
+
+      {/* Product Drawer */}
+      <ProductDrawer produtoId={drawerProdutoId} onClose={() => setDrawerProdutoId(null)} />
+
+      {/* Market Price Dialog */}
+      <Dialog open={mercadoDialogOpen} onOpenChange={setMercadoDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>💲 Preço de Mercado</DialogTitle>
+          </DialogHeader>
+          {mercadoProduto && (
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm font-medium">{mercadoProduto.descricao}</p>
+                <p className="text-xs text-muted-foreground font-mono">{mercadoProduto.codigo}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="bg-muted/50 rounded-lg p-2">
+                  <p className="text-[10px] uppercase text-muted-foreground">Preço Tabela</p>
+                  <p className="font-mono font-semibold">{formatCurrency(mercadoProduto.precoTabela)}</p>
+                </div>
+                <div className="bg-muted/50 rounded-lg p-2">
+                  <p className="text-[10px] uppercase text-muted-foreground">Preço Promo</p>
+                  <p className="font-mono font-semibold">{formatCurrency(mercadoProduto.valorPromocao)}</p>
+                </div>
+              </div>
+
+              {mercadoExisting && (
+                <div className="bg-red-50 dark:bg-red-950/30 rounded-lg p-3 border border-red-200 dark:border-red-800">
+                  <p className="text-[10px] uppercase text-red-600 dark:text-red-400">Preço de mercado atual</p>
+                  <p className="font-mono font-semibold text-red-700 dark:text-red-300">{formatCurrency(mercadoExisting.preco)}</p>
+                  <p className="text-[10px] text-red-500 mt-1">
+                    Atualizado em {new Date(mercadoExisting.updated_at).toLocaleDateString('pt-BR')} às {new Date(mercadoExisting.updated_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Novo preço de mercado (R$)</label>
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="Ex: 29.90"
+                  value={mercadoPrecoInput}
+                  onChange={(e) => setMercadoPrecoInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSaveMercado()}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMercadoDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleSaveMercado} disabled={mercadoSaving}>
+              {mercadoSaving ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
