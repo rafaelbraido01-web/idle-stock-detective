@@ -32,10 +32,23 @@ interface PromoComparison {
   promoAtiva: boolean;
 }
 
+const FONTES_PRECO = [
+  'Mercado Livre',
+  'Kabum',
+  'Pichau',
+  'Amazon',
+  'Magazine Luiza',
+  'Netshoes',
+  'Outro',
+] as const;
+
+type FontePreco = typeof FONTES_PRECO[number];
+
 interface PrecoMercado {
   produto_id: string;
   preco: number;
   updated_at: string;
+  fonte: string;
 }
 
 const STATUS_CONFIG = {
@@ -64,13 +77,14 @@ export default function Promocoes() {
   const [mercadoProdutoId, setMercadoProdutoId] = useState<string | null>(null);
   const [mercadoPrecoInput, setMercadoPrecoInput] = useState('');
   const [mercadoSaving, setMercadoSaving] = useState(false);
+  const [mercadoFonte, setMercadoFonte] = useState<FontePreco>('Outro');
 
   // Load market prices
   useEffect(() => {
     const loadPrecos = async () => {
       const { data, error } = await supabase
         .from('precos_mercado')
-        .select('produto_id, preco, updated_at');
+        .select('produto_id, preco, updated_at, fonte');
       if (!error && data) {
         const map = new Map<string, PrecoMercado>();
         data.forEach((d: any) => map.set(d.produto_id, d));
@@ -171,6 +185,7 @@ export default function Promocoes() {
     setMercadoProdutoId(codigo);
     const existing = precosMercado.get(codigo);
     setMercadoPrecoInput(existing ? String(existing.preco) : '');
+    setMercadoFonte((existing?.fonte as FontePreco) || 'Outro');
     setMercadoDialogOpen(true);
   };
 
@@ -183,10 +198,11 @@ export default function Promocoes() {
     }
 
     setMercadoSaving(true);
+    const now = new Date().toISOString();
     const { error } = await supabase
       .from('precos_mercado')
       .upsert(
-        { produto_id: mercadoProdutoId, preco, updated_at: new Date().toISOString() },
+        { produto_id: mercadoProdutoId, preco, updated_at: now, fonte: mercadoFonte },
         { onConflict: 'produto_id' }
       );
 
@@ -195,7 +211,7 @@ export default function Promocoes() {
     } else {
       setPrecosMercado(prev => {
         const next = new Map(prev);
-        next.set(mercadoProdutoId, { produto_id: mercadoProdutoId, preco, updated_at: new Date().toISOString() });
+        next.set(mercadoProdutoId, { produto_id: mercadoProdutoId, preco, updated_at: now, fonte: mercadoFonte });
         return next;
       });
       toast.success('Preço de mercado salvo!');
@@ -433,10 +449,24 @@ export default function Promocoes() {
                   <p className="text-[10px] uppercase text-red-600 dark:text-red-400">Preço de mercado atual</p>
                   <p className="font-mono font-semibold text-red-700 dark:text-red-300">{formatCurrency(mercadoExisting.preco)}</p>
                   <p className="text-[10px] text-red-500 mt-1">
-                    Atualizado em {new Date(mercadoExisting.updated_at).toLocaleDateString('pt-BR')} às {new Date(mercadoExisting.updated_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                    Fonte: {mercadoExisting.fonte || 'Outro'} · Atualizado em {new Date(mercadoExisting.updated_at).toLocaleDateString('pt-BR')} às {new Date(mercadoExisting.updated_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
               )}
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Fonte do preço</label>
+                <Select value={mercadoFonte} onValueChange={v => setMercadoFonte(v as FontePreco)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FONTES_PRECO.map(f => (
+                      <SelectItem key={f} value={f}>{f}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
               <div className="space-y-1">
                 <label className="text-xs font-medium text-muted-foreground">Novo preço de mercado (R$)</label>
