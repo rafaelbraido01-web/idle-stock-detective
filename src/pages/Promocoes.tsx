@@ -333,6 +333,9 @@ export default function Promocoes() {
                 {filtered.map(item => {
                   const cfg = STATUS_CONFIG[item.status];
                   const hasMercado = precosMercado.has(item.codigo);
+                  const mercadoEntry = precosMercado.get(item.codigo);
+                  const precoDesatualizado = item.promoAtiva && mercadoEntry &&
+                    (Date.now() - new Date(mercadoEntry.updated_at).getTime()) > 25 * 24 * 60 * 60 * 1000;
                   return (
                     <TableRow
                       key={item.produtoId}
@@ -340,7 +343,16 @@ export default function Promocoes() {
                       onClick={() => setDrawerProdutoId(item.produtoId)}
                     >
                       <TableCell className="font-mono text-sm">{item.codigo}</TableCell>
-                      <TableCell className="max-w-[250px] truncate">{item.descricao}</TableCell>
+                      <TableCell className="max-w-[250px] truncate">
+                        <span className="flex items-center gap-1.5">
+                          {item.descricao}
+                          {precoDesatualizado && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-400 text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                              ⚠ Preço desatualizado
+                            </Badge>
+                          )}
+                        </span>
+                      </TableCell>
                       <TableCell className="text-center">
                         <span className={item.promoAtiva ? 'text-emerald-600 font-medium' : 'text-muted-foreground'}>
                           {formatDate(item.dataFimPromocao)}
