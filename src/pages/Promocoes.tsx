@@ -205,7 +205,7 @@ export default function Promocoes() {
   };
 
   const mercadoProduto = mercadoProdutoId
-    ? comparisons.find(c => c.produtoId === mercadoProdutoId)
+    ? comparisons.find(c => c.codigo === mercadoProdutoId)
     : null;
   const mercadoExisting = mercadoProdutoId ? precosMercado.get(mercadoProdutoId) : null;
 
