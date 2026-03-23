@@ -316,17 +316,17 @@ export default function Promocoes() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Código</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead className="text-center">Validade Promo</TableHead>
-                  <TableHead className="text-right">Preço Tabela</TableHead>
-                  <TableHead className="text-right">Preço Promo</TableHead>
-                  <TableHead className="text-center">Desconto</TableHead>
-                  <TableHead className="text-right">Qtd Anterior</TableHead>
-                  <TableHead className="text-right">Qtd Atual</TableHead>
-                  <TableHead className="text-right">Diferença</TableHead>
-                  <TableHead className="text-center">Status</TableHead>
-                  <TableHead className="text-center">Mercado</TableHead>
+                  <TableHead className="px-2">Código</TableHead>
+                  <TableHead className="px-2">Descrição</TableHead>
+                  <TableHead className="px-2 text-center">Validade Promo</TableHead>
+                  <TableHead className="px-2 text-right">Preço Tabela</TableHead>
+                  <TableHead className="px-2 text-right">Preço Promo</TableHead>
+                  <TableHead className="px-2 text-center">Desconto</TableHead>
+                  <TableHead className="px-2 text-right">Qtd Anterior</TableHead>
+                  <TableHead className="px-2 text-right">Qtd Atual</TableHead>
+                  <TableHead className="px-2 text-right">Diferença</TableHead>
+                  <TableHead className="px-2 text-center">Status</TableHead>
+                  <TableHead className="px-2 text-center">Mercado</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
