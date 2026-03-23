@@ -316,17 +316,17 @@ export default function Promocoes() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Código</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead className="text-center">Validade Promo</TableHead>
-                  <TableHead className="text-right">Preço Tabela</TableHead>
-                  <TableHead className="text-right">Preço Promo</TableHead>
-                  <TableHead className="text-center">Desconto</TableHead>
-                  <TableHead className="text-right">Qtd Anterior</TableHead>
-                  <TableHead className="text-right">Qtd Atual</TableHead>
-                  <TableHead className="text-right">Diferença</TableHead>
-                  <TableHead className="text-center">Status</TableHead>
-                  <TableHead className="text-center">Mercado</TableHead>
+                  <TableHead className="px-2">Código</TableHead>
+                  <TableHead className="px-2">Descrição</TableHead>
+                  <TableHead className="px-2 text-center">Validade Promo</TableHead>
+                  <TableHead className="px-2 text-right">Preço Tabela</TableHead>
+                  <TableHead className="px-2 text-right">Preço Promo</TableHead>
+                  <TableHead className="px-2 text-center">Desconto</TableHead>
+                  <TableHead className="px-2 text-right">Qtd Anterior</TableHead>
+                  <TableHead className="px-2 text-right">Qtd Atual</TableHead>
+                  <TableHead className="px-2 text-right">Diferença</TableHead>
+                  <TableHead className="px-2 text-center">Status</TableHead>
+                  <TableHead className="px-2 text-center">Mercado</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -342,8 +342,8 @@ export default function Promocoes() {
                       className={`cursor-pointer ${item.promoAtiva ? 'bg-orange-50 dark:bg-orange-950/20' : ''}`}
                       onClick={() => setDrawerProdutoId(item.produtoId)}
                     >
-                      <TableCell className="font-mono text-sm">{item.codigo}</TableCell>
-                      <TableCell className="max-w-[250px] truncate">
+                      <TableCell className="px-2 py-1.5 font-mono text-sm">{item.codigo}</TableCell>
+                      <TableCell className="px-2 py-1.5 max-w-[250px] truncate">
                         <span className="flex items-center gap-1.5">
                           {item.descricao}
                           {precoDesatualizado && (
@@ -353,36 +353,36 @@ export default function Promocoes() {
                           )}
                         </span>
                       </TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="px-2 py-1.5 text-center">
                         <span className={item.promoAtiva ? 'text-emerald-600 font-medium' : 'text-muted-foreground'}>
                           {formatDate(item.dataFimPromocao)}
                         </span>
                       </TableCell>
-                      <TableCell className="text-right tabular-nums">{formatCurrency(item.precoTabela)}</TableCell>
-                      <TableCell className="text-right tabular-nums">{formatCurrency(item.valorPromocao)}</TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="px-2 py-1.5 text-right tabular-nums">{formatCurrency(item.precoTabela)}</TableCell>
+                      <TableCell className="px-2 py-1.5 text-right tabular-nums">{formatCurrency(item.valorPromocao)}</TableCell>
+                      <TableCell className="px-2 py-1.5 text-center">
                         {item.percentualDesconto > 0 && (
                           <Badge variant="secondary" className="text-xs">
                             -{item.percentualDesconto.toFixed(0)}%
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums">{formatNumber(item.qtdAnterior)}</TableCell>
-                      <TableCell className={`text-right tabular-nums font-medium ${item.qtdAtual >= 100 ? 'text-amber-600 dark:text-amber-400' : ''}`}>
+                      <TableCell className="px-2 py-1.5 text-right tabular-nums">{formatNumber(item.qtdAnterior)}</TableCell>
+                      <TableCell className={`px-2 py-1.5 text-right tabular-nums font-medium ${item.qtdAtual >= 100 ? 'text-amber-600 dark:text-amber-400' : ''}`}>
                         {formatNumber(item.qtdAtual)}
                         {item.qtdAtual >= 100 && <span className="ml-1">🔥</span>}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums font-medium">
+                      <TableCell className="px-2 py-1.5 text-right tabular-nums font-medium">
                         <span className={item.delta > 0 ? 'text-emerald-600' : item.delta < 0 ? 'text-amber-600' : 'text-muted-foreground'}>
                           {item.delta > 0 ? `+${formatNumber(item.delta)}` : formatNumber(item.delta)}
                         </span>
                       </TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="px-2 py-1.5 text-center">
                         <Badge variant={cfg.variant} className={cfg.className}>
                           {cfg.label}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="px-2 py-1.5 text-center">
                         <Button
                           variant="ghost"
                           size="sm"
