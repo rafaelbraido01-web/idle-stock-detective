@@ -399,14 +399,26 @@ export default function Promocoes() {
                         </Badge>
                       </TableCell>
                       <TableCell className="px-2 py-1.5 text-center">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={`text-xs px-2 py-1 h-auto ${hasMercado ? 'text-red-600 hover:text-red-700' : 'text-muted-foreground hover:text-foreground'}`}
-                          onClick={(e) => handleOpenMercado(e, item.codigo)}
-                        >
-                          💲 Mercado
-                        </Button>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={`text-xs px-2 py-1 h-auto ${hasMercado ? 'text-red-600 hover:text-red-700' : 'text-muted-foreground hover:text-foreground'}`}
+                            onClick={(e) => handleOpenMercado(e, item.codigo)}
+                          >
+                            💲 Mercado
+                          </Button>
+                          {mercadoEntry && (() => {
+                            const diff = ((item.valorPromocao - mercadoEntry.preco) / mercadoEntry.preco) * 100;
+                            const isAbove = diff > 0;
+                            const absVal = Math.abs(diff).toFixed(0);
+                            return (
+                              <span className={`text-[10px] font-medium whitespace-nowrap ${isAbove ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                                {isAbove ? `▲ +${absVal}%` : `▼ -${absVal}%`}
+                              </span>
+                            );
+                          })()}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
