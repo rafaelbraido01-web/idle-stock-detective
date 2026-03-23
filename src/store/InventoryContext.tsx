@@ -2,9 +2,9 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import type { Produto, EstoqueSnapshot, EstoqueProdutoSnapshot } from '@/types/inventory';
 import { supabase } from '@/integrations/supabase/client';
 
-async function fetchAll<T>(table: string, orderBy?: { column: string; ascending: boolean }): Promise<T[]> {
+async function fetchAllRows(table: 'produtos' | 'estoque_snapshots' | 'estoque_produto_snapshots', orderBy?: { column: string; ascending: boolean }): Promise<any[]> {
   const PAGE = 1000;
-  let allData: T[] = [];
+  let allData: any[] = [];
   let from = 0;
   let hasMore = true;
   while (hasMore) {
@@ -12,7 +12,7 @@ async function fetchAll<T>(table: string, orderBy?: { column: string; ascending:
     if (orderBy) query = query.order(orderBy.column, { ascending: orderBy.ascending });
     const { data, error } = await query;
     if (error) throw error;
-    const rows = (data || []) as T[];
+    const rows = data || [];
     allData = allData.concat(rows);
     hasMore = rows.length === PAGE;
     from += PAGE;
