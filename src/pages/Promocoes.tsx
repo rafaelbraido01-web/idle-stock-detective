@@ -77,6 +77,7 @@ export default function Promocoes() {
   const [mercadoProdutoId, setMercadoProdutoId] = useState<string | null>(null);
   const [mercadoPrecoInput, setMercadoPrecoInput] = useState('');
   const [mercadoSaving, setMercadoSaving] = useState(false);
+  const [mercadoFonte, setMercadoFonte] = useState<FontePreco>('Outro');
 
   // Load market prices
   useEffect(() => {
