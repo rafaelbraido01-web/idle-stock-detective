@@ -136,8 +136,17 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Fetch all produtos to get correct IDs (upsert may have kept existing IDs)
-    const { data: allProdutos } = await supabase.from('produtos').select('id, codigo');
-    const codigoToId = new Map((allProdutos || []).map((p: any) => [p.codigo, p.id]));
+    const allProdutosPages: any[] = [];
+    let pgFrom = 0;
+    let pgHasMore = true;
+    while (pgHasMore) {
+      const { data } = await supabase.from('produtos').select('id, codigo').range(pgFrom, pgFrom + 999);
+      const rows = data || [];
+      allProdutosPages.push(...rows);
+      pgHasMore = rows.length === 1000;
+      pgFrom += 1000;
+    }
+    const codigoToId = new Map(allProdutosPages.map((p: any) => [p.codigo, p.id]));
 
     // 2. Insert snapshot
     const { error: snapError } = await supabase
