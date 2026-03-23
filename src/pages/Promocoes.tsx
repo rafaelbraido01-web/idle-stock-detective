@@ -202,7 +202,7 @@ export default function Promocoes() {
     const { error } = await supabase
       .from('precos_mercado')
       .upsert(
-        { produto_id: mercadoProdutoId, preco, updated_at: now, fonte: mercadoFonte },
+        { produto_id: mercadoProdutoId, preco, updated_at: now, fonte: mercadoFonte } as any,
         { onConflict: 'produto_id' }
       );
 
@@ -421,8 +421,8 @@ export default function Promocoes() {
       <ProductDrawer produtoId={drawerProdutoId} onClose={() => setDrawerProdutoId(null)} />
 
       {/* Market Price Dialog */}
-      <Dialog open={mercadoDialogOpen} onOpenChange={setMercadoDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+      <Dialog open={mercadoDialogOpen} onOpenChange={(open) => { if (!open) return; setMercadoDialogOpen(open); }}>
+        <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>💲 Preço de Mercado</DialogTitle>
           </DialogHeader>
