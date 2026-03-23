@@ -413,7 +413,7 @@ export default function Promocoes() {
                             const isAbove = diff > 0;
                             const absVal = Math.abs(diff).toFixed(0);
                             return (
-                              <span className={`text-[10px] font-medium whitespace-nowrap ${isAbove ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                              <span className={`text-xs font-semibold whitespace-nowrap ${isAbove ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                                 {isAbove ? `▲ +${absVal}%` : `▼ -${absVal}%`}
                               </span>
                             );
