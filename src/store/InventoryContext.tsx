@@ -214,6 +214,13 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     await loadAll();
   }, [loadAll, state.produtos]);
 
+  const deleteSnapshot = useCallback(async (snapshotId: string) => {
+    // Delete produto_snapshots for this snapshot, then the snapshot itself
+    await supabase.from('estoque_produto_snapshots').delete().eq('snapshot_id', snapshotId);
+    await supabase.from('estoque_snapshots').delete().eq('id', snapshotId);
+    await loadAll();
+  }, [loadAll]);
+
   const clearData = useCallback(async () => {
     // Delete in order: produto_snapshots → snapshots → produtos
     await supabase.from('estoque_produto_snapshots').delete().neq('id', '00000000-0000-0000-0000-000000000000');
