@@ -1,44 +1,28 @@
 
 
-## Plano: Melhorias na Pagina de Promocoes
+## Plano: Botao de Campanha em Lote + Preparacao para Analise Futura
 
-### 1. Highlight de estoque alto (laranja + foguinho)
-Na coluna "Qtd Atual", aplicar texto laranja e emoji 🔥 quando `qtdAtual >= 100`, igual a pagina de Produtos.
+### Resumo
+Adicionar um botao no topo da pagina de Promocoes para cadastrar uma campanha vinculando multiplos produtos de uma vez, inserindo os codigos em um campo de texto livre. Alem disso, ajustar a estrutura para viabilizar analises futuras de frequencia promocional por produto.
 
-### 2. Drawer de detalhamento ao clicar no produto
-Reutilizar o componente `ProductDrawer` existente. Tornar cada linha da tabela clicavel, abrindo o drawer com todas as informacoes do produto (quantidade, precos, promocao, historico, graficos).
+### 1. Botao "Subir Campanha" no topo da pagina
+- Botao visivel no header da pagina de Promocoes (ao lado dos filtros ou KPIs)
+- Ao clicar, abre um Dialog com:
+  - **Nome da campanha** (texto)
+  - **Canais** (checkboxes multiplos: Marketplace, Ecommerce, Mailing, Televendas)
+  - **Data inicio** e **Data fim** (date pickers)
+  - **Codigos dos produtos** (textarea grande, aceita codigos separados por virgula, ponto-e-virgula ou quebra de linha)
+- Ao salvar: busca os `produto_id` correspondentes na tabela `produtos` pelo campo `codigo`, e insere um registro na tabela `campanhas_produto` para cada produto encontrado
+- Exibe toast com quantidade de produtos vinculados e quantos codigos nao foram encontrados
 
-### 3. Botao "$ Mercado" com preco manual persistido
+### 2. Sobre a analise futura (Duvida 1)
+**Sim, ja e possivel.** A tabela `campanhas_produto` ja registra cada vinculo produto-campanha com datas. Futuramente, basta criar uma consulta agrupando por `produto_id` e contando quantas campanhas cada produto participou, com filtros por periodo e canal. Nenhuma mudanca de schema e necessaria agora -- a estrutura atual ja suporta esse tipo de analise.
 
-**Banco de dados** -- criar tabela `precos_mercado`:
-```text
-id           uuid  PK  default gen_random_uuid()
-produto_id   text  NOT NULL
-preco        numeric NOT NULL
-updated_at   timestamptz NOT NULL default now()
-```
-- Sem RLS (dados publicos internos, sem autenticacao no app).
-- Unique constraint em `produto_id` para manter apenas 1 preco por produto (upsert).
-
-**Na tabela de Promocoes**:
-- Adicionar coluna "Mercado" com botao pequeno: emoji 💲 + texto "Mercado".
-- Botao fica vermelho se ja tiver preco cadastrado para aquele produto.
-- Ao clicar, abre um Dialog/popup com:
-  - Campo de input numerico para o preco de mercado.
-  - Se ja tiver preco salvo, exibe o valor atual e a data da ultima atualizacao.
-  - Botao "Salvar" que faz upsert na tabela `precos_mercado`.
-
-**Alteracoes em arquivos**:
+### Alteracoes
 
 | Arquivo | Mudanca |
 |---|---|
-| `src/pages/Promocoes.tsx` | Adicionar highlight laranja/foguinho na qtd, linha clicavel com ProductDrawer, coluna "Mercado" com botao e dialog |
-| Migration SQL | Criar tabela `precos_mercado` |
+| `src/pages/Promocoes.tsx` | Adicionar botao "Subir Campanha", dialog com formulario em lote, logica de lookup de codigos e insercao em batch |
 
-### Fluxo do popup de Mercado
-1. Usuario clica no botao 💲 Mercado
-2. Popup abre mostrando produto, preco atual (se existir) e data
-3. Usuario digita o novo preco
-4. Clica Salvar → upsert no banco
-5. Botao muda para vermelho indicando que tem preco
+Nenhuma migracao de banco necessaria -- a tabela `campanhas_produto` ja suporta multiplos registros por produto.
 
