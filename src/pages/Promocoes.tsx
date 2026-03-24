@@ -104,6 +104,8 @@ export default function Promocoes() {
   const [campanhaDataInicio, setCampanhaDataInicio] = useState<Date | undefined>();
   const [campanhaDataFim, setCampanhaDataFim] = useState<Date | undefined>();
   const [campanhaSaving, setCampanhaSaving] = useState(false);
+
+  // Load market prices and campaigns
   useEffect(() => {
     const loadPrecos = async () => {
       const { data, error } = await supabase
@@ -115,7 +117,18 @@ export default function Promocoes() {
         setPrecosMercado(map);
       }
     };
+    const loadCampanhas = async () => {
+      const { data, error } = await supabase
+        .from('campanhas_produto')
+        .select('*') as { data: CampanhaProduto[] | null; error: any };
+      if (!error && data) {
+        const map = new Map<string, CampanhaProduto>();
+        data.forEach((d) => map.set(d.produto_id, d));
+        setCampanhas(map);
+      }
+    };
     loadPrecos();
+    loadCampanhas();
   }, []);
 
   // Auto-select last two snapshots
