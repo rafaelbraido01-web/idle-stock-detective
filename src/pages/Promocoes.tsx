@@ -900,6 +900,7 @@ export default function Promocoes() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      )}
     </div>
   );
 }
