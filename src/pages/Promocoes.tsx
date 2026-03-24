@@ -397,6 +397,15 @@ export default function Promocoes() {
     ? comparisons.find(c => c.codigo === campanhaProdutoId)
     : null;
 
+  // Pagination
+  const PAGE_SIZE = 50;
+  const [page, setPage] = useState(0);
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginatedItems = useMemo(() => filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE), [filtered, page]);
+
+  // Reset page when filters change
+  useEffect(() => { setPage(0); }, [statusFilter, promoFilter, atualId, anteriorId]);
+
   if (sortedSnapshots.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] text-muted-foreground gap-3">
