@@ -430,7 +430,7 @@ export default function Promocoes() {
                   <TableHead className="px-2 text-right">Diferença</TableHead>
                   <TableHead className="px-2 text-center">Status</TableHead>
                   <TableHead className="px-2 text-center">Mercado</TableHead>
-                </TableRow>
+                  <TableHead className="px-2 text-center">Campanha</TableHead>
               </TableHeader>
               <TableBody>
                 {filtered.map(item => {
