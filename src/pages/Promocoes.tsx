@@ -650,6 +650,7 @@ export default function Promocoes() {
       <ProductDrawer produtoId={drawerProdutoId} onClose={() => setDrawerProdutoId(null)} />
 
       {/* Market Price Dialog */}
+      {mercadoDialogOpen && (
       <Dialog open={mercadoDialogOpen} onOpenChange={(open) => { if (!open) return; setMercadoDialogOpen(open); }}>
         <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
