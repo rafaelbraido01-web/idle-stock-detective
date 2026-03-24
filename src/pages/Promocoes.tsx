@@ -107,6 +107,15 @@ export default function Promocoes() {
   const [campanhaDataFim, setCampanhaDataFim] = useState<Date | undefined>();
   const [campanhaSaving, setCampanhaSaving] = useState(false);
 
+  // Bulk campaign state
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [bulkCampanhaNome, setBulkCampanhaNome] = useState('');
+  const [bulkCanais, setBulkCanais] = useState<CanalCampanha[]>([]);
+  const [bulkDataInicio, setBulkDataInicio] = useState<Date | undefined>();
+  const [bulkDataFim, setBulkDataFim] = useState<Date | undefined>();
+  const [bulkCodigos, setBulkCodigos] = useState('');
+  const [bulkSaving, setBulkSaving] = useState(false);
+
   // Load market prices and campaigns
   useEffect(() => {
     const loadPrecos = async () => {
