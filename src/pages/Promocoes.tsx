@@ -55,6 +55,18 @@ interface PrecoMercado {
   fonte: string;
 }
 
+interface CampanhaProduto {
+  id: string;
+  produto_id: string;
+  campanha: string;
+  canal: string;
+  data_inicio: string;
+  data_fim: string;
+}
+
+const CANAIS_CAMPANHA = ['Marketplace', 'Ecommerce', 'Mailing', 'Televendas'] as const;
+type CanalCampanha = typeof CANAIS_CAMPANHA[number];
+
 const STATUS_CONFIG = {
   vendeu: { label: 'Vendeu', variant: 'default' as const, className: 'bg-emerald-600 hover:bg-emerald-700' },
   'sem-movimento': { label: 'Sem movimento', variant: 'secondary' as const, className: '' },
