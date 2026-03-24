@@ -532,7 +532,7 @@ export default function Promocoes() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map(item => {
+                {paginatedItems.map(item => {
                   const cfg = STATUS_CONFIG[item.status];
                   const hasMercado = precosMercado.has(item.codigo);
                   const mercadoEntry = precosMercado.get(item.codigo);
