@@ -633,17 +633,22 @@ export default function Promocoes() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground">Canal</label>
-                <Select value={campanhaCanal} onValueChange={v => setCampanhaCanal(v as CanalCampanha)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CANAIS_CAMPANHA.map(c => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <label className="text-xs font-medium text-muted-foreground">Canais</label>
+                <div className="flex flex-wrap gap-2">
+                  {CANAIS_CAMPANHA.map(c => (
+                    <label key={c} className="flex items-center gap-1.5 text-sm cursor-pointer">
+                      <Checkbox
+                        checked={campanhaCanais.includes(c)}
+                        onCheckedChange={(checked) => {
+                          setCampanhaCanais(prev =>
+                            checked ? [...prev, c] : prev.filter(x => x !== c)
+                          );
+                        }}
+                      />
+                      {c}
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
