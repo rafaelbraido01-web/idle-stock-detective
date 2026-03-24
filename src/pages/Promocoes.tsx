@@ -651,7 +651,7 @@ export default function Promocoes() {
 
       {/* Market Price Dialog */}
       {mercadoDialogOpen && (
-      <Dialog open={mercadoDialogOpen} onOpenChange={(open) => { if (!open) return; setMercadoDialogOpen(open); }}>
+      <Dialog open={mercadoDialogOpen} onOpenChange={setMercadoDialogOpen}>
         <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>💲 Preço de Mercado</DialogTitle>
@@ -723,7 +723,7 @@ export default function Promocoes() {
 
       {/* Campaign Dialog */}
       {campanhaDialogOpen && (
-      <Dialog open={campanhaDialogOpen} onOpenChange={(open) => { if (!open) return; setCampanhaDialogOpen(open); }}>
+      <Dialog open={campanhaDialogOpen} onOpenChange={setCampanhaDialogOpen}>
         <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>🏷️ Campanha Promocional</DialogTitle>
@@ -816,7 +816,7 @@ export default function Promocoes() {
       )}
       {/* Bulk Campaign Dialog */}
       {bulkDialogOpen && (
-      <Dialog open={bulkDialogOpen} onOpenChange={(open) => { if (!open) return; setBulkDialogOpen(open); }}>
+      <Dialog open={bulkDialogOpen} onOpenChange={setBulkDialogOpen}>
         <DialogContent className="sm:max-w-lg" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>📦 Subir Campanha em Lote</DialogTitle>
