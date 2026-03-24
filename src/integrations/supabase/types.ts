@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      campanhas_produto: {
+        Row: {
+          campanha: string
+          canal: string
+          created_at: string
+          data_fim: string
+          data_inicio: string
+          id: string
+          produto_id: string
+        }
+        Insert: {
+          campanha?: string
+          canal?: string
+          created_at?: string
+          data_fim: string
+          data_inicio: string
+          id?: string
+          produto_id: string
+        }
+        Update: {
+          campanha?: string
+          canal?: string
+          created_at?: string
+          data_fim?: string
+          data_inicio?: string
+          id?: string
+          produto_id?: string
+        }
+        Relationships: []
+      }
       estoque_produto_snapshots: {
         Row: {
           categoria_estoque: string
