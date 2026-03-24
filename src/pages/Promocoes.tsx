@@ -723,7 +723,7 @@ export default function Promocoes() {
 
       {/* Campaign Dialog */}
       {campanhaDialogOpen && (
-      <Dialog open={campanhaDialogOpen} onOpenChange={(open) => { if (!open) return; setCampanhaDialogOpen(open); }}>
+      <Dialog open={campanhaDialogOpen} onOpenChange={setCampanhaDialogOpen}>
         <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>🏷️ Campanha Promocional</DialogTitle>
