@@ -397,6 +397,15 @@ export default function Promocoes() {
     ? comparisons.find(c => c.codigo === campanhaProdutoId)
     : null;
 
+  // Pagination
+  const PAGE_SIZE = 50;
+  const [page, setPage] = useState(0);
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginatedItems = useMemo(() => filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE), [filtered, page]);
+
+  // Reset page when filters change
+  useEffect(() => { setPage(0); }, [statusFilter, promoFilter, atualId, anteriorId]);
+
   if (sortedSnapshots.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] text-muted-foreground gap-3">
@@ -523,7 +532,7 @@ export default function Promocoes() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map(item => {
+                {paginatedItems.map(item => {
                   const cfg = STATUS_CONFIG[item.status];
                   const hasMercado = precosMercado.has(item.codigo);
                   const mercadoEntry = precosMercado.get(item.codigo);
@@ -623,6 +632,17 @@ export default function Promocoes() {
               </TableBody>
             </Table>
           )}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-4 border-t">
+              <p className="text-xs text-muted-foreground">
+                Mostrando {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filtered.length)} de {filtered.length}
+              </p>
+              <div className="flex gap-1.5">
+                <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>Anterior</Button>
+                <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>Próximo</Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -630,6 +650,7 @@ export default function Promocoes() {
       <ProductDrawer produtoId={drawerProdutoId} onClose={() => setDrawerProdutoId(null)} />
 
       {/* Market Price Dialog */}
+      {mercadoDialogOpen && (
       <Dialog open={mercadoDialogOpen} onOpenChange={(open) => { if (!open) return; setMercadoDialogOpen(open); }}>
         <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
@@ -698,8 +719,10 @@ export default function Promocoes() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      )}
 
       {/* Campaign Dialog */}
+      {campanhaDialogOpen && (
       <Dialog open={campanhaDialogOpen} onOpenChange={(open) => { if (!open) return; setCampanhaDialogOpen(open); }}>
         <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
@@ -790,7 +813,9 @@ export default function Promocoes() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      )}
       {/* Bulk Campaign Dialog */}
+      {bulkDialogOpen && (
       <Dialog open={bulkDialogOpen} onOpenChange={(open) => { if (!open) return; setBulkDialogOpen(open); }}>
         <DialogContent className="sm:max-w-lg" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
@@ -875,6 +900,7 @@ export default function Promocoes() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      )}
     </div>
   );
 }
