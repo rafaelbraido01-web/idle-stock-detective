@@ -790,6 +790,91 @@ export default function Promocoes() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Bulk Campaign Dialog */}
+      <Dialog open={bulkDialogOpen} onOpenChange={(open) => { if (!open) return; setBulkDialogOpen(open); }}>
+        <DialogContent className="sm:max-w-lg" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle>📦 Subir Campanha em Lote</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Nome da campanha</label>
+              <Input
+                placeholder="Ex: Black Friday 2026"
+                value={bulkCampanhaNome}
+                onChange={(e) => setBulkCampanhaNome(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Canais</label>
+              <div className="flex flex-wrap gap-2">
+                {CANAIS_CAMPANHA.map(c => (
+                  <label key={c} className="flex items-center gap-1.5 text-sm cursor-pointer">
+                    <Checkbox
+                      checked={bulkCanais.includes(c)}
+                      onCheckedChange={(checked) => {
+                        setBulkCanais(prev =>
+                          checked ? [...prev, c] : prev.filter(x => x !== c)
+                        );
+                      }}
+                    />
+                    {c}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Data Início</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !bulkDataInicio && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {bulkDataInicio ? format(bulkDataInicio, 'dd/MM/yyyy') : 'Selecionar'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={bulkDataInicio} onSelect={setBulkDataInicio} initialFocus className={cn("p-3 pointer-events-auto")} />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Data Fim</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !bulkDataFim && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {bulkDataFim ? format(bulkDataFim, 'dd/MM/yyyy') : 'Selecionar'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={bulkDataFim} onSelect={setBulkDataFim} initialFocus className={cn("p-3 pointer-events-auto")} />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Códigos dos produtos</label>
+              <Textarea
+                placeholder="Insira os códigos separados por vírgula, ponto e vírgula ou quebra de linha. Ex:&#10;ABC123&#10;DEF456, GHI789"
+                value={bulkCodigos}
+                onChange={(e) => setBulkCodigos(e.target.value)}
+                rows={6}
+              />
+              <p className="text-[10px] text-muted-foreground">Aceita separação por vírgula, ponto e vírgula ou quebra de linha</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleSaveBulkCampanha} disabled={bulkSaving}>
+              {bulkSaving ? 'Salvando...' : 'Salvar Campanha'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
