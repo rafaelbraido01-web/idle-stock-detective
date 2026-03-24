@@ -487,7 +487,7 @@ export default function Promocoes() {
                         </Badge>
                       </TableCell>
                       <TableCell className="px-2 py-1.5 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
+                        <div className="flex items-center justify-center gap-1.5 flex-wrap">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -500,13 +500,33 @@ export default function Promocoes() {
                             const diff = ((item.valorPromocao - mercadoEntry.preco) / mercadoEntry.preco) * 100;
                             const isAbove = diff > 0;
                             const absVal = Math.abs(diff).toFixed(0);
+                            const updDate = new Date(mercadoEntry.updated_at).toLocaleDateString('pt-BR');
                             return (
-                              <span className={`text-xs font-semibold whitespace-nowrap ${isAbove ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                                {isAbove ? `▲ +${absVal}%` : `▼ -${absVal}%`}
+                              <span className="flex flex-col items-center leading-tight">
+                                <span className={`text-xs font-semibold whitespace-nowrap ${isAbove ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                                  {isAbove ? `▲ +${absVal}%` : `▼ -${absVal}%`}
+                                </span>
+                                <span className="text-[9px] text-muted-foreground whitespace-nowrap">{updDate}</span>
                               </span>
                             );
                           })()}
                         </div>
+                      </TableCell>
+                      <TableCell className="px-2 py-1.5 text-center">
+                        {(() => {
+                          const hasCampanha = campanhas.has(item.codigo);
+                          return (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={`text-xs px-2 py-1 h-auto ${hasCampanha ? 'text-red-600 hover:text-red-700' : 'text-muted-foreground hover:text-foreground'}`}
+                              onClick={(e) => handleOpenCampanha(e, item.codigo)}
+                            >
+                              {hasCampanha ? '🏷️' : '🏷️'}
+                              <span className="ml-0.5">{hasCampanha ? 'Campanha' : 'Campanha'}</span>
+                            </Button>
+                          );
+                        })()}
                       </TableCell>
                     </TableRow>
                   );
@@ -585,6 +605,93 @@ export default function Promocoes() {
             <Button variant="outline" onClick={() => setMercadoDialogOpen(false)}>Cancelar</Button>
             <Button onClick={handleSaveMercado} disabled={mercadoSaving}>
               {mercadoSaving ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Campaign Dialog */}
+      <Dialog open={campanhaDialogOpen} onOpenChange={(open) => { if (!open) return; setCampanhaDialogOpen(open); }}>
+        <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle>🏷️ Campanha Promocional</DialogTitle>
+          </DialogHeader>
+          {campanhaProduto && (
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm font-medium">{campanhaProduto.descricao}</p>
+                <p className="text-xs text-muted-foreground font-mono">{campanhaProduto.codigo}</p>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Nome da campanha</label>
+                <Input
+                  placeholder="Ex: Black Friday 2026"
+                  value={campanhaNome}
+                  onChange={(e) => setCampanhaNome(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Canal</label>
+                <Select value={campanhaCanal} onValueChange={v => setCampanhaCanal(v as CanalCampanha)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CANAIS_CAMPANHA.map(c => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-muted-foreground">Data Início</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !campanhaDataInicio && "text-muted-foreground")}>
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {campanhaDataInicio ? format(campanhaDataInicio, 'dd/MM/yyyy') : 'Selecionar'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={campanhaDataInicio} onSelect={setCampanhaDataInicio} initialFocus className={cn("p-3 pointer-events-auto")} />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-muted-foreground">Data Fim</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !campanhaDataFim && "text-muted-foreground")}>
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {campanhaDataFim ? format(campanhaDataFim, 'dd/MM/yyyy') : 'Selecionar'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={campanhaDataFim} onSelect={setCampanhaDataFim} initialFocus className={cn("p-3 pointer-events-auto")} />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+
+              {campanhas.get(campanhaProdutoId || '') && (
+                <div className="bg-muted/50 rounded-lg p-3 border">
+                  <p className="text-[10px] uppercase text-muted-foreground">Campanha atual</p>
+                  <p className="text-sm font-medium">{campanhas.get(campanhaProdutoId || '')?.campanha}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    {campanhas.get(campanhaProdutoId || '')?.canal} · {campanhas.get(campanhaProdutoId || '')?.data_inicio && new Date(campanhas.get(campanhaProdutoId || '')!.data_inicio + 'T00:00:00').toLocaleDateString('pt-BR')} a {campanhas.get(campanhaProdutoId || '')?.data_fim && new Date(campanhas.get(campanhaProdutoId || '')!.data_fim + 'T00:00:00').toLocaleDateString('pt-BR')}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCampanhaDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleSaveCampanha} disabled={campanhaSaving}>
+              {campanhaSaving ? 'Salvando...' : 'Salvar'}
             </Button>
           </DialogFooter>
         </DialogContent>
