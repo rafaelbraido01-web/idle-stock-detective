@@ -95,7 +95,15 @@ export default function Promocoes() {
   const [mercadoSaving, setMercadoSaving] = useState(false);
   const [mercadoFonte, setMercadoFonte] = useState<FontePreco>('Outro');
 
-  // Load market prices
+  // Campaign state
+  const [campanhas, setCampanhas] = useState<Map<string, CampanhaProduto>>(new Map());
+  const [campanhaDialogOpen, setCampanhaDialogOpen] = useState(false);
+  const [campanhaProdutoId, setCampanhaProdutoId] = useState<string | null>(null);
+  const [campanhaNome, setCampanhaNome] = useState('');
+  const [campanhaCanal, setCampanhaCanal] = useState<CanalCampanha>('Marketplace');
+  const [campanhaDataInicio, setCampanhaDataInicio] = useState<Date | undefined>();
+  const [campanhaDataFim, setCampanhaDataFim] = useState<Date | undefined>();
+  const [campanhaSaving, setCampanhaSaving] = useState(false);
   useEffect(() => {
     const loadPrecos = async () => {
       const { data, error } = await supabase
