@@ -257,10 +257,60 @@ export default function Promocoes() {
     setMercadoSaving(false);
   };
 
+  const handleOpenCampanha = (e: React.MouseEvent, codigo: string) => {
+    e.stopPropagation();
+    setCampanhaProdutoId(codigo);
+    const existing = campanhas.get(codigo);
+    setCampanhaNome(existing?.campanha || '');
+    setCampanhaCanal((existing?.canal as CanalCampanha) || 'Marketplace');
+    setCampanhaDataInicio(existing?.data_inicio ? new Date(existing.data_inicio + 'T00:00:00') : undefined);
+    setCampanhaDataFim(existing?.data_fim ? new Date(existing.data_fim + 'T00:00:00') : undefined);
+    setCampanhaDialogOpen(true);
+  };
+
+  const handleSaveCampanha = async () => {
+    if (!campanhaProdutoId || !campanhaNome || !campanhaDataInicio || !campanhaDataFim) {
+      toast.error('Preencha todos os campos');
+      return;
+    }
+    setCampanhaSaving(true);
+    const payload = {
+      produto_id: campanhaProdutoId,
+      campanha: campanhaNome,
+      canal: campanhaCanal,
+      data_inicio: format(campanhaDataInicio, 'yyyy-MM-dd'),
+      data_fim: format(campanhaDataFim, 'yyyy-MM-dd'),
+    };
+
+    const existing = campanhas.get(campanhaProdutoId);
+    let error;
+    if (existing) {
+      ({ error } = await supabase.from('campanhas_produto').update(payload as any).eq('id', existing.id));
+    } else {
+      ({ error } = await supabase.from('campanhas_produto').insert(payload as any));
+    }
+
+    if (error) {
+      toast.error('Erro ao salvar campanha');
+    } else {
+      setCampanhas(prev => {
+        const next = new Map(prev);
+        next.set(campanhaProdutoId, { id: existing?.id || '', ...payload } as CampanhaProduto);
+        return next;
+      });
+      toast.success('Campanha salva!');
+      setCampanhaDialogOpen(false);
+    }
+    setCampanhaSaving(false);
+  };
+
   const mercadoProduto = mercadoProdutoId
     ? comparisons.find(c => c.codigo === mercadoProdutoId)
     : null;
   const mercadoExisting = mercadoProdutoId ? precosMercado.get(mercadoProdutoId) : null;
+  const campanhaProduto = campanhaProdutoId
+    ? comparisons.find(c => c.codigo === campanhaProdutoId)
+    : null;
 
   if (sortedSnapshots.length === 0) {
     return (
