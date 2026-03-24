@@ -816,7 +816,7 @@ export default function Promocoes() {
       )}
       {/* Bulk Campaign Dialog */}
       {bulkDialogOpen && (
-      <Dialog open={bulkDialogOpen} onOpenChange={(open) => { if (!open) return; setBulkDialogOpen(open); }}>
+      <Dialog open={bulkDialogOpen} onOpenChange={setBulkDialogOpen}>
         <DialogContent className="sm:max-w-lg" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>📦 Subir Campanha em Lote</DialogTitle>
