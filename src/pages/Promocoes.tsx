@@ -651,7 +651,7 @@ export default function Promocoes() {
 
       {/* Market Price Dialog */}
       {mercadoDialogOpen && (
-      <Dialog open={mercadoDialogOpen} onOpenChange={(open) => { if (!open) return; setMercadoDialogOpen(open); }}>
+      <Dialog open={mercadoDialogOpen} onOpenChange={setMercadoDialogOpen}>
         <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>💲 Preço de Mercado</DialogTitle>
