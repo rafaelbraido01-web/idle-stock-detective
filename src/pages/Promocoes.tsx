@@ -431,6 +431,7 @@ export default function Promocoes() {
                   <TableHead className="px-2 text-center">Status</TableHead>
                   <TableHead className="px-2 text-center">Mercado</TableHead>
                   <TableHead className="px-2 text-center">Campanha</TableHead>
+                </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.map(item => {
