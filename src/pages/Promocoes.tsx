@@ -269,7 +269,7 @@ export default function Promocoes() {
   };
 
   const handleSaveCampanha = async () => {
-    if (!campanhaProdutoId || !campanhaNome || !campanhaDataInicio || !campanhaDataFim) {
+    if (!campanhaProdutoId || !campanhaNome || campanhaCanais.length === 0 || !campanhaDataInicio || !campanhaDataFim) {
       toast.error('Preencha todos os campos');
       return;
     }
@@ -277,7 +277,7 @@ export default function Promocoes() {
     const payload = {
       produto_id: campanhaProdutoId,
       campanha: campanhaNome,
-      canal: campanhaCanal,
+      canal: campanhaCanais.join(', '),
       data_inicio: format(campanhaDataInicio, 'yyyy-MM-dd'),
       data_fim: format(campanhaDataFim, 'yyyy-MM-dd'),
     };
