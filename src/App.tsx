@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { InventoryProvider } from "@/store/InventoryContext";
 import { PageVisibilityProvider } from "@/store/PageVisibilityContext";
 import { Layout } from "@/components/Layout";
+import { useAuth } from "@/hooks/useAuth";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import Imports from "./pages/Imports";
@@ -12,15 +13,28 @@ import Comparacao from "./pages/Comparacao";
 import Promocoes from "./pages/Promocoes";
 import PrecoMercado from "./pages/PrecoMercado";
 import Configuracoes from "./pages/Configuracoes";
+import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <PageVisibilityProvider>
+const ProtectedApp = () => {
+  const { session, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <p className="text-muted-foreground">Carregando...</p>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <Login />;
+  }
+
+  return (
+    <PageVisibilityProvider>
       <InventoryProvider>
         <BrowserRouter>
           <Layout>
@@ -37,7 +51,15 @@ const App = () => (
           </Layout>
         </BrowserRouter>
       </InventoryProvider>
-      </PageVisibilityProvider>
+    </PageVisibilityProvider>
+  );
+};
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <ProtectedApp />
     </TooltipProvider>
   </QueryClientProvider>
 );
