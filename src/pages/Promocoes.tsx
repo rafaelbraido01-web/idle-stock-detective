@@ -262,7 +262,7 @@ export default function Promocoes() {
     setCampanhaProdutoId(codigo);
     const existing = campanhas.get(codigo);
     setCampanhaNome(existing?.campanha || '');
-    setCampanhaCanal((existing?.canal as CanalCampanha) || 'Marketplace');
+    setCampanhaCanais(existing?.canal ? (existing.canal as string).split(', ').filter(c => CANAIS_CAMPANHA.includes(c as CanalCampanha)) as CanalCampanha[] : []);
     setCampanhaDataInicio(existing?.data_inicio ? new Date(existing.data_inicio + 'T00:00:00') : undefined);
     setCampanhaDataFim(existing?.data_fim ? new Date(existing.data_fim + 'T00:00:00') : undefined);
     setCampanhaDialogOpen(true);
