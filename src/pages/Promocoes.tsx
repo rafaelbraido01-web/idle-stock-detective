@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useInventory } from '@/store/InventoryContext';
@@ -100,7 +101,7 @@ export default function Promocoes() {
   const [campanhaDialogOpen, setCampanhaDialogOpen] = useState(false);
   const [campanhaProdutoId, setCampanhaProdutoId] = useState<string | null>(null);
   const [campanhaNome, setCampanhaNome] = useState('');
-  const [campanhaCanal, setCampanhaCanal] = useState<CanalCampanha>('Marketplace');
+  const [campanhaCanais, setCampanhaCanais] = useState<CanalCampanha[]>([]);
   const [campanhaDataInicio, setCampanhaDataInicio] = useState<Date | undefined>();
   const [campanhaDataFim, setCampanhaDataFim] = useState<Date | undefined>();
   const [campanhaSaving, setCampanhaSaving] = useState(false);
@@ -262,14 +263,14 @@ export default function Promocoes() {
     setCampanhaProdutoId(codigo);
     const existing = campanhas.get(codigo);
     setCampanhaNome(existing?.campanha || '');
-    setCampanhaCanal((existing?.canal as CanalCampanha) || 'Marketplace');
+    setCampanhaCanais(existing?.canal ? (existing.canal as string).split(', ').filter(c => CANAIS_CAMPANHA.includes(c as CanalCampanha)) as CanalCampanha[] : []);
     setCampanhaDataInicio(existing?.data_inicio ? new Date(existing.data_inicio + 'T00:00:00') : undefined);
     setCampanhaDataFim(existing?.data_fim ? new Date(existing.data_fim + 'T00:00:00') : undefined);
     setCampanhaDialogOpen(true);
   };
 
   const handleSaveCampanha = async () => {
-    if (!campanhaProdutoId || !campanhaNome || !campanhaDataInicio || !campanhaDataFim) {
+    if (!campanhaProdutoId || !campanhaNome || campanhaCanais.length === 0 || !campanhaDataInicio || !campanhaDataFim) {
       toast.error('Preencha todos os campos');
       return;
     }
@@ -277,7 +278,7 @@ export default function Promocoes() {
     const payload = {
       produto_id: campanhaProdutoId,
       campanha: campanhaNome,
-      canal: campanhaCanal,
+      canal: campanhaCanais.join(', '),
       data_inicio: format(campanhaDataInicio, 'yyyy-MM-dd'),
       data_fim: format(campanhaDataFim, 'yyyy-MM-dd'),
     };
@@ -633,17 +634,22 @@ export default function Promocoes() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground">Canal</label>
-                <Select value={campanhaCanal} onValueChange={v => setCampanhaCanal(v as CanalCampanha)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CANAIS_CAMPANHA.map(c => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <label className="text-xs font-medium text-muted-foreground">Canais</label>
+                <div className="flex flex-wrap gap-2">
+                  {CANAIS_CAMPANHA.map(c => (
+                    <label key={c} className="flex items-center gap-1.5 text-sm cursor-pointer">
+                      <Checkbox
+                        checked={campanhaCanais.includes(c)}
+                        onCheckedChange={(checked) => {
+                          setCampanhaCanais(prev =>
+                            checked ? [...prev, c] : prev.filter(x => x !== c)
+                          );
+                        }}
+                      />
+                      {c}
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
