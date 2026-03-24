@@ -11,9 +11,10 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useInventory } from '@/store/InventoryContext';
 import { formatCurrency, formatNumber, formatDate } from '@/types/inventory';
+import { Textarea } from '@/components/ui/textarea';
 import { KPICard } from '@/components/KPICard';
 import { ProductDrawer } from '@/components/ProductDrawer';
-import { Tag, PackageSearch, CalendarIcon } from 'lucide-react';
+import { Tag, PackageSearch, CalendarIcon, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -105,6 +106,15 @@ export default function Promocoes() {
   const [campanhaDataInicio, setCampanhaDataInicio] = useState<Date | undefined>();
   const [campanhaDataFim, setCampanhaDataFim] = useState<Date | undefined>();
   const [campanhaSaving, setCampanhaSaving] = useState(false);
+
+  // Bulk campaign state
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [bulkCampanhaNome, setBulkCampanhaNome] = useState('');
+  const [bulkCanais, setBulkCanais] = useState<CanalCampanha[]>([]);
+  const [bulkDataInicio, setBulkDataInicio] = useState<Date | undefined>();
+  const [bulkDataFim, setBulkDataFim] = useState<Date | undefined>();
+  const [bulkCodigos, setBulkCodigos] = useState('');
+  const [bulkSaving, setBulkSaving] = useState(false);
 
   // Load market prices and campaigns
   useEffect(() => {
@@ -309,6 +319,80 @@ export default function Promocoes() {
     ? comparisons.find(c => c.codigo === mercadoProdutoId)
     : null;
   const mercadoExisting = mercadoProdutoId ? precosMercado.get(mercadoProdutoId) : null;
+  const handleSaveBulkCampanha = async () => {
+    if (!bulkCampanhaNome || bulkCanais.length === 0 || !bulkDataInicio || !bulkDataFim || !bulkCodigos.trim()) {
+      toast.error('Preencha todos os campos');
+      return;
+    }
+    setBulkSaving(true);
+
+    const codigos = bulkCodigos
+      .split(/[,;\n]+/)
+      .map(c => c.trim())
+      .filter(Boolean);
+
+    // Lookup produto_ids by codigo
+    const { data: produtosFound, error: lookupError } = await supabase
+      .from('produtos')
+      .select('id, codigo')
+      .in('codigo', codigos);
+
+    if (lookupError) {
+      toast.error('Erro ao buscar produtos');
+      setBulkSaving(false);
+      return;
+    }
+
+    const foundCodigos = new Set((produtosFound || []).map(p => p.codigo));
+    const notFound = codigos.filter(c => !foundCodigos.has(c));
+
+    if (!produtosFound || produtosFound.length === 0) {
+      toast.error('Nenhum código de produto encontrado');
+      setBulkSaving(false);
+      return;
+    }
+
+    const canal = bulkCanais.join(', ');
+    const dataInicio = format(bulkDataInicio, 'yyyy-MM-dd');
+    const dataFim = format(bulkDataFim, 'yyyy-MM-dd');
+
+    const rows = produtosFound.map(p => ({
+      produto_id: p.codigo,
+      campanha: bulkCampanhaNome,
+      canal,
+      data_inicio: dataInicio,
+      data_fim: dataFim,
+    }));
+
+    const { error: insertError } = await supabase
+      .from('campanhas_produto')
+      .insert(rows as any);
+
+    if (insertError) {
+      toast.error('Erro ao salvar campanhas');
+    } else {
+      // Update local state
+      setCampanhas(prev => {
+        const next = new Map(prev);
+        rows.forEach(r => {
+          next.set(r.produto_id, { id: '', ...r } as CampanhaProduto);
+        });
+        return next;
+      });
+      const msg = notFound.length > 0
+        ? `${produtosFound.length} produtos vinculados. ${notFound.length} código(s) não encontrado(s): ${notFound.join(', ')}`
+        : `${produtosFound.length} produtos vinculados à campanha!`;
+      toast.success(msg);
+      setBulkDialogOpen(false);
+      setBulkCampanhaNome('');
+      setBulkCanais([]);
+      setBulkDataInicio(undefined);
+      setBulkDataFim(undefined);
+      setBulkCodigos('');
+    }
+    setBulkSaving(false);
+  };
+
   const campanhaProduto = campanhaProdutoId
     ? comparisons.find(c => c.codigo === campanhaProdutoId)
     : null;
@@ -380,7 +464,7 @@ export default function Promocoes() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-3 items-end">
         <Select value={statusFilter} onValueChange={v => setStatusFilter(v as StatusFilter)}>
           <SelectTrigger className="w-[180px]">
             <SelectValue />
@@ -403,6 +487,10 @@ export default function Promocoes() {
             <SelectItem value="expirada">Promoção expirada</SelectItem>
           </SelectContent>
         </Select>
+        <Button onClick={() => setBulkDialogOpen(true)} className="ml-auto">
+          <Upload className="h-4 w-4 mr-1.5" />
+          Subir Campanha
+        </Button>
       </div>
 
       {/* Table */}
@@ -698,6 +786,91 @@ export default function Promocoes() {
             <Button variant="outline" onClick={() => setCampanhaDialogOpen(false)}>Cancelar</Button>
             <Button onClick={handleSaveCampanha} disabled={campanhaSaving}>
               {campanhaSaving ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Bulk Campaign Dialog */}
+      <Dialog open={bulkDialogOpen} onOpenChange={(open) => { if (!open) return; setBulkDialogOpen(open); }}>
+        <DialogContent className="sm:max-w-lg" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle>📦 Subir Campanha em Lote</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Nome da campanha</label>
+              <Input
+                placeholder="Ex: Black Friday 2026"
+                value={bulkCampanhaNome}
+                onChange={(e) => setBulkCampanhaNome(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Canais</label>
+              <div className="flex flex-wrap gap-2">
+                {CANAIS_CAMPANHA.map(c => (
+                  <label key={c} className="flex items-center gap-1.5 text-sm cursor-pointer">
+                    <Checkbox
+                      checked={bulkCanais.includes(c)}
+                      onCheckedChange={(checked) => {
+                        setBulkCanais(prev =>
+                          checked ? [...prev, c] : prev.filter(x => x !== c)
+                        );
+                      }}
+                    />
+                    {c}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Data Início</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !bulkDataInicio && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {bulkDataInicio ? format(bulkDataInicio, 'dd/MM/yyyy') : 'Selecionar'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={bulkDataInicio} onSelect={setBulkDataInicio} initialFocus className={cn("p-3 pointer-events-auto")} />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Data Fim</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !bulkDataFim && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {bulkDataFim ? format(bulkDataFim, 'dd/MM/yyyy') : 'Selecionar'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={bulkDataFim} onSelect={setBulkDataFim} initialFocus className={cn("p-3 pointer-events-auto")} />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Códigos dos produtos</label>
+              <Textarea
+                placeholder="Insira os códigos separados por vírgula, ponto e vírgula ou quebra de linha. Ex:&#10;ABC123&#10;DEF456, GHI789"
+                value={bulkCodigos}
+                onChange={(e) => setBulkCodigos(e.target.value)}
+                rows={6}
+              />
+              <p className="text-[10px] text-muted-foreground">Aceita separação por vírgula, ponto e vírgula ou quebra de linha</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleSaveBulkCampanha} disabled={bulkSaving}>
+              {bulkSaving ? 'Salvando...' : 'Salvar Campanha'}
             </Button>
           </DialogFooter>
         </DialogContent>
