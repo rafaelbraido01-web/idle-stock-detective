@@ -719,8 +719,10 @@ export default function Promocoes() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      )}
 
       {/* Campaign Dialog */}
+      {campanhaDialogOpen && (
       <Dialog open={campanhaDialogOpen} onOpenChange={(open) => { if (!open) return; setCampanhaDialogOpen(open); }}>
         <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
