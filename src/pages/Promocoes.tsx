@@ -319,6 +319,80 @@ export default function Promocoes() {
     ? comparisons.find(c => c.codigo === mercadoProdutoId)
     : null;
   const mercadoExisting = mercadoProdutoId ? precosMercado.get(mercadoProdutoId) : null;
+  const handleSaveBulkCampanha = async () => {
+    if (!bulkCampanhaNome || bulkCanais.length === 0 || !bulkDataInicio || !bulkDataFim || !bulkCodigos.trim()) {
+      toast.error('Preencha todos os campos');
+      return;
+    }
+    setBulkSaving(true);
+
+    const codigos = bulkCodigos
+      .split(/[,;\n]+/)
+      .map(c => c.trim())
+      .filter(Boolean);
+
+    // Lookup produto_ids by codigo
+    const { data: produtosFound, error: lookupError } = await supabase
+      .from('produtos')
+      .select('id, codigo')
+      .in('codigo', codigos);
+
+    if (lookupError) {
+      toast.error('Erro ao buscar produtos');
+      setBulkSaving(false);
+      return;
+    }
+
+    const foundCodigos = new Set((produtosFound || []).map(p => p.codigo));
+    const notFound = codigos.filter(c => !foundCodigos.has(c));
+
+    if (!produtosFound || produtosFound.length === 0) {
+      toast.error('Nenhum código de produto encontrado');
+      setBulkSaving(false);
+      return;
+    }
+
+    const canal = bulkCanais.join(', ');
+    const dataInicio = format(bulkDataInicio, 'yyyy-MM-dd');
+    const dataFim = format(bulkDataFim, 'yyyy-MM-dd');
+
+    const rows = produtosFound.map(p => ({
+      produto_id: p.codigo,
+      campanha: bulkCampanhaNome,
+      canal,
+      data_inicio: dataInicio,
+      data_fim: dataFim,
+    }));
+
+    const { error: insertError } = await supabase
+      .from('campanhas_produto')
+      .insert(rows as any);
+
+    if (insertError) {
+      toast.error('Erro ao salvar campanhas');
+    } else {
+      // Update local state
+      setCampanhas(prev => {
+        const next = new Map(prev);
+        rows.forEach(r => {
+          next.set(r.produto_id, { id: '', ...r } as CampanhaProduto);
+        });
+        return next;
+      });
+      const msg = notFound.length > 0
+        ? `${produtosFound.length} produtos vinculados. ${notFound.length} código(s) não encontrado(s): ${notFound.join(', ')}`
+        : `${produtosFound.length} produtos vinculados à campanha!`;
+      toast.success(msg);
+      setBulkDialogOpen(false);
+      setBulkCampanhaNome('');
+      setBulkCanais([]);
+      setBulkDataInicio(undefined);
+      setBulkDataFim(undefined);
+      setBulkCodigos('');
+    }
+    setBulkSaving(false);
+  };
+
   const campanhaProduto = campanhaProdutoId
     ? comparisons.find(c => c.codigo === campanhaProdutoId)
     : null;
