@@ -6,13 +6,17 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useInventory } from '@/store/InventoryContext';
 import { formatCurrency, formatNumber, formatDate } from '@/types/inventory';
 import { KPICard } from '@/components/KPICard';
 import { ProductDrawer } from '@/components/ProductDrawer';
-import { Tag, PackageSearch } from 'lucide-react';
+import { Tag, PackageSearch, CalendarIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 type StatusFilter = 'todos' | 'vendeu' | 'sem-movimento' | 'reposicao';
 type PromoFilter = 'todas' | 'ativa' | 'expirada' | 'recem-expirada';
