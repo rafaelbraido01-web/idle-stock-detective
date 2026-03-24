@@ -100,7 +100,7 @@ export default function Promocoes() {
   const [campanhaDialogOpen, setCampanhaDialogOpen] = useState(false);
   const [campanhaProdutoId, setCampanhaProdutoId] = useState<string | null>(null);
   const [campanhaNome, setCampanhaNome] = useState('');
-  const [campanhaCanal, setCampanhaCanal] = useState<CanalCampanha>('Marketplace');
+  const [campanhaCanais, setCampanhaCanais] = useState<CanalCampanha[]>([]);
   const [campanhaDataInicio, setCampanhaDataInicio] = useState<Date | undefined>();
   const [campanhaDataFim, setCampanhaDataFim] = useState<Date | undefined>();
   const [campanhaSaving, setCampanhaSaving] = useState(false);
