@@ -464,7 +464,7 @@ export default function Promocoes() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-3 items-end">
         <Select value={statusFilter} onValueChange={v => setStatusFilter(v as StatusFilter)}>
           <SelectTrigger className="w-[180px]">
             <SelectValue />
@@ -487,6 +487,10 @@ export default function Promocoes() {
             <SelectItem value="expirada">Promoção expirada</SelectItem>
           </SelectContent>
         </Select>
+        <Button onClick={() => setBulkDialogOpen(true)} className="ml-auto">
+          <Upload className="h-4 w-4 mr-1.5" />
+          Subir Campanha
+        </Button>
       </div>
 
       {/* Table */}
