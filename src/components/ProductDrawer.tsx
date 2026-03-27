@@ -1,8 +1,26 @@
+import { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useInventory } from '@/store/InventoryContext';
 import { AgingBadge } from '@/components/AgingBadge';
 import { formatCurrency, formatNumber, formatDate } from '@/types/inventory';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { supabase } from '@/integrations/supabase/client';
+import { Tag, TrendingDown } from 'lucide-react';
+
+interface CampanhaRecord {
+  id: string;
+  campanha: string;
+  canal: string;
+  data_inicio: string;
+  data_fim: string;
+}
+
+interface PrecoMercadoRecord {
+  id: string;
+  fonte: string;
+  preco: number;
+  updated_at: string;
+}
 
 interface ProductDrawerProps {
   produtoId: string | null;
@@ -14,6 +32,24 @@ export function ProductDrawer({ produtoId, onClose }: ProductDrawerProps) {
   const produto = produtos.find(p => p.id === produtoId);
   const history = produtoId ? getProdutoHistory(produtoId) : [];
   const latestSnap = getLatestProdutoSnapshots().find(ps => ps.produto_id === produtoId);
+
+  const [campanhas, setCampanhas] = useState<CampanhaRecord[]>([]);
+  const [precosMercado, setPrecosMercado] = useState<PrecoMercadoRecord[]>([]);
+
+  useEffect(() => {
+    if (!produto) { setCampanhas([]); setPrecosMercado([]); return; }
+    const codigo = produto.codigo;
+
+    supabase.from('campanhas_produto').select('*')
+      .eq('produto_id', codigo)
+      .order('data_fim', { ascending: false })
+      .then(({ data }) => setCampanhas((data as CampanhaRecord[]) || []));
+
+    supabase.from('precos_mercado').select('*')
+      .eq('produto_id', codigo)
+      .order('updated_at', { ascending: false })
+      .then(({ data }) => setPrecosMercado((data as PrecoMercadoRecord[]) || []));
+  }, [produto]);
 
   const chartData = history.map(h => ({
     data: new Date(h.data_importacao).toLocaleDateString('pt-BR'),
