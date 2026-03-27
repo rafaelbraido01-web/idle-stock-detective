@@ -196,12 +196,21 @@ export default function Campanhas() {
   useEffect(() => { setPage(0); }, [statusFilter, searchTerm]);
 
   const kpis = useMemo(() => {
-    const ativas = enriched.filter(c => c.status === 'ativa').length;
-    const futuras = enriched.filter(c => c.status === 'futura').length;
-    const encerradas = enriched.filter(c => c.status === 'encerrada').length;
+    const ativas = grouped.filter(g => g.status === 'ativa').length;
+    const futuras = grouped.filter(g => g.status === 'futura').length;
+    const encerradas = grouped.filter(g => g.status === 'encerrada').length;
     const produtosUnicos = new Set(enriched.map(c => c.produto_id)).size;
-    return { total: enriched.length, ativas, futuras, encerradas, produtosUnicos };
-  }, [enriched]);
+    return { total: grouped.length, ativas, futuras, encerradas, produtosUnicos };
+  }, [grouped, enriched]);
+
+  const toggleGroup = (key: string) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir(d => d === 'desc' ? 'asc' : 'desc');
