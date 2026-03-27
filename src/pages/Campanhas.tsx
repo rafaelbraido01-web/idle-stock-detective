@@ -133,19 +133,40 @@ export default function Campanhas() {
     }));
   }, [campanhas]);
 
+  // Group by identical campaign attributes
+  const grouped = useMemo(() => {
+    const map = new Map<string, CampanhaGroup>();
+    for (const c of enriched) {
+      const key = `${c.campanha}||${c.canal}||${c.data_inicio}||${c.data_fim}`;
+      if (!map.has(key)) {
+        map.set(key, {
+          key,
+          campanha: c.campanha,
+          canal: c.canal,
+          data_inicio: c.data_inicio,
+          data_fim: c.data_fim,
+          status: c.status,
+          produtos: [],
+        });
+      }
+      map.get(key)!.produtos.push({ id: c.id, produto_id: c.produto_id });
+    }
+    return Array.from(map.values());
+  }, [enriched]);
+
   const filtered = useMemo(() => {
-    let result = enriched;
+    let result = grouped;
 
     if (statusFilter !== 'todas') {
-      result = result.filter(c => c.status === statusFilter);
+      result = result.filter(g => g.status === statusFilter);
     }
 
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
-      result = result.filter(c =>
-        c.campanha.toLowerCase().includes(term) ||
-        c.produto_id.toLowerCase().includes(term) ||
-        c.canal.toLowerCase().includes(term)
+      result = result.filter(g =>
+        g.campanha.toLowerCase().includes(term) ||
+        g.canal.toLowerCase().includes(term) ||
+        g.produtos.some(p => p.produto_id.toLowerCase().includes(term))
       );
     }
 
@@ -154,6 +175,8 @@ export default function Campanhas() {
       if (sortKey === 'status') {
         const order = { ativa: 0, futura: 1, encerrada: 2 };
         va = order[a.status]; vb = order[b.status];
+      } else if (sortKey === 'produtos') {
+        va = a.produtos.length; vb = b.produtos.length;
       } else {
         va = a[sortKey] || ''; vb = b[sortKey] || '';
       }
@@ -165,7 +188,7 @@ export default function Campanhas() {
     });
 
     return result;
-  }, [enriched, statusFilter, searchTerm, sortKey, sortDir]);
+  }, [grouped, statusFilter, searchTerm, sortKey, sortDir]);
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = useMemo(() => filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE), [filtered, page]);
