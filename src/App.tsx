@@ -12,6 +12,7 @@ import Imports from "./pages/Imports";
 import Comparacao from "./pages/Comparacao";
 import Promocoes from "./pages/Promocoes";
 import PrecoMercado from "./pages/PrecoMercado";
+import Campanhas from "./pages/Campanhas";
 import Configuracoes from "./pages/Configuracoes";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
