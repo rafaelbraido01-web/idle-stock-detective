@@ -14,7 +14,7 @@ import { formatCurrency, formatNumber, formatDate } from '@/types/inventory';
 import { Textarea } from '@/components/ui/textarea';
 import { KPICard } from '@/components/KPICard';
 import { ProductDrawer } from '@/components/ProductDrawer';
-import { Tag, PackageSearch, CalendarIcon, Upload } from 'lucide-react';
+import { Tag, PackageSearch, CalendarIcon, Upload, ArrowUpDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
