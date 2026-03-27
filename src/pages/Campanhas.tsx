@@ -42,7 +42,17 @@ type CanalCampanha = typeof CANAIS_CAMPANHA[number];
 
 type StatusCampanha = 'ativa' | 'futura' | 'encerrada';
 type StatusFilter = 'todas' | StatusCampanha;
-type SortKey = 'campanha' | 'produto_id' | 'canal' | 'data_inicio' | 'data_fim' | 'status';
+type SortKey = 'campanha' | 'canal' | 'data_inicio' | 'data_fim' | 'status' | 'produtos';
+
+interface CampanhaGroup {
+  key: string;
+  campanha: string;
+  canal: string;
+  data_inicio: string;
+  data_fim: string;
+  status: StatusCampanha;
+  produtos: Array<{ id: string; produto_id: string }>;
+}
 
 function getCampanhaStatus(dataInicio: string, dataFim: string): StatusCampanha {
   const now = new Date();
