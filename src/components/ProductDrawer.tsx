@@ -179,6 +179,61 @@ export function ProductDrawer({ produtoId, onClose }: ProductDrawerProps) {
                 <p className="text-xs text-muted-foreground">Importe mais relatórios para ver o histórico de evolução</p>
               </div>
             )}
+
+            {/* Campanhas realizadas */}
+            <div className="mt-6">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <Tag className="h-3.5 w-3.5" /> Campanhas Realizadas
+              </p>
+              {campanhas.length > 0 ? (
+                <div className="space-y-2">
+                  {campanhas.map(c => {
+                    const ativa = new Date(c.data_fim) >= new Date();
+                    return (
+                      <div key={c.id} className={`rounded-lg p-3 border text-sm ${ativa ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800' : 'bg-muted/50 border-border'}`}>
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">{c.campanha || 'Sem nome'}</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${ativa ? 'bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200' : 'bg-muted text-muted-foreground'}`}>
+                            {ativa ? 'Ativa' : 'Encerrada'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {c.canal} · {formatDate(c.data_inicio)} → {formatDate(c.data_fim)}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="border border-dashed rounded-lg p-4 text-center">
+                  <p className="text-xs text-muted-foreground">Nenhuma campanha registrada</p>
+                </div>
+              )}
+            </div>
+
+            {/* Histórico de preço de mercado */}
+            <div className="mt-6 mb-4">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <TrendingDown className="h-3.5 w-3.5" /> Histórico de Preço de Mercado
+              </p>
+              {precosMercado.length > 0 ? (
+                <div className="space-y-2">
+                  {precosMercado.map(pm => (
+                    <div key={pm.id} className="bg-muted/50 rounded-lg p-3 flex items-center justify-between">
+                      <div>
+                        <span className="text-sm font-medium">{pm.fonte}</span>
+                        <p className="text-[10px] text-muted-foreground">{new Date(pm.updated_at).toLocaleDateString('pt-BR')}</p>
+                      </div>
+                      <span className="text-sm font-mono font-semibold">{formatCurrency(pm.preco)}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="border border-dashed rounded-lg p-4 text-center">
+                  <p className="text-xs text-muted-foreground">Nenhum preço de mercado pesquisado</p>
+                </div>
+              )}
+            </div>
           </>
         )}
       </SheetContent>
