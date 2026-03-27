@@ -173,17 +173,27 @@ export default function Products() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b bg-muted/30">
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">Código</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">Descrição</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">Grupo</th>
+                    <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('codigo')}>
+                      <span className="inline-flex items-center gap-1">Código <ArrowUpDown className="h-3 w-3" /></span>
+                    </th>
+                    <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('descricao')}>
+                      <span className="inline-flex items-center gap-1">Descrição <ArrowUpDown className="h-3 w-3" /></span>
+                    </th>
+                    <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('grupo')}>
+                      <span className="inline-flex items-center gap-1">Grupo <ArrowUpDown className="h-3 w-3" /></span>
+                    </th>
                     <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('quantidade')}>
                       <span className="inline-flex items-center gap-1">Qtd <ArrowUpDown className="h-3 w-3" /></span>
                     </th>
-                    <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">Custo Médio</th>
+                    <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('valor_unitario')}>
+                      <span className="inline-flex items-center gap-1">Custo Médio <ArrowUpDown className="h-3 w-3" /></span>
+                    </th>
                     <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('preco_tabela')}>
                       <span className="inline-flex items-center gap-1">Preço Tabela <ArrowUpDown className="h-3 w-3" /></span>
                     </th>
-                    <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">Promoção</th>
+                    <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('valor_promocao')}>
+                      <span className="inline-flex items-center gap-1">Promoção <ArrowUpDown className="h-3 w-3" /></span>
+                    </th>
                     <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('valor_total')}>
                       <span className="inline-flex items-center gap-1">Vlr Estoque <ArrowUpDown className="h-3 w-3" /></span>
                     </th>
@@ -193,7 +203,9 @@ export default function Products() {
                     <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('dias_sem_venda')}>
                       <span className="inline-flex items-center gap-1">Dias s/ Venda <ArrowUpDown className="h-3 w-3" /></span>
                     </th>
-                    <th className="text-center px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+                    <th className="text-center px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('categoria_estoque')}>
+                      <span className="inline-flex items-center gap-1">Status <ArrowUpDown className="h-3 w-3" /></span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
