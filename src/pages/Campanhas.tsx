@@ -99,6 +99,7 @@ export default function Campanhas() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   // Pagination
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const PAGE_SIZE = 50;
   const [page, setPage] = useState(0);
 
