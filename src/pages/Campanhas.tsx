@@ -14,7 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Megaphone, Plus, Upload, Trash2, CalendarIcon, Search, ArrowUpDown } from 'lucide-react';
+import { Megaphone, Plus, Upload, Trash2, CalendarIcon, Search, ArrowUpDown, ChevronDown, ChevronRight, Users } from 'lucide-react';
 import { KPICard } from '@/components/KPICard';
 import {
   AlertDialog,
