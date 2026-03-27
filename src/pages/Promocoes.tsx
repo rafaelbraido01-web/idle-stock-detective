@@ -258,7 +258,7 @@ export default function Promocoes() {
     } else {
       setPrecosMercado(prev => {
         const next = new Map(prev);
-        next.set(mercadoProdutoId, { produto_id: mercadoProdutoId, preco, updated_at: now, fonte: mercadoFonte });
+        next.set(mercadoProdutoId, inserted as any);
         return next;
       });
       toast.success('Preço de mercado salvo!');
