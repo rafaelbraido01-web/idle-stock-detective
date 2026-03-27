@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { ImportButton } from '@/components/ImportButton';
+import { SyncERPButton } from '@/components/SyncERPButton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -19,6 +20,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </Tooltip>
             </div>
             <div className="flex items-center gap-2">
+              <SyncERPButton />
               <ImportButton />
             </div>
           </header>
