@@ -1,36 +1,46 @@
 
 
-## Plano: Reestruturar página Preço de Mercado
-
-### Contexto
-A página atual mostra produtos com um botão de pesquisa automática online por linha. O usuário quer:
-1. **Reestruturar** a página para incluir dados de preço de mercado já salvos no banco (`precos_mercado`)
-2. **Botão toggle** no topo para ocultar/exibir a coluna de pesquisa automática
+## Plano: Melhorar Dashboard com Campanhas e Preço de Mercado
 
 ### O que muda
 
-**Arquivo: `src/pages/PrecoMercado.tsx`**
+**Arquivo: `src/pages/Dashboard.tsx`**
 
-1. **Carregar preços salvos do banco** -- useEffect que busca `precos_mercado` agrupado por `produto_id`, pegando o registro mais recente de cada produto (maior `updated_at`)
+#### 1. Novos dados carregados via Supabase
+- Buscar `campanhas_produto` para calcular campanhas ativas/futuras/encerradas
+- Buscar `precos_mercado` agrupado por `produto_id` (mais recente de cada)
+- Cruzar com os produtos do snapshot atual
 
-2. **Novas colunas na tabela:**
-   - **Preço Mercado** -- último valor registrado manualmente ou via pesquisa
-   - **Fonte** -- de onde veio (Mercado Livre, Kabum, etc.)
-   - **Atualizado em** -- data do último registro
-   - **Diferença %** -- comparação entre preço tabela e preço de mercado
+#### 2. Novos KPIs (segunda linha, abaixo dos 2 existentes)
+- **Campanhas Ativas** -- quantidade de campanhas com status "ativa" hoje
+- **Produtos com Preço de Mercado** -- quantos produtos do estoque atual possuem preço de mercado registrado
+- **Diferença Média** -- diferença percentual média entre preço tabela e preço de mercado (dos que possuem registro)
 
-3. **Botão toggle no topo** ("Pesquisa Online") usando um Switch ou Button que controla um estado `showAutoSearch`:
-   - Quando ativo: mostra a coluna "Ação" com os botões de pesquisa automática (comportamento atual)
-   - Quando oculto: esconde essa coluna, deixando a tabela mais limpa para consulta
+#### 3. Novo card: Resumo de Campanhas
+- Mini-tabela ou lista mostrando as campanhas ativas com: nome da campanha, canal, quantidade de produtos vinculados, data de fim
+- Ordenado por data de fim (mais próxima do vencimento primeiro)
+- Exibido ao lado do gráfico de Evolução ou em uma nova linha
 
-4. **Ordenação clicável** nos cabeçalhos (mesmo padrão já usado em Promoções/Produtos)
-
-5. **Paginação** para tabelas grandes
+#### 4. Novo card: Oportunidades de Preço
+- Lista dos produtos com maior diferença negativa (preço de mercado menor que preço tabela) -- produtos onde a concorrência está mais barata
+- Colunas: Código, Descrição, Preço Tabela, Preço Mercado, Diferença %
+- Top 5-10, ordenado pela maior diferença
 
 ### Detalhes técnicos
-- Query: `supabase.from('precos_mercado').select('produto_id, preco, updated_at, fonte').order('updated_at', { ascending: false })`
-- Agrupar por `produto_id` mantendo apenas o mais recente (mesmo padrão da página Promoções)
+- Queries diretas ao Supabase com `useEffect` (mesmo padrão usado em PrecoMercado e Campanhas)
+- Status de campanha calculado com a mesma lógica de `getCampanhaStatus` da página Campanhas
+- Preço de mercado agrupado por `produto_id` mantendo o `updated_at` mais recente
 - Diferença %: `((precoMercado - precoTabela) / precoTabela) * 100`
-- Estado `showAutoSearch` inicia como `false` (oculto por padrão)
-- Toggle renderizado como `<Button variant="outline">` com ícone `Eye`/`EyeOff`
+- Os filtros de grupo/marca existentes continuam funcionando para os KPIs de estoque; os novos cards de campanhas e preço ficam independentes dos filtros
+
+### Layout final
+```text
+[Alertas de Risco]
+[Valor Total] [Pareto]
+[Campanhas Ativas] [Produtos c/ Preço Mercado] [Diferença Média]
+[Últ. Compra] [Custo Médio]
+[Curva ABC] [Evolução]
+[Campanhas Ativas - detalhe] [Oportunidades de Preço]
+[Top 10 Parados]
+```
 
