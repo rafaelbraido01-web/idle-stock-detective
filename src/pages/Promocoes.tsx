@@ -210,7 +210,7 @@ export default function Promocoes() {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(now.getDate() - 30);
 
-    return comparisons.filter(c => {
+    let result = comparisons.filter(c => {
       if (statusFilter !== 'todos' && c.status !== statusFilter) return false;
       if (promoFilter === 'ativa' && !c.promoAtiva) return false;
       if (promoFilter === 'expirada' && c.promoAtiva) return false;
@@ -220,7 +220,28 @@ export default function Promocoes() {
       }
       return true;
     });
-  }, [comparisons, statusFilter, promoFilter]);
+
+    result.sort((a, b) => {
+      let va: any, vb: any;
+      if (sortKey === 'codigo' || sortKey === 'descricao' || sortKey === 'status') {
+        va = a[sortKey] || '';
+        vb = b[sortKey] || '';
+      } else if (sortKey === 'dataFimPromocao') {
+        va = a.dataFimPromocao || '';
+        vb = b.dataFimPromocao || '';
+      } else {
+        va = a[sortKey] ?? 0;
+        vb = b[sortKey] ?? 0;
+      }
+      if (typeof va === 'string') {
+        const cmp = va.localeCompare(vb as string);
+        return sortDir === 'desc' ? -cmp : cmp;
+      }
+      return sortDir === 'desc' ? (vb as number) - (va as number) : (va as number) - (vb as number);
+    });
+
+    return result;
+  }, [comparisons, statusFilter, promoFilter, sortKey, sortDir]);
 
   const kpis = useMemo(() => {
     const total = comparisons.length;
