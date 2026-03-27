@@ -188,13 +188,26 @@ export function ProductDrawer({ produtoId, onClose }: ProductDrawerProps) {
               {campanhas.length > 0 ? (
                 <div className="space-y-2">
                   {campanhas.map(c => {
-                    const ativa = new Date(c.data_fim) >= new Date();
+                    const hoje = new Date();
+                    const inicio = new Date(c.data_inicio + 'T00:00:00');
+                    const fim = new Date(c.data_fim + 'T23:59:59');
+                    const status = inicio > hoje ? 'Futura' : fim >= hoje ? 'Ativa' : 'Encerrada';
+                    const statusClass = status === 'Ativa'
+                      ? 'bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200'
+                      : status === 'Futura'
+                        ? 'bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200'
+                        : 'bg-muted text-muted-foreground';
+                    const cardClass = status === 'Ativa'
+                      ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
+                      : status === 'Futura'
+                        ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800'
+                        : 'bg-muted/50 border-border';
                     return (
-                      <div key={c.id} className={`rounded-lg p-3 border text-sm ${ativa ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800' : 'bg-muted/50 border-border'}`}>
+                      <div key={c.id} className={`rounded-lg p-3 border text-sm ${cardClass}`}>
                         <div className="flex items-center justify-between">
                           <span className="font-medium">{c.campanha || 'Sem nome'}</span>
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${ativa ? 'bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200' : 'bg-muted text-muted-foreground'}`}>
-                            {ativa ? 'Ativa' : 'Encerrada'}
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${statusClass}`}>
+                            {status}
                           </span>
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
