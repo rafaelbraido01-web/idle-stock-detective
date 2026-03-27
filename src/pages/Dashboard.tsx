@@ -1,13 +1,36 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell, AreaChart, Area, Legend, Line } from 'recharts';
 import { useInventory } from '@/store/InventoryContext';
 import { KPICard } from '@/components/KPICard';
 import { AgingBadge } from '@/components/AgingBadge';
 import { formatCurrency, formatNumber } from '@/types/inventory';
-import { AlertTriangle, TrendingDown, Filter } from 'lucide-react';
+import { AlertTriangle, TrendingDown, Filter, Megaphone, BarChart3 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
 
+interface MarketPrice {
+  produto_id: string;
+  preco: number;
+  updated_at: string;
+  fonte: string;
+}
+
+interface Campanha {
+  id: string;
+  campanha: string;
+  canal: string;
+  data_inicio: string;
+  data_fim: string;
+  produto_id: string;
+}
+
+function getCampanhaStatus(c: Campanha) {
+  const today = new Date().toISOString().slice(0, 10);
+  if (c.data_inicio > today) return 'Futura';
+  if (c.data_fim < today) return 'Encerrada';
+  return 'Ativa';
+}
 
 export default function Dashboard() {
   const { snapshots, produtoSnapshots, getLatestProdutoSnapshots, produtos } = useInventory();
@@ -16,6 +39,34 @@ export default function Dashboard() {
 
   const [grupoFilter, setGrupoFilter] = useState('all');
   const [marcaFilter, setMarcaFilter] = useState('all');
+
+  // New data from Supabase
+  const [marketPrices, setMarketPrices] = useState<Record<string, MarketPrice>>({});
+  const [campanhas, setCampanhas] = useState<Campanha[]>([]);
+
+  useEffect(() => {
+    async function fetchMarketPrices() {
+      const { data } = await supabase
+        .from('precos_mercado')
+        .select('produto_id, preco, updated_at, fonte')
+        .order('updated_at', { ascending: false });
+      if (data) {
+        const map: Record<string, MarketPrice> = {};
+        for (const row of data) {
+          if (!map[row.produto_id]) map[row.produto_id] = row;
+        }
+        setMarketPrices(map);
+      }
+    }
+    async function fetchCampanhas() {
+      const { data } = await supabase
+        .from('campanhas_produto')
+        .select('id, campanha, canal, data_inicio, data_fim, produto_id');
+      if (data) setCampanhas(data);
+    }
+    fetchMarketPrices();
+    fetchCampanhas();
+  }, []);
 
   const grupos = useMemo(() => [...new Set(produtos.map(p => p.grupo).filter(Boolean))].sort(), [produtos]);
   const marcas = useMemo(() => [...new Set(produtos.map(p => p.marca).filter(Boolean))].sort(), [produtos]);
@@ -72,6 +123,67 @@ export default function Dashboard() {
     };
   }, [filteredLatest]);
 
+  // Campaign KPIs
+  const campanhaKpis = useMemo(() => {
+    const ativas = campanhas.filter(c => getCampanhaStatus(c) === 'Ativa');
+    // Deduplicate campaign names for counting
+    const uniqueAtivas = [...new Set(ativas.map(c => c.campanha))];
+    return { ativasCount: uniqueAtivas.length, ativasTotal: ativas };
+  }, [campanhas]);
+
+  // Active campaigns summary (grouped by campaign name)
+  const campanhasAtivasResumo = useMemo(() => {
+    const ativas = campanhas.filter(c => getCampanhaStatus(c) === 'Ativa');
+    const grouped: Record<string, { campanha: string; canal: string; data_fim: string; qtdProdutos: number }> = {};
+    for (const c of ativas) {
+      const key = `${c.campanha}__${c.canal}`;
+      if (!grouped[key]) {
+        grouped[key] = { campanha: c.campanha, canal: c.canal, data_fim: c.data_fim, qtdProdutos: 0 };
+      }
+      grouped[key].qtdProdutos++;
+      if (c.data_fim < grouped[key].data_fim) grouped[key].data_fim = c.data_fim;
+    }
+    return Object.values(grouped).sort((a, b) => a.data_fim.localeCompare(b.data_fim));
+  }, [campanhas]);
+
+  // Market price KPIs
+  const marketKpis = useMemo(() => {
+    const codigoMap = new Map(produtos.map(p => [p.codigo, p.id]));
+    let totalWithPrice = 0;
+    let totalDiff = 0;
+    let countDiff = 0;
+
+    for (const ps of filteredLatest) {
+      const produto = produtos.find(p => p.id === ps.produto_id);
+      if (!produto) continue;
+      const mp = marketPrices[produto.codigo];
+      if (!mp) continue;
+      totalWithPrice++;
+      if (ps.preco_tabela > 0) {
+        totalDiff += ((mp.preco - ps.preco_tabela) / ps.preco_tabela) * 100;
+        countDiff++;
+      }
+    }
+    const avgDiff = countDiff > 0 ? totalDiff / countDiff : 0;
+    return { totalWithPrice, avgDiff };
+  }, [filteredLatest, produtos, marketPrices]);
+
+  // Price opportunities (market price lower than tabela = competitors cheaper)
+  const priceOpportunities = useMemo(() => {
+    const rows: { codigo: string; descricao: string; precoTabela: number; precoMercado: number; diff: number }[] = [];
+    for (const ps of filteredLatest) {
+      const produto = produtos.find(p => p.id === ps.produto_id);
+      if (!produto) continue;
+      const mp = marketPrices[produto.codigo];
+      if (!mp || ps.preco_tabela <= 0) continue;
+      const diff = ((mp.preco - ps.preco_tabela) / ps.preco_tabela) * 100;
+      if (diff < 0) {
+        rows.push({ codigo: produto.codigo, descricao: produto.descricao, precoTabela: ps.preco_tabela, precoMercado: mp.preco, diff });
+      }
+    }
+    return rows.sort((a, b) => a.diff - b.diff).slice(0, 10);
+  }, [filteredLatest, produtos, marketPrices]);
+
   // Última Compra
   const compraDistribuicao = useMemo(() => {
     const lt30 = filteredLatest.filter(p => p.dias_sem_compra >= 0 && p.dias_sem_compra < 30);
@@ -89,9 +201,6 @@ export default function Dashboard() {
     ].filter(d => d.qtd > 0);
   }, [filteredLatest]);
 
-
-
-
   // Evolução
   const evolutionData = useMemo(() => {
     return snapshots.map(snap => {
@@ -105,9 +214,6 @@ export default function Dashboard() {
       };
     });
   }, [snapshots, produtoSnapshots]);
-
-
-
 
   // Curva ABC
   const curvaABC = useMemo(() => {
@@ -222,7 +328,7 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* KPIs */}
+          {/* KPIs Row 1 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <KPICard
               title="Valor Total em Estoque"
@@ -233,6 +339,26 @@ export default function Dashboard() {
               title="Concentração (Pareto)"
               value={`${kpis.pctPareto.toFixed(0)}% dos SKUs`}
               subtitle={`${formatNumber(kpis.skusPareto)} SKUs = 80% do valor`}
+            />
+          </div>
+
+          {/* KPIs Row 2: Campanhas + Preço de Mercado */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <KPICard
+              title="Campanhas Ativas"
+              value={String(campanhaKpis.ativasCount)}
+              subtitle={`${campanhaKpis.ativasTotal.length} vínculos de produto`}
+            />
+            <KPICard
+              title="Produtos c/ Preço de Mercado"
+              value={String(marketKpis.totalWithPrice)}
+              subtitle={`de ${formatNumber(kpis.totalSKUs)} no estoque`}
+            />
+            <KPICard
+              title="Diferença Média (Mercado)"
+              value={`${marketKpis.avgDiff >= 0 ? '+' : ''}${marketKpis.avgDiff.toFixed(1)}%`}
+              subtitle="Preço mercado vs. preço tabela"
+              valueClassName={marketKpis.avgDiff < 0 ? 'text-destructive' : 'text-emerald-600'}
             />
           </div>
 
@@ -321,6 +447,78 @@ export default function Dashboard() {
                   <p className="text-xs text-muted-foreground">Importe mais relatórios para ver a evolução</p>
                 </div>
               )}
+            </motion.div>
+          </div>
+
+          {/* Row 3: Campanhas Ativas + Oportunidades de Preço */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Campanhas Ativas - detalhe */}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-card rounded-xl shadow-card overflow-hidden">
+              <div className="p-5 pb-0 flex items-center gap-2">
+                <Megaphone className="h-4 w-4 text-muted-foreground" />
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Campanhas Ativas</p>
+              </div>
+              <div className="overflow-x-auto mt-3">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/30">
+                      <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Campanha</th>
+                      <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Canal</th>
+                      <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Produtos</th>
+                      <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Encerra em</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {campanhasAtivasResumo.map((c, i) => (
+                      <tr key={i} className="border-b last:border-0">
+                        <td className="px-4 py-2.5 text-xs font-medium">{c.campanha}</td>
+                        <td className="px-4 py-2.5 text-xs text-muted-foreground">{c.canal}</td>
+                        <td className="px-4 py-2.5 text-right font-mono text-xs">{c.qtdProdutos}</td>
+                        <td className="px-4 py-2.5 text-right text-xs text-muted-foreground">{new Date(c.data_fim + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
+                      </tr>
+                    ))}
+                    {campanhasAtivasResumo.length === 0 && (
+                      <tr><td colSpan={4} className="px-4 py-6 text-center text-muted-foreground text-xs">Nenhuma campanha ativa no momento</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </motion.div>
+
+            {/* Oportunidades de Preço */}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="bg-card rounded-xl shadow-card overflow-hidden">
+              <div className="p-5 pb-0 flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Oportunidades de Preço</p>
+                <span className="text-[10px] text-muted-foreground ml-1">(Concorrência mais barata)</span>
+              </div>
+              <div className="overflow-x-auto mt-3">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/30">
+                      <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Código</th>
+                      <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Descrição</th>
+                      <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">P. Tabela</th>
+                      <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">P. Mercado</th>
+                      <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Dif %</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {priceOpportunities.map((row, i) => (
+                      <tr key={i} className="border-b last:border-0">
+                        <td className="px-4 py-2.5 font-mono text-xs">{row.codigo}</td>
+                        <td className="px-4 py-2.5 text-xs max-w-[180px] truncate">{row.descricao}</td>
+                        <td className="px-4 py-2.5 text-right font-mono text-xs">{formatCurrency(row.precoTabela)}</td>
+                        <td className="px-4 py-2.5 text-right font-mono text-xs">{formatCurrency(row.precoMercado)}</td>
+                        <td className="px-4 py-2.5 text-right font-mono text-xs text-destructive">{row.diff.toFixed(1)}%</td>
+                      </tr>
+                    ))}
+                    {priceOpportunities.length === 0 && (
+                      <tr><td colSpan={5} className="px-4 py-6 text-center text-muted-foreground text-xs">Nenhuma oportunidade identificada</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </motion.div>
           </div>
 
