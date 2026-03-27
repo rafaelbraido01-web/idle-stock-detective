@@ -20,6 +20,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </Tooltip>
             </div>
             <div className="flex items-center gap-2">
+              <SyncERPButton />
               <ImportButton />
             </div>
           </header>
