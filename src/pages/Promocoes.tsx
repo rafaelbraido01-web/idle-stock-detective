@@ -293,20 +293,18 @@ export default function Promocoes() {
       data_fim: format(campanhaDataFim, 'yyyy-MM-dd'),
     };
 
-    const existing = campanhas.get(campanhaProdutoId);
-    let error;
-    if (existing) {
-      ({ error } = await supabase.from('campanhas_produto').update(payload as any).eq('id', existing.id));
-    } else {
-      ({ error } = await supabase.from('campanhas_produto').insert(payload as any));
-    }
+    const { data: inserted, error } = await supabase
+      .from('campanhas_produto')
+      .insert(payload as any)
+      .select()
+      .single();
 
     if (error) {
       toast.error('Erro ao salvar campanha');
     } else {
       setCampanhas(prev => {
         const next = new Map(prev);
-        next.set(campanhaProdutoId, { id: existing?.id || '', ...payload } as CampanhaProduto);
+        next.set(campanhaProdutoId, inserted as CampanhaProduto);
         return next;
       });
       toast.success('Campanha salva!');
