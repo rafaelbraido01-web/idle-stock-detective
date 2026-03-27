@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { ProductDrawer } from '@/components/ProductDrawer';
 
-type SortKey = 'valor_total' | 'dias_sem_venda' | 'quantidade' | 'preco_tabela' | 'valor_venda_total';
+type SortKey = 'codigo' | 'descricao' | 'grupo' | 'quantidade' | 'valor_unitario' | 'preco_tabela' | 'valor_promocao' | 'valor_total' | 'valor_venda_total' | 'dias_sem_venda' | 'categoria_estoque';
 const PAGE_SIZE = 50;
 
 export default function Products() {
@@ -63,8 +63,15 @@ export default function Products() {
     if (categoriaFilter !== 'all') result = result.filter(r => r.categoria_estoque === categoriaFilter);
 
     result.sort((a, b) => {
-      const va = a[sortKey];
-      const vb = b[sortKey];
+      let va: any, vb: any;
+      if (sortKey === 'codigo') { va = a.produto?.codigo || ''; vb = b.produto?.codigo || ''; }
+      else if (sortKey === 'descricao') { va = a.produto?.descricao || ''; vb = b.produto?.descricao || ''; }
+      else if (sortKey === 'grupo') { va = a.produto?.grupo || ''; vb = b.produto?.grupo || ''; }
+      else { va = a[sortKey] ?? 0; vb = b[sortKey] ?? 0; }
+      if (typeof va === 'string') {
+        const cmp = va.localeCompare(vb as string);
+        return sortDir === 'desc' ? -cmp : cmp;
+      }
       return sortDir === 'desc' ? (vb as number) - (va as number) : (va as number) - (vb as number);
     });
     return result;
@@ -166,17 +173,27 @@ export default function Products() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b bg-muted/30">
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">Código</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">Descrição</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">Grupo</th>
+                    <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('codigo')}>
+                      <span className="inline-flex items-center gap-1">Código <ArrowUpDown className="h-3 w-3" /></span>
+                    </th>
+                    <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('descricao')}>
+                      <span className="inline-flex items-center gap-1">Descrição <ArrowUpDown className="h-3 w-3" /></span>
+                    </th>
+                    <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('grupo')}>
+                      <span className="inline-flex items-center gap-1">Grupo <ArrowUpDown className="h-3 w-3" /></span>
+                    </th>
                     <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('quantidade')}>
                       <span className="inline-flex items-center gap-1">Qtd <ArrowUpDown className="h-3 w-3" /></span>
                     </th>
-                    <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">Custo Médio</th>
+                    <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('valor_unitario')}>
+                      <span className="inline-flex items-center gap-1">Custo Médio <ArrowUpDown className="h-3 w-3" /></span>
+                    </th>
                     <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('preco_tabela')}>
                       <span className="inline-flex items-center gap-1">Preço Tabela <ArrowUpDown className="h-3 w-3" /></span>
                     </th>
-                    <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">Promoção</th>
+                    <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('valor_promocao')}>
+                      <span className="inline-flex items-center gap-1">Promoção <ArrowUpDown className="h-3 w-3" /></span>
+                    </th>
                     <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('valor_total')}>
                       <span className="inline-flex items-center gap-1">Vlr Estoque <ArrowUpDown className="h-3 w-3" /></span>
                     </th>
@@ -186,7 +203,9 @@ export default function Products() {
                     <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('dias_sem_venda')}>
                       <span className="inline-flex items-center gap-1">Dias s/ Venda <ArrowUpDown className="h-3 w-3" /></span>
                     </th>
-                    <th className="text-center px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+                    <th className="text-center px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('categoria_estoque')}>
+                      <span className="inline-flex items-center gap-1">Status <ArrowUpDown className="h-3 w-3" /></span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
