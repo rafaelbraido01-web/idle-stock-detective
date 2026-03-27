@@ -609,16 +609,25 @@ export default function Promocoes() {
                       </TableCell>
                       <TableCell className="px-2 py-1.5 text-center">
                         {(() => {
-                          const hasCampanha = campanhas.has(item.codigo);
+                          const camp = campanhas.get(item.codigo);
+                          let colorClass = 'text-muted-foreground hover:text-foreground';
+                          if (camp) {
+                            const hoje = new Date();
+                            const inicio = new Date(camp.data_inicio + 'T00:00:00');
+                            const fim = new Date(camp.data_fim + 'T23:59:59');
+                            if (inicio > hoje) colorClass = 'text-blue-600 hover:text-blue-700';
+                            else if (fim >= hoje) colorClass = 'text-red-600 hover:text-red-700';
+                            else colorClass = 'text-muted-foreground hover:text-foreground';
+                          }
                           return (
                             <Button
                               variant="ghost"
                               size="sm"
-                              className={`text-xs px-2 py-1 h-auto ${hasCampanha ? 'text-red-600 hover:text-red-700' : 'text-muted-foreground hover:text-foreground'}`}
+                              className={`text-xs px-2 py-1 h-auto ${colorClass}`}
                               onClick={(e) => handleOpenCampanha(e, item.codigo)}
                             >
-                              {hasCampanha ? '🏷️' : '🏷️'}
-                              <span className="ml-0.5">{hasCampanha ? 'Campanha' : 'Campanha'}</span>
+                              🏷️
+                              <span className="ml-0.5">Campanha</span>
                             </Button>
                           );
                         })()}
