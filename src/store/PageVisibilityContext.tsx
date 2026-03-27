@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 
-export type ToggleablePage = 'produtos' | 'comparacao' | 'preco-mercado';
+export type ToggleablePage = 'produtos' | 'comparacao' | 'preco-mercado' | 'importacoes' | 'promocoes' | 'campanhas';
 
 const STORAGE_KEY = 'hidden-pages';
 
