@@ -38,7 +38,10 @@ const providers = [
 
 const toggleablePages: Array<{ key: ToggleablePage; label: string }> = [
   { key: 'produtos', label: 'Produtos' },
+  { key: 'importacoes', label: 'Importações' },
   { key: 'comparacao', label: 'Comparação de Snapshots' },
+  { key: 'promocoes', label: 'Promoções' },
+  { key: 'campanhas', label: 'Campanhas' },
   { key: 'preco-mercado', label: 'Preço de Mercado' },
 ];
 

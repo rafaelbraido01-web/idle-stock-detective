@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 
-export type ToggleablePage = 'produtos' | 'comparacao' | 'preco-mercado';
+export type ToggleablePage = 'produtos' | 'comparacao' | 'preco-mercado' | 'importacoes' | 'promocoes' | 'campanhas';
 
 const STORAGE_KEY = 'hidden-pages';
 
@@ -9,7 +9,7 @@ function getInitialHidden(): Set<ToggleablePage> {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) return new Set(JSON.parse(stored));
   } catch {}
-  return new Set<ToggleablePage>(['produtos', 'comparacao', 'preco-mercado']);
+  return new Set<ToggleablePage>();
 }
 
 interface PageVisibilityContextType {
