@@ -247,19 +247,18 @@ export default function Promocoes() {
 
     setMercadoSaving(true);
     const now = new Date().toISOString();
-    const { error } = await supabase
+    const { data: inserted, error } = await supabase
       .from('precos_mercado')
-      .upsert(
-        { produto_id: mercadoProdutoId, preco, updated_at: now, fonte: mercadoFonte } as any,
-        { onConflict: 'produto_id' }
-      );
+      .insert({ produto_id: mercadoProdutoId, preco, updated_at: now, fonte: mercadoFonte } as any)
+      .select()
+      .single();
 
     if (error) {
       toast.error('Erro ao salvar preço de mercado');
     } else {
       setPrecosMercado(prev => {
         const next = new Map(prev);
-        next.set(mercadoProdutoId, { produto_id: mercadoProdutoId, preco, updated_at: now, fonte: mercadoFonte });
+        next.set(mercadoProdutoId, inserted as any);
         return next;
       });
       toast.success('Preço de mercado salvo!');
