@@ -14,7 +14,7 @@ import { formatCurrency, formatNumber, formatDate } from '@/types/inventory';
 import { Textarea } from '@/components/ui/textarea';
 import { KPICard } from '@/components/KPICard';
 import { ProductDrawer } from '@/components/ProductDrawer';
-import { Tag, PackageSearch, CalendarIcon, Upload } from 'lucide-react';
+import { Tag, PackageSearch, CalendarIcon, Upload, ArrowUpDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 
 type StatusFilter = 'todos' | 'vendeu' | 'sem-movimento' | 'reposicao';
 type PromoFilter = 'todas' | 'ativa' | 'expirada' | 'recem-expirada';
+type PromoSortKey = 'codigo' | 'descricao' | 'dataFimPromocao' | 'precoTabela' | 'valorPromocao' | 'percentualDesconto' | 'qtdAnterior' | 'qtdAtual' | 'delta' | 'status';
 
 interface PromoComparison {
   produtoId: string;
@@ -87,6 +88,8 @@ export default function Promocoes() {
   const [atualId, setAtualId] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('todos');
   const [promoFilter, setPromoFilter] = useState<PromoFilter>('todas');
+  const [sortKey, setSortKey] = useState<PromoSortKey>('delta');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [drawerProdutoId, setDrawerProdutoId] = useState<string | null>(null);
 
   // Market price state
@@ -207,7 +210,7 @@ export default function Promocoes() {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(now.getDate() - 30);
 
-    return comparisons.filter(c => {
+    let result = comparisons.filter(c => {
       if (statusFilter !== 'todos' && c.status !== statusFilter) return false;
       if (promoFilter === 'ativa' && !c.promoAtiva) return false;
       if (promoFilter === 'expirada' && c.promoAtiva) return false;
@@ -217,7 +220,28 @@ export default function Promocoes() {
       }
       return true;
     });
-  }, [comparisons, statusFilter, promoFilter]);
+
+    result.sort((a, b) => {
+      let va: any, vb: any;
+      if (sortKey === 'codigo' || sortKey === 'descricao' || sortKey === 'status') {
+        va = a[sortKey] || '';
+        vb = b[sortKey] || '';
+      } else if (sortKey === 'dataFimPromocao') {
+        va = a.dataFimPromocao || '';
+        vb = b.dataFimPromocao || '';
+      } else {
+        va = a[sortKey] ?? 0;
+        vb = b[sortKey] ?? 0;
+      }
+      if (typeof va === 'string') {
+        const cmp = va.localeCompare(vb as string);
+        return sortDir === 'desc' ? -cmp : cmp;
+      }
+      return sortDir === 'desc' ? (vb as number) - (va as number) : (va as number) - (vb as number);
+    });
+
+    return result;
+  }, [comparisons, statusFilter, promoFilter, sortKey, sortDir]);
 
   const kpis = useMemo(() => {
     const total = comparisons.length;
@@ -394,6 +418,12 @@ export default function Promocoes() {
     ? comparisons.find(c => c.codigo === campanhaProdutoId)
     : null;
 
+  const toggleSort = (key: PromoSortKey) => {
+    if (sortKey === key) setSortDir(d => d === 'desc' ? 'asc' : 'desc');
+    else { setSortKey(key); setSortDir('desc'); }
+    setPage(0);
+  };
+
   // Pagination
   const PAGE_SIZE = 50;
   const [page, setPage] = useState(0);
@@ -514,16 +544,36 @@ export default function Promocoes() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="px-2">Código</TableHead>
-                  <TableHead className="px-2">Descrição</TableHead>
-                  <TableHead className="px-2 text-center">Validade Promo</TableHead>
-                  <TableHead className="px-2 text-right">Preço Tabela</TableHead>
-                  <TableHead className="px-2 text-right">Preço Promo</TableHead>
-                  <TableHead className="px-2 text-center">Desconto</TableHead>
-                  <TableHead className="px-2 text-right">Qtd Anterior</TableHead>
-                  <TableHead className="px-2 text-right">Qtd Atual</TableHead>
-                  <TableHead className="px-2 text-right">Diferença</TableHead>
-                  <TableHead className="px-2 text-center">Status</TableHead>
+                  <TableHead className="px-2 cursor-pointer select-none" onClick={() => toggleSort('codigo')}>
+                    <span className="inline-flex items-center gap-1">Código <ArrowUpDown className="h-3 w-3" /></span>
+                  </TableHead>
+                  <TableHead className="px-2 cursor-pointer select-none" onClick={() => toggleSort('descricao')}>
+                    <span className="inline-flex items-center gap-1">Descrição <ArrowUpDown className="h-3 w-3" /></span>
+                  </TableHead>
+                  <TableHead className="px-2 text-center cursor-pointer select-none" onClick={() => toggleSort('dataFimPromocao')}>
+                    <span className="inline-flex items-center gap-1">Validade Promo <ArrowUpDown className="h-3 w-3" /></span>
+                  </TableHead>
+                  <TableHead className="px-2 text-right cursor-pointer select-none" onClick={() => toggleSort('precoTabela')}>
+                    <span className="inline-flex items-center gap-1 justify-end">Preço Tabela <ArrowUpDown className="h-3 w-3" /></span>
+                  </TableHead>
+                  <TableHead className="px-2 text-right cursor-pointer select-none" onClick={() => toggleSort('valorPromocao')}>
+                    <span className="inline-flex items-center gap-1 justify-end">Preço Promo <ArrowUpDown className="h-3 w-3" /></span>
+                  </TableHead>
+                  <TableHead className="px-2 text-center cursor-pointer select-none" onClick={() => toggleSort('percentualDesconto')}>
+                    <span className="inline-flex items-center gap-1">Desconto <ArrowUpDown className="h-3 w-3" /></span>
+                  </TableHead>
+                  <TableHead className="px-2 text-right cursor-pointer select-none" onClick={() => toggleSort('qtdAnterior')}>
+                    <span className="inline-flex items-center gap-1 justify-end">Qtd Anterior <ArrowUpDown className="h-3 w-3" /></span>
+                  </TableHead>
+                  <TableHead className="px-2 text-right cursor-pointer select-none" onClick={() => toggleSort('qtdAtual')}>
+                    <span className="inline-flex items-center gap-1 justify-end">Qtd Atual <ArrowUpDown className="h-3 w-3" /></span>
+                  </TableHead>
+                  <TableHead className="px-2 text-right cursor-pointer select-none" onClick={() => toggleSort('delta')}>
+                    <span className="inline-flex items-center gap-1 justify-end">Diferença <ArrowUpDown className="h-3 w-3" /></span>
+                  </TableHead>
+                  <TableHead className="px-2 text-center cursor-pointer select-none" onClick={() => toggleSort('status')}>
+                    <span className="inline-flex items-center gap-1">Status <ArrowUpDown className="h-3 w-3" /></span>
+                  </TableHead>
                   <TableHead className="px-2 text-center">Mercado</TableHead>
                   <TableHead className="px-2 text-center">Campanha</TableHead>
                 </TableRow>
