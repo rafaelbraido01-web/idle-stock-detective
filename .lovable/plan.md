@@ -1,28 +1,20 @@
 
 
-## Plano: Botao de Campanha em Lote + Preparacao para Analise Futura
+## Plano: Campanhas como historico (inserir nova em vez de atualizar)
 
-### Resumo
-Adicionar um botao no topo da pagina de Promocoes para cadastrar uma campanha vinculando multiplos produtos de uma vez, inserindo os codigos em um campo de texto livre. Alem disso, ajustar a estrutura para viabilizar analises futuras de frequencia promocional por produto.
+### Problema atual
+Quando o usuario salva uma campanha para um produto que ja tem campanha, o sistema faz `update` no registro existente, apagando o historico anterior.
 
-### 1. Botao "Subir Campanha" no topo da pagina
-- Botao visivel no header da pagina de Promocoes (ao lado dos filtros ou KPIs)
-- Ao clicar, abre um Dialog com:
-  - **Nome da campanha** (texto)
-  - **Canais** (checkboxes multiplos: Marketplace, Ecommerce, Mailing, Televendas)
-  - **Data inicio** e **Data fim** (date pickers)
-  - **Codigos dos produtos** (textarea grande, aceita codigos separados por virgula, ponto-e-virgula ou quebra de linha)
-- Ao salvar: busca os `produto_id` correspondentes na tabela `produtos` pelo campo `codigo`, e insere um registro na tabela `campanhas_produto` para cada produto encontrado
-- Exibe toast com quantidade de produtos vinculados e quantos codigos nao foram encontrados
+### Solucao
+Mudar a logica de `handleSaveCampanha` para **sempre inserir** um novo registro em vez de atualizar o existente. O mapa local `campanhas` continua rastreando apenas a campanha **mais recente** (para colorir o botao), mas o historico completo fica preservado no banco.
 
-### 2. Sobre a analise futura (Duvida 1)
-**Sim, ja e possivel.** A tabela `campanhas_produto` ja registra cada vinculo produto-campanha com datas. Futuramente, basta criar uma consulta agrupando por `produto_id` e contando quantas campanhas cada produto participou, com filtros por periodo e canal. Nenhuma mudanca de schema e necessaria agora -- a estrutura atual ja suporta esse tipo de analise.
+O `ProductDrawer` ja busca todas as campanhas do produto ordenadas por `data_fim desc`, entao o historico ja aparece automaticamente.
 
 ### Alteracoes
 
 | Arquivo | Mudanca |
 |---|---|
-| `src/pages/Promocoes.tsx` | Adicionar botao "Subir Campanha", dialog com formulario em lote, logica de lookup de codigos e insercao em batch |
+| `src/pages/Promocoes.tsx` | Em `handleSaveCampanha`, remover o bloco `if (existing) { update }` e sempre fazer `insert`. Atualizar o mapa local com o novo registro retornado. |
 
-Nenhuma migracao de banco necessaria -- a tabela `campanhas_produto` ja suporta multiplos registros por produto.
+Nenhuma migracao de banco necessaria.
 
