@@ -282,11 +282,11 @@ export default function Campanhas() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <KPICard title="Total" value={kpis.total} icon={Megaphone} />
-        <KPICard title="Ativas" value={kpis.ativas} icon={Megaphone} />
-        <KPICard title="Futuras" value={kpis.futuras} icon={Megaphone} />
-        <KPICard title="Encerradas" value={kpis.encerradas} icon={Megaphone} />
-        <KPICard title="Produtos" value={kpis.produtosUnicos} icon={Megaphone} />
+        <KPICard title="Total" value={String(kpis.total)} />
+        <KPICard title="Ativas" value={String(kpis.ativas)} />
+        <KPICard title="Futuras" value={String(kpis.futuras)} />
+        <KPICard title="Encerradas" value={String(kpis.encerradas)} />
+        <KPICard title="Produtos" value={String(kpis.produtosUnicos)} />
       </div>
 
       {/* Filters */}
