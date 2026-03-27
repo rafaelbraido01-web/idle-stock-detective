@@ -1,0 +1,1 @@
+ALTER TABLE public.precos_mercado DROP CONSTRAINT IF EXISTS precos_mercado_produto_id_key;
