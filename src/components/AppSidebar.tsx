@@ -20,6 +20,7 @@ const navItems: Array<{ title: string; url: string; icon: any; toggleKey?: Toggl
   { title: 'Importações', url: '/importacoes', icon: FileSpreadsheet },
   { title: 'Comparação', url: '/comparacao', icon: GitCompareArrows, toggleKey: 'comparacao' },
   { title: 'Promoções', url: '/promocoes', icon: Tag },
+  { title: 'Campanhas', url: '/campanhas', icon: Megaphone },
   { title: 'Preço de Mercado', url: '/preco-mercado', icon: DollarSign, toggleKey: 'preco-mercado' },
   { title: 'Configurações', url: '/configuracoes', icon: Settings },
 ];

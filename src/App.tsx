@@ -45,6 +45,7 @@ const ProtectedApp = () => {
               <Route path="/importacoes" element={<Imports />} />
               <Route path="/comparacao" element={<Comparacao />} />
               <Route path="/promocoes" element={<Promocoes />} />
+              <Route path="/campanhas" element={<Campanhas />} />
               <Route path="/preco-mercado" element={<PrecoMercado />} />
               <Route path="/configuracoes" element={<Configuracoes />} />
               <Route path="*" element={<NotFound />} />
