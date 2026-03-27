@@ -1,27 +1,20 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useInventory } from '@/store/InventoryContext';
-import { formatCurrency } from '@/types/inventory';
+import { formatCurrency, formatDate } from '@/types/inventory';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, ExternalLink, Loader2, CheckCircle2, ShoppingCart } from 'lucide-react';
+import {
+  Search, ExternalLink, Loader2, CheckCircle2, ShoppingCart,
+  Eye, EyeOff, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight,
+} from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
@@ -38,6 +31,18 @@ interface ProductPriceData {
   citations?: string[];
 }
 
+interface MarketPrice {
+  produto_id: string;
+  preco: number;
+  fonte: string;
+  updated_at: string;
+}
+
+type SortKey = 'codigo' | 'descricao' | 'quantidade' | 'preco_tabela' | 'valor_promocao' | 'preco_mercado' | 'diff';
+type SortDir = 'asc' | 'desc';
+
+const PAGE_SIZE = 25;
+
 export default function PrecoMercado() {
   const { produtos, getLatestProdutoSnapshots } = useInventory();
   const latestSnapshots = getLatestProdutoSnapshots();
@@ -45,16 +50,50 @@ export default function PrecoMercado() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [onlyActivePromo, setOnlyActivePromo] = useState(false);
+  const [showAutoSearch, setShowAutoSearch] = useState(false);
   const [loadingProducts, setLoadingProducts] = useState<Record<string, boolean>>({});
   const [priceResults, setPriceResults] = useState<Record<string, ProductPriceData>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>('descricao');
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const [page, setPage] = useState(0);
+  const [marketPrices, setMarketPrices] = useState<Record<string, MarketPrice>>({});
+
+  // Fetch saved market prices
+  useEffect(() => {
+    const fetchMarketPrices = async () => {
+      const { data, error } = await supabase
+        .from('precos_mercado')
+        .select('produto_id, preco, updated_at, fonte')
+        .order('updated_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching market prices:', error);
+        return;
+      }
+
+      // Group by produto_id keeping only the most recent
+      const map: Record<string, MarketPrice> = {};
+      for (const row of data || []) {
+        if (!map[row.produto_id]) {
+          map[row.produto_id] = row as MarketPrice;
+        }
+      }
+      setMarketPrices(map);
+    };
+
+    fetchMarketPrices();
+  }, []);
 
   const productsWithSnapshot = useMemo(() => {
     return latestSnapshots.map(snap => {
       const produto = produtos.find(p => p.id === snap.produto_id);
       return produto ? { ...produto, snap } : null;
-    }).filter(Boolean) as Array<{ id: string; codigo: string; descricao: string; marca: string; snap: typeof latestSnapshots[0] }>;
+    }).filter(Boolean) as Array<{
+      id: string; codigo: string; descricao: string; marca: string;
+      snap: typeof latestSnapshots[0];
+    }>;
   }, [latestSnapshots, produtos]);
 
   const filtered = useMemo(() => {
@@ -65,31 +104,86 @@ export default function PrecoMercado() {
         new Date(p.snap.data_fim_promocao + 'T23:59:59') >= new Date()
       );
     }
-    if (!searchTerm) return items;
-    const term = searchTerm.toLowerCase();
-    return items.filter(p =>
-      p.descricao.toLowerCase().includes(term) ||
-      p.codigo.toLowerCase().includes(term) ||
-      p.marca.toLowerCase().includes(term)
-    );
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      items = items.filter(p =>
+        p.descricao.toLowerCase().includes(term) ||
+        p.codigo.toLowerCase().includes(term) ||
+        p.marca.toLowerCase().includes(term)
+      );
+    }
+    return items;
   }, [productsWithSnapshot, searchTerm, onlyActivePromo]);
+
+  const getDiff = useCallback((product: typeof productsWithSnapshot[0]) => {
+    const mp = marketPrices[product.codigo];
+    if (!mp) return null;
+    const tabela = product.snap.preco_tabela;
+    if (tabela === 0) return null;
+    return ((mp.preco - tabela) / tabela) * 100;
+  }, [marketPrices]);
+
+  const sorted = useMemo(() => {
+    const arr = [...filtered];
+    arr.sort((a, b) => {
+      let va: number | string = 0;
+      let vb: number | string = 0;
+      switch (sortKey) {
+        case 'codigo': va = a.codigo; vb = b.codigo; break;
+        case 'descricao': va = a.descricao.toLowerCase(); vb = b.descricao.toLowerCase(); break;
+        case 'quantidade': va = a.snap.quantidade; vb = b.snap.quantidade; break;
+        case 'preco_tabela': va = a.snap.preco_tabela; vb = b.snap.preco_tabela; break;
+        case 'valor_promocao': va = a.snap.valor_promocao ?? 0; vb = b.snap.valor_promocao ?? 0; break;
+        case 'preco_mercado':
+          va = marketPrices[a.codigo]?.preco ?? -1;
+          vb = marketPrices[b.codigo]?.preco ?? -1;
+          break;
+        case 'diff':
+          va = getDiff(a) ?? -9999;
+          vb = getDiff(b) ?? -9999;
+          break;
+      }
+      if (va < vb) return sortDir === 'asc' ? -1 : 1;
+      if (va > vb) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return arr;
+  }, [filtered, sortKey, sortDir, marketPrices, getDiff]);
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const paginated = sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
+  // Reset page when filters change
+  useEffect(() => { setPage(0); }, [searchTerm, onlyActivePromo, sortKey, sortDir]);
+
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  };
+
+  const SortIcon = ({ col }: { col: SortKey }) => {
+    if (sortKey !== col) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-40" />;
+    return sortDir === 'asc'
+      ? <ArrowUp className="h-3 w-3 ml-1" />
+      : <ArrowDown className="h-3 w-3 ml-1" />;
+  };
 
   const getProvider = () => localStorage.getItem('preco-mercado-provider') || 'scraper';
 
   const handleSearch = async (productId: string, productName: string, productCode: string) => {
     setLoadingProducts(prev => ({ ...prev, [productId]: true }));
-
     try {
       const provider = getProvider();
       const functionName = provider === 'scraper' ? 'search-product-scraper' : 'search-product-price';
-      const body = provider === 'scraper' 
+      const body = provider === 'scraper'
         ? { productName, productCode }
         : { productName, productCode, provider };
 
-      const { data, error } = await supabase.functions.invoke(functionName, {
-        body,
-      });
-
+      const { data, error } = await supabase.functions.invoke(functionName, { body });
       if (error) throw error;
 
       if (data?.success) {
@@ -100,19 +194,11 @@ export default function PrecoMercado() {
         setSelectedProduct(productId);
         setDialogOpen(true);
       } else {
-        toast({
-          title: 'Erro na pesquisa',
-          description: data?.error || 'Não foi possível pesquisar preços.',
-          variant: 'destructive',
-        });
+        toast({ title: 'Erro na pesquisa', description: data?.error || 'Não foi possível pesquisar preços.', variant: 'destructive' });
       }
     } catch (err: any) {
       console.error('Price search error:', err);
-      toast({
-        title: 'Erro',
-        description: err.message || 'Falha ao pesquisar preços online.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro', description: err.message || 'Falha ao pesquisar preços online.', variant: 'destructive' });
     } finally {
       setLoadingProducts(prev => ({ ...prev, [productId]: false }));
     }
@@ -128,11 +214,22 @@ export default function PrecoMercado() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Preço de Mercado</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Pesquise preços online dos seus produtos no Mercado Livre, Kabum e outras fontes.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Preço de Mercado</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Compare os preços do seu estoque com os preços praticados no mercado.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowAutoSearch(prev => !prev)}
+          className="gap-1.5"
+        >
+          {showAutoSearch ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          {showAutoSearch ? 'Ocultar Pesquisa Online' : 'Pesquisa Online'}
+        </Button>
       </div>
 
       {productsWithSnapshot.length === 0 ? (
@@ -169,63 +266,92 @@ export default function PrecoMercado() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[100px]">Código</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead className="w-[100px] text-right">Qtd</TableHead>
-                  <TableHead className="w-[130px] text-right">Preço Tabela</TableHead>
-                  <TableHead className="w-[130px] text-right">Preço Promoção</TableHead>
-                  <TableHead className="w-[180px] text-center">Ação</TableHead>
+                  <TableHead className="w-[100px] cursor-pointer select-none" onClick={() => toggleSort('codigo')}>
+                    <span className="inline-flex items-center">Código <SortIcon col="codigo" /></span>
+                  </TableHead>
+                  <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('descricao')}>
+                    <span className="inline-flex items-center">Descrição <SortIcon col="descricao" /></span>
+                  </TableHead>
+                  <TableHead className="w-[80px] text-right cursor-pointer select-none" onClick={() => toggleSort('quantidade')}>
+                    <span className="inline-flex items-center justify-end w-full">Qtd <SortIcon col="quantidade" /></span>
+                  </TableHead>
+                  <TableHead className="w-[120px] text-right cursor-pointer select-none" onClick={() => toggleSort('preco_tabela')}>
+                    <span className="inline-flex items-center justify-end w-full">Preço Tabela <SortIcon col="preco_tabela" /></span>
+                  </TableHead>
+                  <TableHead className="w-[120px] text-right cursor-pointer select-none" onClick={() => toggleSort('valor_promocao')}>
+                    <span className="inline-flex items-center justify-end w-full">Promoção <SortIcon col="valor_promocao" /></span>
+                  </TableHead>
+                  <TableHead className="w-[120px] text-right cursor-pointer select-none" onClick={() => toggleSort('preco_mercado')}>
+                    <span className="inline-flex items-center justify-end w-full">Preço Mercado <SortIcon col="preco_mercado" /></span>
+                  </TableHead>
+                  <TableHead className="w-[90px] text-center">Fonte</TableHead>
+                  <TableHead className="w-[100px] text-center">Atualizado</TableHead>
+                  <TableHead className="w-[90px] text-right cursor-pointer select-none" onClick={() => toggleSort('diff')}>
+                    <span className="inline-flex items-center justify-end w-full">Dif % <SortIcon col="diff" /></span>
+                  </TableHead>
+                  {showAutoSearch && (
+                    <TableHead className="w-[180px] text-center">Ação</TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((p) => {
+                {paginated.map((p) => {
                   const isLoading = loadingProducts[p.id];
                   const hasResult = !!priceResults[p.id];
                   const hasActivePromo = !!(
                     p.snap.data_fim_promocao &&
                     new Date(p.snap.data_fim_promocao + 'T23:59:59') >= new Date()
                   );
+                  const mp = marketPrices[p.codigo];
+                  const diff = getDiff(p);
 
                   return (
-                    <TableRow key={p.id} className={hasActivePromo ? 'bg-orange-100' : ''}>
+                    <TableRow key={p.id} className={hasActivePromo ? 'bg-orange-50' : ''}>
                       <TableCell className="font-mono text-xs">{p.codigo}</TableCell>
                       <TableCell className="font-medium text-sm">{p.descricao}</TableCell>
                       <TableCell className="text-right tabular-nums">{p.snap.quantidade}</TableCell>
                       <TableCell className="text-right tabular-nums">{formatCurrency(p.snap.preco_tabela)}</TableCell>
-                      <TableCell className="text-right tabular-nums">{p.snap.valor_promocao ? formatCurrency(p.snap.valor_promocao) : "—"}</TableCell>
-                      <TableCell className="text-center">
-                        {hasResult ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openResults(p.id)}
-                            className="gap-1.5"
-                          >
-                            <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
-                            Ver resultados
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="default"
-                            size="sm"
-                            disabled={isLoading}
-                            onClick={() => handleSearch(p.id, `${p.descricao} ${p.marca}`, p.codigo)}
-                            className="gap-1.5"
-                          >
-                            {isLoading ? (
-                              <>
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                Pesquisando...
-                              </>
-                            ) : (
-                              <>
-                                <Search className="h-3.5 w-3.5" />
-                                Pesquisar preço online
-                              </>
-                            )}
-                          </Button>
-                        )}
+                      <TableCell className="text-right tabular-nums">
+                        {p.snap.valor_promocao ? formatCurrency(p.snap.valor_promocao) : '—'}
                       </TableCell>
+                      <TableCell className="text-right tabular-nums font-semibold">
+                        {mp ? formatCurrency(mp.preco) : '—'}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {mp ? <Badge variant="secondary" className="text-xs">{mp.fonte}</Badge> : '—'}
+                      </TableCell>
+                      <TableCell className="text-center text-xs text-muted-foreground">
+                        {mp ? formatDate(mp.updated_at) : '—'}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums text-sm font-medium">
+                        {diff !== null ? (
+                          <span className={diff > 0 ? 'text-green-600' : diff < 0 ? 'text-red-600' : 'text-muted-foreground'}>
+                            {diff > 0 ? '+' : ''}{diff.toFixed(1)}%
+                          </span>
+                        ) : '—'}
+                      </TableCell>
+                      {showAutoSearch && (
+                        <TableCell className="text-center">
+                          {hasResult ? (
+                            <Button variant="outline" size="sm" onClick={() => openResults(p.id)} className="gap-1.5">
+                              <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                              Ver resultados
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="default" size="sm" disabled={isLoading}
+                              onClick={() => handleSearch(p.id, `${p.descricao} ${p.marca}`, p.codigo)}
+                              className="gap-1.5"
+                            >
+                              {isLoading ? (
+                                <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Pesquisando...</>
+                              ) : (
+                                <><Search className="h-3.5 w-3.5" /> Pesquisar</>
+                              )}
+                            </Button>
+                          )}
+                        </TableCell>
+                      )}
                     </TableRow>
                   );
                 })}
@@ -233,12 +359,27 @@ export default function PrecoMercado() {
             </Table>
           </div>
 
-          <p className="text-xs text-muted-foreground">
-            Mostrando {filtered.length} de {productsWithSnapshot.length} produtos
-          </p>
+          {/* Pagination */}
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">
+              Mostrando {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, sorted.length)} de {sorted.length} produtos
+            </p>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                {page + 1} / {totalPages}
+              </span>
+              <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </>
       )}
 
+      {/* Results Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
@@ -256,25 +397,14 @@ export default function PrecoMercado() {
                 <div key={idx} className="border rounded-lg p-4 space-y-2">
                   <div className="flex items-center justify-between">
                     <Badge variant="secondary">{result.source}</Badge>
-                    <span className="text-lg font-bold text-foreground">
-                      {formatCurrency(result.price)}
-                    </span>
+                    <span className="text-lg font-bold text-foreground">{formatCurrency(result.price)}</span>
                   </div>
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {result.productName}
-                  </p>
-                  <a
-                    href={result.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                    Abrir link para validar
+                  <p className="text-sm text-muted-foreground line-clamp-2">{result.productName}</p>
+                  <a href={result.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline">
+                    <ExternalLink className="h-3.5 w-3.5" /> Abrir link para validar
                   </a>
                 </div>
               ))}
-
               {selectedProduto && (
                 <div className="border-t pt-3 mt-3 space-y-1">
                   <p className="text-xs text-muted-foreground">
@@ -289,9 +419,7 @@ export default function PrecoMercado() {
               )}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground py-4 text-center">
-              Nenhum resultado encontrado.
-            </p>
+            <p className="text-sm text-muted-foreground py-4 text-center">Nenhum resultado encontrado.</p>
           )}
 
           <DialogFooter>
