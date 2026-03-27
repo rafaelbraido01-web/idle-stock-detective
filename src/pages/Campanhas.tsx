@@ -375,39 +375,65 @@ export default function Campanhas() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[40px]" />
                     <SortableHeader label="Campanha" keyName="campanha" />
-                    <SortableHeader label="Código Produto" keyName="produto_id" />
                     <SortableHeader label="Canal" keyName="canal" />
+                    <SortableHeader label="Produtos" keyName="produtos" />
                     <SortableHeader label="Início" keyName="data_inicio" />
                     <SortableHeader label="Fim" keyName="data_fim" />
                     <SortableHeader label="Status" keyName="status" />
-                    <TableHead className="w-[60px]" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginated.map(c => {
-                    const cfg = STATUS_CONFIG[c.status];
+                  {paginated.map(g => {
+                    const cfg = STATUS_CONFIG[g.status];
+                    const isExpanded = expandedGroups.has(g.key);
                     return (
-                      <TableRow key={c.id}>
-                        <TableCell className="font-medium">{c.campanha}</TableCell>
-                        <TableCell className="font-mono text-xs">{c.produto_id}</TableCell>
-                        <TableCell>{c.canal}</TableCell>
-                        <TableCell>{formatDateBR(c.data_inicio)}</TableCell>
-                        <TableCell>{formatDateBR(c.data_fim)}</TableCell>
-                        <TableCell>
-                          <Badge className={cfg.className}>{cfg.label}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-destructive hover:text-destructive"
-                            onClick={() => setDeleteId(c.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
+                      <>
+                        <TableRow
+                          key={g.key}
+                          className="cursor-pointer hover:bg-accent/50"
+                          onClick={() => toggleGroup(g.key)}
+                        >
+                          <TableCell className="px-2">
+                            {isExpanded
+                              ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                              : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                          </TableCell>
+                          <TableCell className="font-medium">{g.campanha}</TableCell>
+                          <TableCell>{g.canal}</TableCell>
+                          <TableCell>
+                            <Badge variant="secondary" className="gap-1">
+                              <Users className="h-3 w-3" />
+                              {g.produtos.length}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{formatDateBR(g.data_inicio)}</TableCell>
+                          <TableCell>{formatDateBR(g.data_fim)}</TableCell>
+                          <TableCell>
+                            <Badge className={cfg.className}>{cfg.label}</Badge>
+                          </TableCell>
+                        </TableRow>
+                        {isExpanded && g.produtos.map(p => (
+                          <TableRow key={p.id} className="bg-muted/30">
+                            <TableCell />
+                            <TableCell colSpan={2} className="font-mono text-xs text-muted-foreground pl-8">
+                              Produto: {p.produto_id}
+                            </TableCell>
+                            <TableCell colSpan={3} />
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-destructive hover:text-destructive"
+                                onClick={(e) => { e.stopPropagation(); setDeleteId(p.id); }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </>
                     );
                   })}
                 </TableBody>
@@ -416,7 +442,7 @@ export default function Campanhas() {
               {totalPages > 1 && (
                 <div className="flex items-center justify-between px-4 py-3 border-t">
                   <span className="text-xs text-muted-foreground">
-                    {filtered.length} registro(s) — Página {page + 1} de {totalPages}
+                    {filtered.length} campanha(s) — Página {page + 1} de {totalPages}
                   </span>
                   <div className="flex gap-1">
                     <Button size="sm" variant="outline" disabled={page === 0} onClick={() => setPage(p => p - 1)}>Anterior</Button>
