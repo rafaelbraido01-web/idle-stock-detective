@@ -63,8 +63,15 @@ export default function Products() {
     if (categoriaFilter !== 'all') result = result.filter(r => r.categoria_estoque === categoriaFilter);
 
     result.sort((a, b) => {
-      const va = a[sortKey];
-      const vb = b[sortKey];
+      let va: any, vb: any;
+      if (sortKey === 'codigo') { va = a.produto?.codigo || ''; vb = b.produto?.codigo || ''; }
+      else if (sortKey === 'descricao') { va = a.produto?.descricao || ''; vb = b.produto?.descricao || ''; }
+      else if (sortKey === 'grupo') { va = a.produto?.grupo || ''; vb = b.produto?.grupo || ''; }
+      else { va = a[sortKey] ?? 0; vb = b[sortKey] ?? 0; }
+      if (typeof va === 'string') {
+        const cmp = va.localeCompare(vb as string);
+        return sortDir === 'desc' ? -cmp : cmp;
+      }
       return sortDir === 'desc' ? (vb as number) - (va as number) : (va as number) - (vb as number);
     });
     return result;
