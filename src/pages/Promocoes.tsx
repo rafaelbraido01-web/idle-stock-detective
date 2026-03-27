@@ -418,6 +418,12 @@ export default function Promocoes() {
     ? comparisons.find(c => c.codigo === campanhaProdutoId)
     : null;
 
+  const toggleSort = (key: PromoSortKey) => {
+    if (sortKey === key) setSortDir(d => d === 'desc' ? 'asc' : 'desc');
+    else { setSortKey(key); setSortDir('desc'); }
+    setPage(0);
+  };
+
   // Pagination
   const PAGE_SIZE = 50;
   const [page, setPage] = useState(0);
