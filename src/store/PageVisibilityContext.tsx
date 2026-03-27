@@ -9,7 +9,7 @@ function getInitialHidden(): Set<ToggleablePage> {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) return new Set(JSON.parse(stored));
   } catch {}
-  return new Set<ToggleablePage>(['produtos', 'comparacao', 'preco-mercado']);
+  return new Set<ToggleablePage>();
 }
 
 interface PageVisibilityContextType {
