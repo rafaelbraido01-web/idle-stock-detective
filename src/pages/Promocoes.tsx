@@ -88,6 +88,8 @@ export default function Promocoes() {
   const [atualId, setAtualId] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('todos');
   const [promoFilter, setPromoFilter] = useState<PromoFilter>('todas');
+  const [sortKey, setSortKey] = useState<PromoSortKey>('delta');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [drawerProdutoId, setDrawerProdutoId] = useState<string | null>(null);
 
   // Market price state
