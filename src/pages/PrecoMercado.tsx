@@ -38,7 +38,7 @@ interface MarketPrice {
   updated_at: string;
 }
 
-type SortKey = 'codigo' | 'descricao' | 'quantidade' | 'preco_tabela' | 'valor_promocao' | 'preco_mercado' | 'diff';
+type SortKey = 'codigo' | 'descricao' | 'quantidade' | 'preco_tabela' | 'valor_promocao' | 'preco_mercado' | 'updated_at' | 'diff';
 type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 25;
