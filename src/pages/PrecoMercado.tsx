@@ -138,6 +138,10 @@ export default function PrecoMercado() {
           va = marketPrices[a.codigo]?.preco ?? -1;
           vb = marketPrices[b.codigo]?.preco ?? -1;
           break;
+        case 'updated_at':
+          va = marketPrices[a.codigo]?.updated_at ?? '';
+          vb = marketPrices[b.codigo]?.updated_at ?? '';
+          break;
         case 'diff':
           va = getDiff(a) ?? -9999;
           vb = getDiff(b) ?? -9999;
