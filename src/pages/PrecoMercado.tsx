@@ -289,7 +289,9 @@ export default function PrecoMercado() {
                     <span className="inline-flex items-center justify-end w-full">Preço Mercado <SortIcon col="preco_mercado" /></span>
                   </TableHead>
                   <TableHead className="w-[90px] text-center">Fonte</TableHead>
-                  <TableHead className="w-[100px] text-center">Atualizado</TableHead>
+                  <TableHead className="w-[100px] text-center cursor-pointer select-none" onClick={() => toggleSort('updated_at')}>
+                    <span className="inline-flex items-center justify-center w-full">Atualizado <SortIcon col="updated_at" /></span>
+                  </TableHead>
                   <TableHead className="w-[90px] text-right cursor-pointer select-none" onClick={() => toggleSort('diff')}>
                     <span className="inline-flex items-center justify-end w-full">Dif % <SortIcon col="diff" /></span>
                   </TableHead>
