@@ -121,6 +121,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
         grupo: p.grupo,
         subgrupo: p.subgrupo,
         marca: p.marca,
+        estoque_minimo: p.estoque_minimo,
         data_criacao: p.data_criacao,
       }));
 
