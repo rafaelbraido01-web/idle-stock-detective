@@ -97,16 +97,16 @@ export default function Dashboard() {
     const totalSKUs = data.length;
     const ticketMedio = totalSKUs > 0 ? valorTotal / totalSKUs : 0;
 
-    const parados180 = data.filter(p => p.dias_sem_venda > 180 || p.dias_sem_venda < 0);
-    const parados365 = data.filter(p => p.dias_sem_venda > 365 || p.dias_sem_venda < 0);
-    const semRegistro = data.filter(p => p.dias_sem_venda < 0);
+    const parados180 = data.filter(p => { const d = getEffectiveDias(p); return d > 180 || d < 0; });
+    const parados365 = data.filter(p => { const d = getEffectiveDias(p); return d > 365 || d < 0; });
+    const semRegistro = data.filter(p => getEffectiveDias(p) < 0);
     const valorParado180 = parados180.reduce((s, p) => s + p.valor_total, 0);
     const valorParado365 = parados365.reduce((s, p) => s + p.valor_total, 0);
     const pctParado = valorTotal > 0 ? (valorParado180 / valorTotal) * 100 : 0;
 
-    const comVenda = data.filter(p => p.dias_sem_venda >= 0);
-    const mediaDias = comVenda.length > 0
-      ? comVenda.reduce((s, p) => s + p.dias_sem_venda, 0) / comVenda.length
+    const comDias = data.filter(p => getEffectiveDias(p) >= 0);
+    const mediaDias = comDias.length > 0
+      ? comDias.reduce((s, p) => s + getEffectiveDias(p), 0) / comDias.length
       : 0;
 
     const sorted = [...data].sort((a, b) => b.valor_total - a.valor_total);
