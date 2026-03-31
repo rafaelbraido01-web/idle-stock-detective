@@ -32,6 +32,11 @@ function getCampanhaStatus(c: Campanha) {
   return 'Ativa';
 }
 
+// Helper: effective days without sale, using dias_sem_compra as fallback
+function getEffectiveDias(p: { dias_sem_venda: number; dias_sem_compra: number }): number {
+  return p.dias_sem_venda >= 0 ? p.dias_sem_venda : p.dias_sem_compra;
+}
+
 export default function Dashboard() {
   const { snapshots, produtoSnapshots, getLatestProdutoSnapshots, produtos } = useInventory();
   const latest = getLatestProdutoSnapshots();
