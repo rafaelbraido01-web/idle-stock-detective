@@ -271,6 +271,7 @@ export function processExcelFile(file: File, existingProdutos: Produto[], refere
           const produtoId = existing?.id || generateId();
 
           if (!existing) {
+            const estoqueMinimo = colEstoqueMinimo ? parseNumericValue(row[colEstoqueMinimo]) : 0;
             const produto: Produto = {
               id: produtoId,
               codigo,
@@ -278,6 +279,7 @@ export function processExcelFile(file: File, existingProdutos: Produto[], refere
               grupo: String(row[colGrupo] || '').trim(),
               subgrupo: String(row[colSubgrupo] || '').trim(),
               marca: String(row[colMarca] || '').trim(),
+              estoque_minimo: estoqueMinimo,
               data_criacao: now.toISOString(),
             };
             produtos.push(produto);
