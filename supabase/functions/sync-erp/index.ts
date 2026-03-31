@@ -294,7 +294,7 @@ serve(async (req) => {
         data_ultima_compra: agg.dataUltimaCompra,
         dias_sem_venda: diasSemVenda,
         dias_sem_compra: diasSemCompra,
-        categoria_estoque: getCategoriaEstoque(diasSemVenda),
+        categoria_estoque: getCategoriaEstoque(diasSemVenda >= 0 ? diasSemVenda : diasSemCompra),
         nome_comissao: agg.nomeComissao,
         comissao: agg.comissao,
         preco_tabela: agg.precoTabela,

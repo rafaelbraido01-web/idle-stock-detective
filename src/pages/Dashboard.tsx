@@ -240,8 +240,8 @@ export default function Dashboard() {
 
   // Alerts
   const criticalAlerts = useMemo(() => {
-    const critical365 = filteredLatest.filter(p => p.dias_sem_venda > 365 && p.valor_total > 1000);
-    const highValueLowTurn = filteredLatest.filter(p => p.dias_sem_venda > 180 && p.valor_total > 5000);
+    const critical365 = filteredLatest.filter(p => getEffectiveDias(p) > 365 && p.valor_total > 1000);
+    const highValueLowTurn = filteredLatest.filter(p => getEffectiveDias(p) > 180 && p.valor_total > 5000);
     return { critical365: critical365.length, highValueLowTurn: highValueLowTurn.length };
   }, [filteredLatest]);
 
