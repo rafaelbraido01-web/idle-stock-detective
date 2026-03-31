@@ -211,8 +211,8 @@ export default function Dashboard() {
     return snapshots.map(snap => {
       const items = produtoSnapshots.filter(ps => ps.snapshot_id === snap.id);
       const total = items.reduce((s, p) => s + p.valor_total, 0);
-      const parado = items.filter(p => p.dias_sem_venda > 180 || p.dias_sem_venda < 0).reduce((s, p) => s + p.valor_total, 0);
-      const saudavel = items.filter(p => p.dias_sem_venda >= 0 && p.dias_sem_venda <= 90).reduce((s, p) => s + p.valor_total, 0);
+      const parado = items.filter(p => { const d = getEffectiveDias(p); return d > 180 || d < 0; }).reduce((s, p) => s + p.valor_total, 0);
+      const saudavel = items.filter(p => { const d = getEffectiveDias(p); return d >= 0 && d <= 90; }).reduce((s, p) => s + p.valor_total, 0);
       return {
         data: new Date(snap.data_importacao).toLocaleDateString('pt-BR'),
         total, parado, saudavel,
