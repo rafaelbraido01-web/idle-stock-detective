@@ -32,6 +32,11 @@ function getCampanhaStatus(c: Campanha) {
   return 'Ativa';
 }
 
+// Helper: effective days without sale, using dias_sem_compra as fallback
+function getEffectiveDias(p: { dias_sem_venda: number; dias_sem_compra: number }): number {
+  return p.dias_sem_venda >= 0 ? p.dias_sem_venda : p.dias_sem_compra;
+}
+
 export default function Dashboard() {
   const { snapshots, produtoSnapshots, getLatestProdutoSnapshots, produtos } = useInventory();
   const latest = getLatestProdutoSnapshots();
@@ -92,16 +97,16 @@ export default function Dashboard() {
     const totalSKUs = data.length;
     const ticketMedio = totalSKUs > 0 ? valorTotal / totalSKUs : 0;
 
-    const parados180 = data.filter(p => p.dias_sem_venda > 180 || p.dias_sem_venda < 0);
-    const parados365 = data.filter(p => p.dias_sem_venda > 365 || p.dias_sem_venda < 0);
-    const semRegistro = data.filter(p => p.dias_sem_venda < 0);
+    const parados180 = data.filter(p => { const d = getEffectiveDias(p); return d > 180 || d < 0; });
+    const parados365 = data.filter(p => { const d = getEffectiveDias(p); return d > 365 || d < 0; });
+    const semRegistro = data.filter(p => getEffectiveDias(p) < 0);
     const valorParado180 = parados180.reduce((s, p) => s + p.valor_total, 0);
     const valorParado365 = parados365.reduce((s, p) => s + p.valor_total, 0);
     const pctParado = valorTotal > 0 ? (valorParado180 / valorTotal) * 100 : 0;
 
-    const comVenda = data.filter(p => p.dias_sem_venda >= 0);
-    const mediaDias = comVenda.length > 0
-      ? comVenda.reduce((s, p) => s + p.dias_sem_venda, 0) / comVenda.length
+    const comDias = data.filter(p => getEffectiveDias(p) >= 0);
+    const mediaDias = comDias.length > 0
+      ? comDias.reduce((s, p) => s + getEffectiveDias(p), 0) / comDias.length
       : 0;
 
     const sorted = [...data].sort((a, b) => b.valor_total - a.valor_total);
@@ -206,8 +211,8 @@ export default function Dashboard() {
     return snapshots.map(snap => {
       const items = produtoSnapshots.filter(ps => ps.snapshot_id === snap.id);
       const total = items.reduce((s, p) => s + p.valor_total, 0);
-      const parado = items.filter(p => p.dias_sem_venda > 180 || p.dias_sem_venda < 0).reduce((s, p) => s + p.valor_total, 0);
-      const saudavel = items.filter(p => p.dias_sem_venda >= 0 && p.dias_sem_venda <= 90).reduce((s, p) => s + p.valor_total, 0);
+      const parado = items.filter(p => { const d = getEffectiveDias(p); return d > 180 || d < 0; }).reduce((s, p) => s + p.valor_total, 0);
+      const saudavel = items.filter(p => { const d = getEffectiveDias(p); return d >= 0 && d <= 90; }).reduce((s, p) => s + p.valor_total, 0);
       return {
         data: new Date(snap.data_importacao).toLocaleDateString('pt-BR'),
         total, parado, saudavel,
@@ -235,8 +240,8 @@ export default function Dashboard() {
 
   // Alerts
   const criticalAlerts = useMemo(() => {
-    const critical365 = filteredLatest.filter(p => p.dias_sem_venda > 365 && p.valor_total > 1000);
-    const highValueLowTurn = filteredLatest.filter(p => p.dias_sem_venda > 180 && p.valor_total > 5000);
+    const critical365 = filteredLatest.filter(p => getEffectiveDias(p) > 365 && p.valor_total > 1000);
+    const highValueLowTurn = filteredLatest.filter(p => getEffectiveDias(p) > 180 && p.valor_total > 5000);
     return { critical365: critical365.length, highValueLowTurn: highValueLowTurn.length };
   }, [filteredLatest]);
 
