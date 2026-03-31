@@ -221,9 +221,11 @@ export default function Products() {
                         <td className="px-4 py-2.5 font-mono text-xs text-foreground">{item.produto?.codigo}</td>
                         <td className="px-4 py-2.5 text-foreground max-w-[250px] truncate">{item.produto?.descricao}</td>
                         <td className="px-4 py-2.5 text-muted-foreground text-xs">{item.produto?.grupo}</td>
-                        <td className={`px-4 py-2.5 text-right font-mono ${isHighQty ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-foreground'}`}>
+                        <td className={`px-4 py-2.5 text-right font-mono ${isBelowMin ? 'text-destructive font-bold' : isHighQty ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-foreground'}`}>
+                          {isBelowMin && <AlertTriangle className="inline h-3 w-3 mr-1" />}
                           {formatNumber(item.quantidade)}
-                          {isHighQty && <span className="ml-1 text-[10px]">🔥</span>}
+                          {isHighQty && !isBelowMin && <span className="ml-1 text-[10px]">🔥</span>}
+                          {isBelowMin && <span className="ml-1 text-[10px] text-destructive">(mín: {formatNumber(item.produto!.estoque_minimo)})</span>}
                         </td>
                         <td className="px-4 py-2.5 text-right font-mono text-foreground">{formatCurrency(item.valor_unitario)}</td>
                         <td className="px-4 py-2.5 text-right font-mono text-foreground">{item.preco_tabela > 0 ? formatCurrency(item.preco_tabela) : '—'}</td>
