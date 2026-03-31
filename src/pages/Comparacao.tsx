@@ -11,8 +11,10 @@ interface SnapshotSummary {
   date: string;
   valorTotal: number;
   faixas: Record<string, number>;
-  giro: number;   // 0-180d
-  parado: number;  // >180d
+  giro: number;
+  parado: number;
+  promoAtiva: number;
+  promoAtivaQtd: number;
 }
 
 const FAIXAS = ['0-90', '90-180', '180-270', '270-365', '365+', 'sem-registro'] as const;
@@ -49,6 +51,13 @@ function DiffBadge({ value, invertColor = false }: { value: number | null; inver
   );
 }
 
+function isPromoAtiva(dataFim: string | null, refDate: string): boolean {
+  if (!dataFim) return false;
+  const fim = new Date(dataFim + 'T23:59:59');
+  const ref = new Date(refDate);
+  return fim >= ref;
+}
+
 export default function Comparacao() {
   const { snapshots, produtoSnapshots } = useInventory();
 
@@ -61,13 +70,19 @@ export default function Comparacao() {
         const faixas: Record<string, number> = {};
         FAIXAS.forEach(f => (faixas[f] = 0));
         let valorTotal = 0;
+        let promoAtiva = 0;
+        let promoAtivaQtd = 0;
         items.forEach(item => {
           valorTotal += item.valor_total;
           faixas[item.categoria_estoque] = (faixas[item.categoria_estoque] || 0) + item.valor_total;
+          if (isPromoAtiva(item.data_fim_promocao, snap.data_importacao)) {
+            promoAtiva += item.valor_total;
+            promoAtivaQtd += item.quantidade;
+          }
         });
         const giro = (faixas['0-90'] || 0) + (faixas['90-180'] || 0);
         const parado = valorTotal - giro;
-        return { snapshotId: snap.id, date: snap.data_importacao, valorTotal, faixas, giro, parado };
+        return { snapshotId: snap.id, date: snap.data_importacao, valorTotal, faixas, giro, parado, promoAtiva, promoAtivaQtd };
       });
   }, [snapshots, produtoSnapshots]);
 
@@ -77,6 +92,7 @@ export default function Comparacao() {
       Giro: Math.round(s.giro),
       Parado: Math.round(s.parado),
       Total: Math.round(s.valorTotal),
+      'Promoção Ativa': Math.round(s.promoAtiva),
     }));
   }, [summaries]);
 
@@ -94,6 +110,8 @@ export default function Comparacao() {
     { key: 'valorTotal', label: 'Valor Total' },
     ...FAIXAS.map(f => ({ key: f, label: FAIXA_LABELS[f] })),
     { key: 'parado', label: 'Estoque Parado (>180d)' },
+    { key: 'promoAtiva', label: '🏷️ Promoção Ativa (Valor)' },
+    { key: 'promoAtivaQtd', label: '🏷️ Promoção Ativa (Qtd)' },
   ];
 
   return (
@@ -109,8 +127,8 @@ export default function Comparacao() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="min-w-[160px]">Métrica</TableHead>
-                {summaries.map((s, i) => (
+                <TableHead className="min-w-[180px]">Métrica</TableHead>
+                {summaries.map(s => (
                   <TableHead key={s.snapshotId} className="text-right min-w-[110px]">
                     {formatDate(s.date)}
                   </TableHead>
@@ -125,15 +143,30 @@ export default function Comparacao() {
                 const getValue = (s: SnapshotSummary) => {
                   if (row.key === 'valorTotal') return s.valorTotal;
                   if (row.key === 'parado') return s.parado;
+                  if (row.key === 'promoAtiva') return s.promoAtiva;
+                  if (row.key === 'promoAtivaQtd') return s.promoAtivaQtd;
                   return s.faixas[row.key] || 0;
                 };
                 const isParado = row.key === 'parado' || ['180-270', '270-365', '365+'].includes(row.key);
+                const isPromo = row.key === 'promoAtiva' || row.key === 'promoAtivaQtd';
+                const isQtd = row.key === 'promoAtivaQtd';
+                const formatValue = isQtd
+                  ? (v: number) => new Intl.NumberFormat('pt-BR').format(Math.round(v))
+                  : (v: number) => formatCurrency(v);
+
                 return (
-                  <TableRow key={row.key} className={row.key === 'parado' ? 'border-t-2 font-medium' : ''}>
+                  <TableRow
+                    key={row.key}
+                    className={
+                      row.key === 'parado' ? 'border-t-2 font-medium' :
+                      row.key === 'promoAtiva' ? 'border-t-2 font-medium bg-accent/30' :
+                      isPromo ? 'bg-accent/30' : ''
+                    }
+                  >
                     <TableCell className="font-medium text-muted-foreground">{row.label}</TableCell>
                     {summaries.map(s => (
                       <TableCell key={s.snapshotId} className="text-right tabular-nums">
-                        {formatCurrency(getValue(s))}
+                        {formatValue(getValue(s))}
                       </TableCell>
                     ))}
                     {summaries.length >= 2 && (
@@ -169,6 +202,8 @@ export default function Comparacao() {
                 <TableHead className="text-right">Var %</TableHead>
                 <TableHead className="text-right">Estoque Parado</TableHead>
                 <TableHead className="text-right">Var %</TableHead>
+                <TableHead className="text-right">Promoção Ativa</TableHead>
+                <TableHead className="text-right">Var %</TableHead>
                 <TableHead className="text-right">Total</TableHead>
                 <TableHead className="text-right">Var %</TableHead>
               </TableRow>
@@ -186,6 +221,10 @@ export default function Comparacao() {
                     <TableCell className="text-right tabular-nums">{formatCurrency(s.parado)}</TableCell>
                     <TableCell className="text-right">
                       <DiffBadge value={prev ? pctDiff(s.parado, prev.parado) : null} invertColor />
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">{formatCurrency(s.promoAtiva)}</TableCell>
+                    <TableCell className="text-right">
+                      <DiffBadge value={prev ? pctDiff(s.promoAtiva, prev.promoAtiva) : null} />
                     </TableCell>
                     <TableCell className="text-right tabular-nums">{formatCurrency(s.valorTotal)}</TableCell>
                     <TableCell className="text-right">
@@ -214,6 +253,7 @@ export default function Comparacao() {
                   <Legend />
                   <Line type="monotone" dataKey="Giro" stroke="hsl(160, 60%, 36%)" strokeWidth={2} dot={{ r: 4 }} />
                   <Line type="monotone" dataKey="Parado" stroke="hsl(0, 72%, 51%)" strokeWidth={2} dot={{ r: 4 }} />
+                  <Line type="monotone" dataKey="Promoção Ativa" stroke="hsl(38, 92%, 50%)" strokeWidth={2} dot={{ r: 4 }} />
                   <Line type="monotone" dataKey="Total" stroke="hsl(222, 47%, 11%)" strokeWidth={2} dot={{ r: 4 }} />
                 </LineChart>
               </ResponsiveContainer>
