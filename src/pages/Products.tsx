@@ -211,10 +211,11 @@ export default function Products() {
                 <tbody>
                   {paginated.map(item => {
                     const isHighQty = item.quantidade >= 100;
+                    const isBelowMin = item.produto && item.produto.estoque_minimo > 0 && item.quantidade < item.produto.estoque_minimo;
                     return (
                       <tr
                         key={item.id}
-                        className="border-b last:border-0 hover:bg-muted/30 transition-colors duration-150 cursor-pointer"
+                        className={`border-b last:border-0 hover:bg-muted/30 transition-colors duration-150 cursor-pointer ${isBelowMin ? 'bg-destructive/5' : ''}`}
                         onClick={() => setSelectedProdutoId(item.produto_id)}
                       >
                         <td className="px-4 py-2.5 font-mono text-xs text-foreground">{item.produto?.codigo}</td>
