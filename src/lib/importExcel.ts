@@ -218,6 +218,23 @@ export function processExcelFile(file: File, existingProdutos: Produto[], refere
         if (!colQuantidade) warnings.push('Coluna de quantidade não encontrada');
         if (!colUltimaVenda) warnings.push('Coluna de data de última venda não encontrada — todos os produtos serão classificados como "Sem registro"');
 
+        // Debug: log all column names and sample values for date columns
+        console.log('[Import] Todas as colunas do Excel:', sampleKeys);
+        console.log('[Import] Coluna detectada para Última Compra:', colUltimaCompra || 'NENHUMA');
+        console.log('[Import] Coluna detectada para Última Venda:', colUltimaVenda || 'NENHUMA');
+        if (colUltimaCompra) {
+          const sampleRaw = rows.slice(0, 5).map(r => r[colUltimaCompra]);
+          const sampleParsed = sampleRaw.map(v => parseExcelDate(v));
+          console.log('[Import] Valores brutos Última Compra (5 primeiros):', sampleRaw);
+          console.log('[Import] Valores parseados Última Compra (5 primeiros):', sampleParsed);
+        }
+        if (colUltimaVenda) {
+          const sampleRaw = rows.slice(0, 5).map(r => r[colUltimaVenda]);
+          const sampleParsed = sampleRaw.map(v => parseExcelDate(v));
+          console.log('[Import] Valores brutos Última Venda (5 primeiros):', sampleRaw);
+          console.log('[Import] Valores parseados Última Venda (5 primeiros):', sampleParsed);
+        }
+
         let totalEstoque = 0;
 
         let skippedNoCodigo = 0;
