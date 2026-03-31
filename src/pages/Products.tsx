@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowUpDown, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowUpDown, Search, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
 import { useInventory } from '@/store/InventoryContext';
 import { AgingBadge } from '@/components/AgingBadge';
 import { formatCurrency, formatNumber, formatDate, AGING_CATEGORIES, type CategoriaEstoque } from '@/types/inventory';
@@ -211,18 +211,21 @@ export default function Products() {
                 <tbody>
                   {paginated.map(item => {
                     const isHighQty = item.quantidade >= 100;
+                    const isBelowMin = item.produto && item.produto.estoque_minimo > 0 && item.quantidade < item.produto.estoque_minimo;
                     return (
                       <tr
                         key={item.id}
-                        className="border-b last:border-0 hover:bg-muted/30 transition-colors duration-150 cursor-pointer"
+                        className={`border-b last:border-0 hover:bg-muted/30 transition-colors duration-150 cursor-pointer ${isBelowMin ? 'bg-destructive/5' : ''}`}
                         onClick={() => setSelectedProdutoId(item.produto_id)}
                       >
                         <td className="px-4 py-2.5 font-mono text-xs text-foreground">{item.produto?.codigo}</td>
                         <td className="px-4 py-2.5 text-foreground max-w-[250px] truncate">{item.produto?.descricao}</td>
                         <td className="px-4 py-2.5 text-muted-foreground text-xs">{item.produto?.grupo}</td>
-                        <td className={`px-4 py-2.5 text-right font-mono ${isHighQty ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-foreground'}`}>
+                        <td className={`px-4 py-2.5 text-right font-mono ${isBelowMin ? 'text-destructive font-bold' : isHighQty ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-foreground'}`}>
+                          {isBelowMin && <AlertTriangle className="inline h-3 w-3 mr-1" />}
                           {formatNumber(item.quantidade)}
-                          {isHighQty && <span className="ml-1 text-[10px]">🔥</span>}
+                          {isHighQty && !isBelowMin && <span className="ml-1 text-[10px]">🔥</span>}
+                          {isBelowMin && <span className="ml-1 text-[10px] text-destructive">(mín: {formatNumber(item.produto!.estoque_minimo)})</span>}
                         </td>
                         <td className="px-4 py-2.5 text-right font-mono text-foreground">{formatCurrency(item.valor_unitario)}</td>
                         <td className="px-4 py-2.5 text-right font-mono text-foreground">{item.preco_tabela > 0 ? formatCurrency(item.preco_tabela) : '—'}</td>

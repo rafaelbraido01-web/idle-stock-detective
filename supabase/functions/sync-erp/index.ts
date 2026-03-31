@@ -237,6 +237,7 @@ serve(async (req) => {
       grupo: p.grupo,
       subgrupo: p.subgrupo,
       marca: p.marca,
+      estoque_minimo: 0,
       data_criacao: nowISO,
     }));
 

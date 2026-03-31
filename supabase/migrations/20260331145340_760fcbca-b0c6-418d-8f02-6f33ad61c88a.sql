@@ -1,0 +1,1 @@
+ALTER TABLE public.produtos ADD COLUMN estoque_minimo numeric NOT NULL DEFAULT 0;

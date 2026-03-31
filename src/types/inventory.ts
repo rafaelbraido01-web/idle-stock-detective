@@ -5,6 +5,7 @@ export interface Produto {
   grupo: string;
   subgrupo: string;
   marca: string;
+  estoque_minimo: number;
   data_criacao: string;
 }
 

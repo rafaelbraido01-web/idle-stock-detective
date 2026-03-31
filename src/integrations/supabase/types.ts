@@ -189,6 +189,7 @@ export type Database = {
           codigo: string
           data_criacao: string
           descricao: string
+          estoque_minimo: number
           grupo: string
           id: string
           marca: string
@@ -198,6 +199,7 @@ export type Database = {
           codigo: string
           data_criacao?: string
           descricao?: string
+          estoque_minimo?: number
           grupo?: string
           id?: string
           marca?: string
@@ -207,6 +209,7 @@ export type Database = {
           codigo?: string
           data_criacao?: string
           descricao?: string
+          estoque_minimo?: number
           grupo?: string
           id?: string
           marca?: string

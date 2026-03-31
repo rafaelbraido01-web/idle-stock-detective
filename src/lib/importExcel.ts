@@ -193,6 +193,7 @@ export function processExcelFile(file: File, existingProdutos: Produto[], refere
         const colValorPromocao = findKey(['valorpromocao', 'valor_promocao', 'vlrpromocao', 'vlr_promocao', 'precopromocao', 'preco_promocao', 'precopromo', 'preco_promo', 'vlrpromo', 'promocao']);
         const colDataFimPromocao = findKey(['datafimpromocao', 'data_fim_promocao', 'dtfimpromocao', 'dt_fim_promocao', 'fimpromocao', 'fim_promocao', 'validadepromocao', 'validade_promocao', 'dtfimpromo', 'validprom', 'valid_prom', 'valid prom', 'vlprom', 'vl_prom']);
         const colValorVendaTotal = findKey(['valorvenda', 'valor_venda', 'vlrvenda', 'vlr_venda', 'totalvenda', 'total_venda', 'vendatotal', 'venda_total', 'vlrvendatotal', 'vlr_venda_total']);
+        const colEstoqueMinimo = findKey(['estoqueminimo', 'estoque_minimo', 'estoque minimo', 'estmin', 'est_min', 'estoquemin', 'estoque_min', 'min_estoque', 'minestoque', 'minimo', 'qtdminima', 'qtd_minima']);
 
         const detectedColumns: Record<string, string> = {
           'Código': colCodigo || '❌ Não encontrado',
@@ -211,6 +212,7 @@ export function processExcelFile(file: File, existingProdutos: Produto[], refere
           'Valor Promoção': colValorPromocao || '—',
           'Fim Promoção': colDataFimPromocao || '—',
           'Valor Venda Total': colValorVendaTotal || '—',
+          'Estoque Mínimo': colEstoqueMinimo || '—',
         };
 
         const warnings: string[] = [];
@@ -269,6 +271,7 @@ export function processExcelFile(file: File, existingProdutos: Produto[], refere
           const produtoId = existing?.id || generateId();
 
           if (!existing) {
+            const estoqueMinimo = colEstoqueMinimo ? parseNumericValue(row[colEstoqueMinimo]) : 0;
             const produto: Produto = {
               id: produtoId,
               codigo,
@@ -276,6 +279,7 @@ export function processExcelFile(file: File, existingProdutos: Produto[], refere
               grupo: String(row[colGrupo] || '').trim(),
               subgrupo: String(row[colSubgrupo] || '').trim(),
               marca: String(row[colMarca] || '').trim(),
+              estoque_minimo: estoqueMinimo,
               data_criacao: now.toISOString(),
             };
             produtos.push(produto);
