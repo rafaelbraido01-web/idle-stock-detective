@@ -212,6 +212,7 @@ export function processExcelFile(file: File, existingProdutos: Produto[], refere
           'Valor Promoção': colValorPromocao || '—',
           'Fim Promoção': colDataFimPromocao || '—',
           'Valor Venda Total': colValorVendaTotal || '—',
+          'Estoque Mínimo': colEstoqueMinimo || '—',
         };
 
         const warnings: string[] = [];
