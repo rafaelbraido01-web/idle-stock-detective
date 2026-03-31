@@ -331,6 +331,9 @@ export function processExcelFile(file: File, existingProdutos: Produto[], refere
             percentualDesconto = Math.round(((agg.precoTabela - agg.valorPromocao) / agg.precoTabela) * 10000) / 100;
           }
 
+          // Use dias_sem_venda for categorization; fallback to dias_sem_compra if venda unavailable
+          const diasParaCategoria = diasSemVenda >= 0 ? diasSemVenda : diasSemCompra;
+
           produtoSnapshots.push({
             id: generateId(),
             snapshot_id: snapshotId,
@@ -342,7 +345,7 @@ export function processExcelFile(file: File, existingProdutos: Produto[], refere
             data_ultima_compra: agg.dataUltimaCompra,
             dias_sem_venda: diasSemVenda,
             dias_sem_compra: diasSemCompra,
-            categoria_estoque: getCategoriaEstoque(diasSemVenda),
+            categoria_estoque: getCategoriaEstoque(diasParaCategoria),
             nome_comissao: agg.nomeComissao,
             comissao: agg.comissao,
             preco_tabela: agg.precoTabela,
