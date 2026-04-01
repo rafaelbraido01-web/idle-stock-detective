@@ -170,8 +170,6 @@ export default function Promocoes() {
     const results: PromoComparison[] = [];
 
     for (const item of atualItems) {
-      if (!item.data_fim_promocao) continue;
-
       const produto = produtoMap.get(item.produto_id);
       if (!produto) continue;
 
@@ -179,7 +177,9 @@ export default function Promocoes() {
       const qtdAnterior = anterior?.quantidade ?? item.quantidade;
       const qtdAtual = item.quantidade;
       const delta = qtdAnterior - qtdAtual;
-      const promoDate = new Date(item.data_fim_promocao + 'T23:59:59');
+      
+      const hasPromo = !!item.data_fim_promocao;
+      const promoDate = hasPromo ? new Date(item.data_fim_promocao + 'T23:59:59') : null;
 
       let status: PromoComparison['status'];
       if (delta > 0) status = 'vendeu';
@@ -190,7 +190,7 @@ export default function Promocoes() {
         produtoId: item.produto_id,
         codigo: produto.codigo,
         descricao: produto.descricao,
-        dataFimPromocao: item.data_fim_promocao,
+        dataFimPromocao: item.data_fim_promocao ?? '',
         precoTabela: item.preco_tabela,
         valorPromocao: item.valor_promocao ?? item.preco_tabela,
         percentualDesconto: item.percentual_desconto ?? 0,
@@ -198,7 +198,7 @@ export default function Promocoes() {
         qtdAtual,
         delta,
         status,
-        promoAtiva: promoDate >= now,
+        promoAtiva: promoDate ? promoDate >= now : false,
       });
     }
 
@@ -213,8 +213,11 @@ export default function Promocoes() {
     let result = comparisons.filter(c => {
       if (statusFilter !== 'todos' && c.status !== statusFilter) return false;
       if (promoFilter === 'ativa' && !c.promoAtiva) return false;
-      if (promoFilter === 'expirada' && c.promoAtiva) return false;
+      if (promoFilter === 'expirada') {
+        if (!c.dataFimPromocao || c.promoAtiva) return false;
+      }
       if (promoFilter === 'recem-expirada') {
+        if (!c.dataFimPromocao) return false;
         const promoDate = new Date(c.dataFimPromocao + 'T23:59:59');
         if (c.promoAtiva || promoDate < thirtyDaysAgo) return false;
       }
