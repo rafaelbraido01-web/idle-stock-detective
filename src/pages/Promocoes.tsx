@@ -213,8 +213,11 @@ export default function Promocoes() {
     let result = comparisons.filter(c => {
       if (statusFilter !== 'todos' && c.status !== statusFilter) return false;
       if (promoFilter === 'ativa' && !c.promoAtiva) return false;
-      if (promoFilter === 'expirada' && c.promoAtiva) return false;
+      if (promoFilter === 'expirada') {
+        if (!c.dataFimPromocao || c.promoAtiva) return false;
+      }
       if (promoFilter === 'recem-expirada') {
+        if (!c.dataFimPromocao) return false;
         const promoDate = new Date(c.dataFimPromocao + 'T23:59:59');
         if (c.promoAtiva || promoDate < thirtyDaysAgo) return false;
       }
