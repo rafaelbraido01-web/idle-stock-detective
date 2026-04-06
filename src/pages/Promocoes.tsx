@@ -280,7 +280,7 @@ export default function Promocoes() {
     });
 
     return result;
-  }, [comparisons, search, grupoFilter, subgrupoFilter, marcaFilter, statusFilter, promoFilter, sortKey, sortDir, produtoMap]);
+  }, [comparisons, search, grupoFilter, subgrupoFilter, marcaFilter, compraFilter, statusFilter, promoFilter, sortKey, sortDir, produtoMap]);
 
   const kpis = useMemo(() => {
     const total = comparisons.length;
