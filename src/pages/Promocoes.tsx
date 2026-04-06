@@ -588,10 +588,12 @@ export default function Promocoes() {
                   const mercadoEntry = precosMercado.get(item.codigo);
                   const precoDesatualizado = item.promoAtiva && mercadoEntry &&
                     (Date.now() - new Date(mercadoEntry.updated_at).getTime()) > 25 * 24 * 60 * 60 * 1000;
+                  const camp = campanhas.get(item.codigo);
+                  const hasCampanhaVencida = camp ? new Date(camp.data_fim + 'T23:59:59') < new Date() : false;
                   return (
                     <TableRow
                       key={item.produtoId}
-                      className={`cursor-pointer ${item.promoAtiva ? 'bg-orange-50 dark:bg-orange-950/20' : ''}`}
+                      className={`cursor-pointer ${hasCampanhaVencida ? 'bg-purple-50 dark:bg-purple-950/20' : item.promoAtiva ? 'bg-orange-50 dark:bg-orange-950/20' : ''}`}
                       onClick={() => setDrawerProdutoId(item.produtoId)}
                     >
                       <TableCell className="px-2 py-1.5 font-mono text-sm">{item.codigo}</TableCell>
