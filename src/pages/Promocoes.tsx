@@ -532,6 +532,36 @@ export default function Promocoes() {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-end">
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por código ou descrição..."
+            value={search}
+            onChange={e => { setSearch(e.target.value); setPage(0); }}
+            className="pl-9"
+          />
+        </div>
+        <Select value={grupoFilter} onValueChange={v => { setGrupoFilter(v); setPage(0); }}>
+          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Grupo" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os grupos</SelectItem>
+            {grupos.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={subgrupoFilter} onValueChange={v => { setSubgrupoFilter(v); setPage(0); }}>
+          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Subgrupo" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos subgrupos</SelectItem>
+            {subgrupos.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={marcaFilter} onValueChange={v => { setMarcaFilter(v); setPage(0); }}>
+          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Marca" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas as marcas</SelectItem>
+            {marcas.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+          </SelectContent>
+        </Select>
         <Select value={statusFilter} onValueChange={v => setStatusFilter(v as StatusFilter)}>
           <SelectTrigger className="w-[180px]">
             <SelectValue />
@@ -559,6 +589,8 @@ export default function Promocoes() {
           Subir Campanha
         </Button>
       </div>
+
+      <p className="text-xs text-muted-foreground">{formatNumber(filtered.length)} produtos</p>
 
       {/* Table */}
       <Card>
