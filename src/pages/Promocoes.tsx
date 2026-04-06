@@ -209,12 +209,37 @@ export default function Promocoes() {
     return results.sort((a, b) => b.delta - a.delta);
   }, [atualId, anteriorId, produtoSnapshots, produtos]);
 
+  const produtoMap = useMemo(() => new Map(produtos.map(p => [p.id, p])), [produtos]);
+
+  const grupos = useMemo(() => [...new Set(comparisons.map(c => {
+    const p = produtoMap.get(c.produtoId);
+    return p?.grupo;
+  }).filter(Boolean))].sort() as string[], [comparisons, produtoMap]);
+
+  const subgrupos = useMemo(() => [...new Set(comparisons.map(c => {
+    const p = produtoMap.get(c.produtoId);
+    return p?.subgrupo;
+  }).filter(Boolean))].sort() as string[], [comparisons, produtoMap]);
+
+  const marcas = useMemo(() => [...new Set(comparisons.map(c => {
+    const p = produtoMap.get(c.produtoId);
+    return p?.marca;
+  }).filter(Boolean))].sort() as string[], [comparisons, produtoMap]);
+
   const filtered = useMemo(() => {
     const now = new Date();
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(now.getDate() - 30);
 
     let result = comparisons.filter(c => {
+      if (search) {
+        const q = search.toLowerCase();
+        if (!c.codigo.toLowerCase().includes(q) && !c.descricao.toLowerCase().includes(q)) return false;
+      }
+      const produto = produtoMap.get(c.produtoId);
+      if (grupoFilter !== 'all' && produto?.grupo !== grupoFilter) return false;
+      if (subgrupoFilter !== 'all' && produto?.subgrupo !== subgrupoFilter) return false;
+      if (marcaFilter !== 'all' && produto?.marca !== marcaFilter) return false;
       if (statusFilter !== 'todos' && c.status !== statusFilter) return false;
       if (promoFilter === 'ativa' && !c.promoAtiva) return false;
       if (promoFilter === 'expirada') {
@@ -248,7 +273,7 @@ export default function Promocoes() {
     });
 
     return result;
-  }, [comparisons, statusFilter, promoFilter, sortKey, sortDir]);
+  }, [comparisons, search, grupoFilter, subgrupoFilter, marcaFilter, statusFilter, promoFilter, sortKey, sortDir, produtoMap]);
 
   const kpis = useMemo(() => {
     const total = comparisons.length;
