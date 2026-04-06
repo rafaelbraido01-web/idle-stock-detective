@@ -14,7 +14,7 @@ import { formatCurrency, formatNumber, formatDate } from '@/types/inventory';
 import { Textarea } from '@/components/ui/textarea';
 import { KPICard } from '@/components/KPICard';
 import { ProductDrawer } from '@/components/ProductDrawer';
-import { Tag, PackageSearch, CalendarIcon, Upload, ArrowUpDown } from 'lucide-react';
+import { Tag, PackageSearch, CalendarIcon, Upload, ArrowUpDown, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -88,6 +88,10 @@ export default function Promocoes() {
   const [atualId, setAtualId] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('todos');
   const [promoFilter, setPromoFilter] = useState<PromoFilter>('todas');
+  const [search, setSearch] = useState('');
+  const [grupoFilter, setGrupoFilter] = useState('all');
+  const [subgrupoFilter, setSubgrupoFilter] = useState('all');
+  const [marcaFilter, setMarcaFilter] = useState('all');
   const [sortKey, setSortKey] = useState<PromoSortKey>('delta');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [drawerProdutoId, setDrawerProdutoId] = useState<string | null>(null);
@@ -205,12 +209,37 @@ export default function Promocoes() {
     return results.sort((a, b) => b.delta - a.delta);
   }, [atualId, anteriorId, produtoSnapshots, produtos]);
 
+  const produtoMap = useMemo(() => new Map(produtos.map(p => [p.id, p])), [produtos]);
+
+  const grupos = useMemo(() => [...new Set(comparisons.map(c => {
+    const p = produtoMap.get(c.produtoId);
+    return p?.grupo;
+  }).filter(Boolean))].sort() as string[], [comparisons, produtoMap]);
+
+  const subgrupos = useMemo(() => [...new Set(comparisons.map(c => {
+    const p = produtoMap.get(c.produtoId);
+    return p?.subgrupo;
+  }).filter(Boolean))].sort() as string[], [comparisons, produtoMap]);
+
+  const marcas = useMemo(() => [...new Set(comparisons.map(c => {
+    const p = produtoMap.get(c.produtoId);
+    return p?.marca;
+  }).filter(Boolean))].sort() as string[], [comparisons, produtoMap]);
+
   const filtered = useMemo(() => {
     const now = new Date();
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(now.getDate() - 30);
 
     let result = comparisons.filter(c => {
+      if (search) {
+        const q = search.toLowerCase();
+        if (!c.codigo.toLowerCase().includes(q) && !c.descricao.toLowerCase().includes(q)) return false;
+      }
+      const produto = produtoMap.get(c.produtoId);
+      if (grupoFilter !== 'all' && produto?.grupo !== grupoFilter) return false;
+      if (subgrupoFilter !== 'all' && produto?.subgrupo !== subgrupoFilter) return false;
+      if (marcaFilter !== 'all' && produto?.marca !== marcaFilter) return false;
       if (statusFilter !== 'todos' && c.status !== statusFilter) return false;
       if (promoFilter === 'ativa' && !c.promoAtiva) return false;
       if (promoFilter === 'expirada') {
@@ -244,7 +273,7 @@ export default function Promocoes() {
     });
 
     return result;
-  }, [comparisons, statusFilter, promoFilter, sortKey, sortDir]);
+  }, [comparisons, search, grupoFilter, subgrupoFilter, marcaFilter, statusFilter, promoFilter, sortKey, sortDir, produtoMap]);
 
   const kpis = useMemo(() => {
     const total = comparisons.length;
@@ -433,8 +462,7 @@ export default function Promocoes() {
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginatedItems = useMemo(() => filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE), [filtered, page]);
 
-  // Reset page when filters change
-  useEffect(() => { setPage(0); }, [statusFilter, promoFilter, atualId, anteriorId]);
+  useEffect(() => { setPage(0); }, [statusFilter, promoFilter, search, grupoFilter, subgrupoFilter, marcaFilter, atualId, anteriorId]);
 
   if (sortedSnapshots.length === 0) {
     return (
@@ -504,6 +532,36 @@ export default function Promocoes() {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-end">
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por código ou descrição..."
+            value={search}
+            onChange={e => { setSearch(e.target.value); setPage(0); }}
+            className="pl-9"
+          />
+        </div>
+        <Select value={grupoFilter} onValueChange={v => { setGrupoFilter(v); setPage(0); }}>
+          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Grupo" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os grupos</SelectItem>
+            {grupos.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={subgrupoFilter} onValueChange={v => { setSubgrupoFilter(v); setPage(0); }}>
+          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Subgrupo" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos subgrupos</SelectItem>
+            {subgrupos.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={marcaFilter} onValueChange={v => { setMarcaFilter(v); setPage(0); }}>
+          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Marca" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas as marcas</SelectItem>
+            {marcas.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+          </SelectContent>
+        </Select>
         <Select value={statusFilter} onValueChange={v => setStatusFilter(v as StatusFilter)}>
           <SelectTrigger className="w-[180px]">
             <SelectValue />
@@ -531,6 +589,8 @@ export default function Promocoes() {
           Subir Campanha
         </Button>
       </div>
+
+      <p className="text-xs text-muted-foreground">{formatNumber(filtered.length)} produtos</p>
 
       {/* Table */}
       <Card>
