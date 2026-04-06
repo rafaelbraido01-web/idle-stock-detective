@@ -462,8 +462,7 @@ export default function Promocoes() {
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginatedItems = useMemo(() => filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE), [filtered, page]);
 
-  // Reset page when filters change
-  useEffect(() => { setPage(0); }, [statusFilter, promoFilter, atualId, anteriorId]);
+  useEffect(() => { setPage(0); }, [statusFilter, promoFilter, search, grupoFilter, subgrupoFilter, marcaFilter, atualId, anteriorId]);
 
   if (sortedSnapshots.length === 0) {
     return (
