@@ -37,6 +37,7 @@ interface PromoComparison {
   delta: number;
   status: 'vendeu' | 'sem-movimento' | 'reposicao';
   promoAtiva: boolean;
+  diasSemCompra: number;
 }
 
 const FONTES_PRECO = [
@@ -92,6 +93,7 @@ export default function Promocoes() {
   const [grupoFilter, setGrupoFilter] = useState('all');
   const [subgrupoFilter, setSubgrupoFilter] = useState('all');
   const [marcaFilter, setMarcaFilter] = useState('all');
+  const [compraFilter, setCompraFilter] = useState('all');
   const [sortKey, setSortKey] = useState<PromoSortKey>('delta');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [drawerProdutoId, setDrawerProdutoId] = useState<string | null>(null);
@@ -203,6 +205,7 @@ export default function Promocoes() {
         delta,
         status,
         promoAtiva: promoDate ? promoDate >= now : false,
+        diasSemCompra: item.dias_sem_compra,
       });
     }
 
@@ -240,6 +243,10 @@ export default function Promocoes() {
       if (grupoFilter !== 'all' && produto?.grupo !== grupoFilter) return false;
       if (subgrupoFilter !== 'all' && produto?.subgrupo !== subgrupoFilter) return false;
       if (marcaFilter !== 'all' && produto?.marca !== marcaFilter) return false;
+      if (compraFilter === 'lt90') { if (c.diasSemCompra < 0 || c.diasSemCompra >= 90) return false; }
+      else if (compraFilter === '90-180') { if (c.diasSemCompra < 90 || c.diasSemCompra > 180) return false; }
+      else if (compraFilter === 'gt180') { if (c.diasSemCompra <= 180) return false; }
+      else if (compraFilter === 'sem-registro') { if (c.diasSemCompra >= 0) return false; }
       if (statusFilter !== 'todos' && c.status !== statusFilter) return false;
       if (promoFilter === 'ativa' && !c.promoAtiva) return false;
       if (promoFilter === 'expirada') {
@@ -582,6 +589,16 @@ export default function Promocoes() {
             <SelectItem value="ativa">Promoção ativa</SelectItem>
             <SelectItem value="recem-expirada">Recém expirada (30 dias)</SelectItem>
             <SelectItem value="expirada">Promoção expirada</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={compraFilter} onValueChange={v => { setCompraFilter(v); setPage(0); }}>
+          <SelectTrigger className="w-[180px]"><SelectValue placeholder="Últ. Compra" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas (compra)</SelectItem>
+            <SelectItem value="lt90">&lt; 90 dias</SelectItem>
+            <SelectItem value="90-180">90 a 180 dias</SelectItem>
+            <SelectItem value="gt180">&gt; 180 dias</SelectItem>
+            <SelectItem value="sem-registro">Sem registro</SelectItem>
           </SelectContent>
         </Select>
         <Button onClick={() => setBulkDialogOpen(true)} className="ml-auto">
