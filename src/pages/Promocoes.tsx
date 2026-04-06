@@ -593,7 +593,7 @@ export default function Promocoes() {
                   return (
                     <TableRow
                       key={item.produtoId}
-                      className={`cursor-pointer ${hasCampanhaVencida ? 'bg-purple-50 dark:bg-purple-950/20' : item.promoAtiva ? 'bg-orange-50 dark:bg-orange-950/20' : ''}`}
+                      className={`cursor-pointer ${hasCampanhaVencida ? 'bg-purple-200 dark:bg-purple-900/40' : item.promoAtiva ? 'bg-orange-50 dark:bg-orange-950/20' : ''}`}
                       onClick={() => setDrawerProdutoId(item.produtoId)}
                     >
                       <TableCell className="px-2 py-1.5 font-mono text-sm">{item.codigo}</TableCell>
