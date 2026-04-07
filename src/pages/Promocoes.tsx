@@ -91,11 +91,9 @@ export default function Promocoes() {
   const [atualId, setAtualId] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('todos');
   const [promoFilter, setPromoFilter] = useState<PromoFilter>('todas');
-  const [search, setSearch] = useState('');
-  const [grupoFilter, setGrupoFilter] = useState('all');
-  const [subgrupoFilter, setSubgrupoFilter] = useState('all');
-  const [marcaFilter, setMarcaFilter] = useState('all');
   const [compraFilter, setCompraFilter] = useState('all');
+  const [compraMinFilter, setCompraMinFilter] = useState<Date | undefined>();
+  const [compraMaxFilter, setCompraMaxFilter] = useState<Date | undefined>();
   const [validadeMinFilter, setValidadeMinFilter] = useState<Date | undefined>();
   const [validadeMaxFilter, setValidadeMaxFilter] = useState<Date | undefined>();
   const [sortKey, setSortKey] = useState<PromoSortKey>('delta');
