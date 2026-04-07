@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useInventory } from '@/store/InventoryContext';
-import { formatCurrency, formatDate } from '@/types/inventory';
+import { formatCurrency, formatDate, parseLocalDate } from '@/types/inventory';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { ArrowUpRight, ArrowDownRight, Minus, GitCompareArrows } from 'lucide-react';
 
@@ -53,8 +53,8 @@ function DiffBadge({ value, invertColor = false }: { value: number | null; inver
 
 function isPromoAtiva(dataFim: string | null, refDate: string): boolean {
   if (!dataFim) return false;
-  const fim = new Date(dataFim + 'T23:59:59');
-  const ref = new Date(refDate);
+  const fim = parseLocalDate(dataFim);
+  const ref = parseLocalDate(refDate);
   return fim >= ref;
 }
 

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useInventory } from '@/store/InventoryContext';
 import { AgingBadge } from '@/components/AgingBadge';
-import { formatCurrency, formatNumber, formatDate } from '@/types/inventory';
+import { formatCurrency, formatNumber, formatDate, parseLocalDate } from '@/types/inventory';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
 import { Tag, TrendingDown } from 'lucide-react';
@@ -188,9 +188,9 @@ export function ProductDrawer({ produtoId, onClose }: ProductDrawerProps) {
               {campanhas.length > 0 ? (
                 <div className="space-y-2">
                   {campanhas.map(c => {
-                    const hoje = new Date();
-                    const inicio = new Date(c.data_inicio + 'T00:00:00');
-                    const fim = new Date(c.data_fim + 'T23:59:59');
+                    const hoje = new Date(new Date().toDateString());
+                    const inicio = parseLocalDate(c.data_inicio);
+                    const fim = parseLocalDate(c.data_fim);
                     const status = inicio > hoje ? 'Futura' : fim >= hoje ? 'Ativa' : 'Encerrada';
                     const statusClass = status === 'Ativa'
                       ? 'bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200'

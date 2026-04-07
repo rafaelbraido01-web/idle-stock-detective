@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useInventory } from '@/store/InventoryContext';
-import { formatCurrency, formatDate } from '@/types/inventory';
+import { formatCurrency, formatDate, parseLocalDate } from '@/types/inventory';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Search, ExternalLink, Loader2, CheckCircle2, ShoppingCart,
@@ -101,7 +101,7 @@ export default function PrecoMercado() {
     if (onlyActivePromo) {
       items = items.filter(p =>
         p.snap.data_fim_promocao &&
-        new Date(p.snap.data_fim_promocao + 'T23:59:59') >= new Date()
+        parseLocalDate(p.snap.data_fim_promocao) >= new Date(new Date().toDateString())
       );
     }
     if (searchTerm) {
@@ -306,7 +306,7 @@ export default function PrecoMercado() {
                   const hasResult = !!priceResults[p.id];
                   const hasActivePromo = !!(
                     p.snap.data_fim_promocao &&
-                    new Date(p.snap.data_fim_promocao + 'T23:59:59') >= new Date()
+                    parseLocalDate(p.snap.data_fim_promocao) >= new Date(new Date().toDateString())
                   );
                   const mp = marketPrices[p.codigo];
                   const diff = getDiff(p);

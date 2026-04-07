@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useInventory } from '@/store/InventoryContext';
-import { formatCurrency, formatNumber, formatDate } from '@/types/inventory';
+import { formatCurrency, formatNumber, formatDate, parseLocalDate } from '@/types/inventory';
 import { Textarea } from '@/components/ui/textarea';
 import { KPICard } from '@/components/KPICard';
 import { ProductDrawer } from '@/components/ProductDrawer';
@@ -174,7 +174,7 @@ export default function Promocoes() {
 
     const anteriorMap = new Map(anteriorItems.map(i => [i.produto_id, i]));
     const produtoMap = new Map(produtos.map(p => [p.id, p]));
-    const now = new Date();
+    const now = new Date(new Date().toDateString()); // midnight local, no time component
 
     const results: PromoComparison[] = [];
 
@@ -188,7 +188,7 @@ export default function Promocoes() {
       const delta = qtdAnterior - qtdAtual;
       
       const hasPromo = !!item.data_fim_promocao;
-      const promoDate = hasPromo ? new Date(item.data_fim_promocao + 'T23:59:59') : null;
+      const promoDate = hasPromo ? parseLocalDate(item.data_fim_promocao!) : null;
 
       let status: PromoComparison['status'];
       if (delta > 0) status = 'vendeu';
@@ -236,13 +236,13 @@ export default function Promocoes() {
       else if (compraFilter === 'sem-registro') { if (c.diasSemCompra >= 0) return false; }
       if (compraMinFilter || compraMaxFilter) {
         if (!c.dataUltimaCompra) return false;
-        const compraDate = new Date(c.dataUltimaCompra);
+        const compraDate = parseLocalDate(c.dataUltimaCompra);
         if (compraMinFilter && compraDate < compraMinFilter) return false;
         if (compraMaxFilter && compraDate > compraMaxFilter) return false;
       }
       if (statusFilter !== 'todos' && c.status !== statusFilter) return false;
       if ((validadeMinFilter || validadeMaxFilter) && c.dataFimPromocao) {
-        const promoDate = new Date(c.dataFimPromocao + 'T23:59:59');
+        const promoDate = parseLocalDate(c.dataFimPromocao);
         if (validadeMinFilter && promoDate < validadeMinFilter) return false;
         if (validadeMaxFilter && promoDate > validadeMaxFilter) return false;
       }
@@ -253,7 +253,7 @@ export default function Promocoes() {
       }
       if (promoFilter === 'recem-expirada') {
         if (!c.dataFimPromocao) return false;
-        const promoDate = new Date(c.dataFimPromocao + 'T23:59:59');
+        const promoDate = parseLocalDate(c.dataFimPromocao);
         if (c.promoAtiva || promoDate < thirtyDaysAgo) return false;
       }
       return true;
@@ -800,7 +800,7 @@ export default function Promocoes() {
                   const precoDesatualizado = item.promoAtiva && mercadoEntry &&
                     (Date.now() - new Date(mercadoEntry.updated_at).getTime()) > 25 * 24 * 60 * 60 * 1000;
                   const camp = campanhas.get(item.codigo);
-                  const hasCampanhaVencida = camp ? new Date(camp.data_fim + 'T23:59:59') < new Date() : false;
+                  const hasCampanhaVencida = camp ? parseLocalDate(camp.data_fim) < new Date(new Date().toDateString()) : false;
                   return (
                     <TableRow
                       key={item.produtoId}
@@ -882,9 +882,9 @@ export default function Promocoes() {
                           const camp = campanhas.get(item.codigo);
                           let colorClass = 'text-muted-foreground hover:text-foreground';
                           if (camp) {
-                            const hoje = new Date();
-                            const inicio = new Date(camp.data_inicio + 'T00:00:00');
-                            const fim = new Date(camp.data_fim + 'T23:59:59');
+                            const hoje = new Date(new Date().toDateString());
+                            const inicio = parseLocalDate(camp.data_inicio);
+                            const fim = parseLocalDate(camp.data_fim);
                             if (inicio > hoje) colorClass = 'text-blue-600 hover:text-blue-700';
                             else if (fim >= hoje) colorClass = 'text-red-600 hover:text-red-700';
                             else colorClass = 'text-muted-foreground hover:text-foreground';
