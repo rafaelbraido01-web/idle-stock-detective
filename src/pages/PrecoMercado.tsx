@@ -228,6 +228,73 @@ export default function PrecoMercado() {
     setDialogOpen(true);
   };
 
+  const handleEditOpen = (mp: MarketPrice) => {
+    setEditingPrice(mp);
+    setEditPreco(String(mp.preco));
+    setEditFonte(mp.fonte);
+    setEditDialogOpen(true);
+  };
+
+  const handleEditSave = async () => {
+    if (!editingPrice) return;
+    const preco = parseFloat(editPreco);
+    if (isNaN(preco) || preco <= 0) {
+      toast({ title: 'Valor inválido', description: 'Informe um preço válido.', variant: 'destructive' });
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      const { error } = await supabase
+        .from('precos_mercado')
+        .update({ preco, fonte: editFonte })
+        .eq('id', editingPrice.id);
+      if (error) throw error;
+      // Update local state
+      setMarketPrices(prev => {
+        const updated = { ...prev };
+        if (updated[editingPrice.produto_id]) {
+          updated[editingPrice.produto_id] = { ...updated[editingPrice.produto_id], preco, fonte: editFonte };
+        }
+        return updated;
+      });
+      toast({ title: 'Preço atualizado com sucesso' });
+      setEditDialogOpen(false);
+    } catch (err: any) {
+      toast({ title: 'Erro ao atualizar', description: err.message, variant: 'destructive' });
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleDeleteOpen = (mp: MarketPrice) => {
+    setEditingPrice(mp);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!editingPrice) return;
+    setDeletingPrice(true);
+    try {
+      const { error } = await supabase
+        .from('precos_mercado')
+        .delete()
+        .eq('id', editingPrice.id);
+      if (error) throw error;
+      // Remove from local state
+      setMarketPrices(prev => {
+        const updated = { ...prev };
+        delete updated[editingPrice.produto_id];
+        return updated;
+      });
+      toast({ title: 'Preço removido com sucesso' });
+      setDeleteDialogOpen(false);
+    } catch (err: any) {
+      toast({ title: 'Erro ao remover', description: err.message, variant: 'destructive' });
+    } finally {
+      setDeletingPrice(false);
+    }
+  };
+
   const selectedData = selectedProduct ? priceResults[selectedProduct] : null;
   const selectedProduto = selectedProduct ? productsWithSnapshot.find(p => p.id === selectedProduct) : null;
 
