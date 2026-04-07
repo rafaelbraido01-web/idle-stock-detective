@@ -847,6 +847,11 @@ export default function Promocoes() {
                       </TableCell>
                       <TableCell className="px-2 py-1.5 text-right tabular-nums text-foreground">{formatCurrency(item.valorEstoque)}</TableCell>
                       <TableCell className="px-2 py-1.5 text-center">
+                        <Badge variant={cfg.variant} className={cfg.className}>
+                          {cfg.label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="px-2 py-1.5 text-center">
                         <div className="flex items-center justify-center gap-1.5 flex-wrap">
                           <Button
                             variant="ghost"
