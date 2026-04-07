@@ -22,7 +22,7 @@ import { cn } from '@/lib/utils';
 
 type StatusFilter = 'todos' | 'vendeu' | 'sem-movimento' | 'reposicao';
 type PromoFilter = 'todas' | 'ativa' | 'expirada' | 'recem-expirada';
-type PromoSortKey = 'codigo' | 'descricao' | 'dataFimPromocao' | 'precoTabela' | 'valorPromocao' | 'percentualDesconto' | 'qtdAnterior' | 'qtdAtual' | 'delta' | 'status';
+type PromoSortKey = 'codigo' | 'descricao' | 'dataFimPromocao' | 'precoTabela' | 'valorPromocao' | 'percentualDesconto' | 'qtdAnterior' | 'qtdAtual' | 'delta' | 'status' | 'valorEstoque';
 
 interface PromoComparison {
   produtoId: string;
@@ -38,6 +38,7 @@ interface PromoComparison {
   status: 'vendeu' | 'sem-movimento' | 'reposicao';
   promoAtiva: boolean;
   diasSemCompra: number;
+  valorEstoque: number;
 }
 
 const FONTES_PRECO = [
@@ -206,6 +207,7 @@ export default function Promocoes() {
         status,
         promoAtiva: promoDate ? promoDate >= now : false,
         diasSemCompra: item.dias_sem_compra,
+        valorEstoque: item.valor_total,
       });
     }
 
@@ -651,6 +653,9 @@ export default function Promocoes() {
                   <TableHead className="px-2 text-right cursor-pointer select-none" onClick={() => toggleSort('delta')}>
                     <span className="inline-flex items-center gap-1 justify-end">Diferença <ArrowUpDown className="h-3 w-3" /></span>
                   </TableHead>
+                  <TableHead className="px-2 text-right cursor-pointer select-none" onClick={() => toggleSort('valorEstoque')}>
+                    <span className="inline-flex items-center gap-1 justify-end">VLR Estoque <ArrowUpDown className="h-3 w-3" /></span>
+                  </TableHead>
                   <TableHead className="px-2 text-center cursor-pointer select-none" onClick={() => toggleSort('status')}>
                     <span className="inline-flex items-center gap-1">Status <ArrowUpDown className="h-3 w-3" /></span>
                   </TableHead>
@@ -708,6 +713,7 @@ export default function Promocoes() {
                           {item.delta > 0 ? `+${formatNumber(item.delta)}` : formatNumber(item.delta)}
                         </span>
                       </TableCell>
+                      <TableCell className="px-2 py-1.5 text-right tabular-nums">{formatCurrency(item.valorEstoque)}</TableCell>
                       <TableCell className="px-2 py-1.5 text-center">
                         <Badge variant={cfg.variant} className={cfg.className}>
                           {cfg.label}
