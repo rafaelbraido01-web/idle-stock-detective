@@ -713,6 +713,7 @@ export default function Promocoes() {
                           {item.delta > 0 ? `+${formatNumber(item.delta)}` : formatNumber(item.delta)}
                         </span>
                       </TableCell>
+                      <TableCell className="px-2 py-1.5 text-right tabular-nums">{formatCurrency(item.valorEstoque)}</TableCell>
                       <TableCell className="px-2 py-1.5 text-center">
                         <Badge variant={cfg.variant} className={cfg.className}>
                           {cfg.label}
