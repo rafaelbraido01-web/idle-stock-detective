@@ -800,7 +800,7 @@ export default function Promocoes() {
                   const precoDesatualizado = item.promoAtiva && mercadoEntry &&
                     (Date.now() - new Date(mercadoEntry.updated_at).getTime()) > 25 * 24 * 60 * 60 * 1000;
                   const camp = campanhas.get(item.codigo);
-                  const hasCampanhaVencida = camp ? new Date(camp.data_fim + 'T23:59:59') < new Date() : false;
+                  const hasCampanhaVencida = camp ? parseLocalDate(camp.data_fim) < new Date(new Date().toDateString()) : false;
                   return (
                     <TableRow
                       key={item.produtoId}
@@ -882,9 +882,9 @@ export default function Promocoes() {
                           const camp = campanhas.get(item.codigo);
                           let colorClass = 'text-muted-foreground hover:text-foreground';
                           if (camp) {
-                            const hoje = new Date();
-                            const inicio = new Date(camp.data_inicio + 'T00:00:00');
-                            const fim = new Date(camp.data_fim + 'T23:59:59');
+                            const hoje = new Date(new Date().toDateString());
+                            const inicio = parseLocalDate(camp.data_inicio);
+                            const fim = parseLocalDate(camp.data_fim);
                             if (inicio > hoje) colorClass = 'text-blue-600 hover:text-blue-700';
                             else if (fim >= hoje) colorClass = 'text-red-600 hover:text-red-700';
                             else colorClass = 'text-muted-foreground hover:text-foreground';
