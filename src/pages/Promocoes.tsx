@@ -786,6 +786,7 @@ export default function Promocoes() {
                   <TableHead className="px-2 text-center cursor-pointer select-none" onClick={() => toggleSort('status')}>
                     <span className="inline-flex items-center gap-1">Status <ArrowUpDown className="h-3 w-3" /></span>
                   </TableHead>
+                  <TableHead className="px-2 text-center">Últ. Compra</TableHead>
                   <TableHead className="px-2 text-center">Mercado</TableHead>
                   <TableHead className="px-2 text-center">Campanha</TableHead>
                 </TableRow>
@@ -846,6 +847,9 @@ export default function Promocoes() {
                           {cfg.label}
                         </Badge>
                       </TableCell>
+                      <TableCell className="px-2 py-1.5 text-center text-xs text-muted-foreground">
+                        {item.dataUltimaCompra ? formatDate(item.dataUltimaCompra) : '—'}
+                      </TableCell>
                       <TableCell className="px-2 py-1.5 text-center">
                         <div className="flex items-center justify-center gap-1.5 flex-wrap">
                           <Button
@@ -866,7 +870,7 @@ export default function Promocoes() {
                                 <span className={`text-xs font-semibold whitespace-nowrap ${isAbove ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                                   {isAbove ? `▲ +${absVal}%` : `▼ -${absVal}%`}
                                 </span>
-                                <span className="text-[9px] text-muted-foreground whitespace-nowrap">{updDate}</span>
+                                <span className="text-[10px] text-muted-foreground whitespace-nowrap">{updDate}</span>
                               </span>
                             );
                           })()}
