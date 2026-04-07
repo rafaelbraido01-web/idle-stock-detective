@@ -38,6 +38,7 @@ interface PromoComparison {
   status: 'vendeu' | 'sem-movimento' | 'reposicao';
   promoAtiva: boolean;
   diasSemCompra: number;
+  dataUltimaCompra: string | null;
   valorEstoque: number;
 }
 
@@ -91,10 +92,9 @@ export default function Promocoes() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('todos');
   const [promoFilter, setPromoFilter] = useState<PromoFilter>('todas');
   const [search, setSearch] = useState('');
-  const [grupoFilter, setGrupoFilter] = useState('all');
-  const [subgrupoFilter, setSubgrupoFilter] = useState('all');
-  const [marcaFilter, setMarcaFilter] = useState('all');
   const [compraFilter, setCompraFilter] = useState('all');
+  const [compraMinFilter, setCompraMinFilter] = useState<Date | undefined>();
+  const [compraMaxFilter, setCompraMaxFilter] = useState<Date | undefined>();
   const [validadeMinFilter, setValidadeMinFilter] = useState<Date | undefined>();
   const [validadeMaxFilter, setValidadeMaxFilter] = useState<Date | undefined>();
   const [sortKey, setSortKey] = useState<PromoSortKey>('delta');
@@ -209,6 +209,7 @@ export default function Promocoes() {
         status,
         promoAtiva: promoDate ? promoDate >= now : false,
         diasSemCompra: item.dias_sem_compra,
+        dataUltimaCompra: item.data_ultima_compra ?? null,
         valorEstoque: item.valor_total,
       });
     }
@@ -218,20 +219,6 @@ export default function Promocoes() {
 
   const produtoMap = useMemo(() => new Map(produtos.map(p => [p.id, p])), [produtos]);
 
-  const grupos = useMemo(() => [...new Set(comparisons.map(c => {
-    const p = produtoMap.get(c.produtoId);
-    return p?.grupo;
-  }).filter(Boolean))].sort() as string[], [comparisons, produtoMap]);
-
-  const subgrupos = useMemo(() => [...new Set(comparisons.map(c => {
-    const p = produtoMap.get(c.produtoId);
-    return p?.subgrupo;
-  }).filter(Boolean))].sort() as string[], [comparisons, produtoMap]);
-
-  const marcas = useMemo(() => [...new Set(comparisons.map(c => {
-    const p = produtoMap.get(c.produtoId);
-    return p?.marca;
-  }).filter(Boolean))].sort() as string[], [comparisons, produtoMap]);
 
   const filtered = useMemo(() => {
     const now = new Date();
@@ -243,14 +230,16 @@ export default function Promocoes() {
         const q = search.toLowerCase();
         if (!c.codigo.toLowerCase().includes(q) && !c.descricao.toLowerCase().includes(q)) return false;
       }
-      const produto = produtoMap.get(c.produtoId);
-      if (grupoFilter !== 'all' && produto?.grupo !== grupoFilter) return false;
-      if (subgrupoFilter !== 'all' && produto?.subgrupo !== subgrupoFilter) return false;
-      if (marcaFilter !== 'all' && produto?.marca !== marcaFilter) return false;
       if (compraFilter === 'lt90') { if (c.diasSemCompra < 0 || c.diasSemCompra >= 90) return false; }
       else if (compraFilter === '90-180') { if (c.diasSemCompra < 90 || c.diasSemCompra > 180) return false; }
       else if (compraFilter === 'gt180') { if (c.diasSemCompra <= 180) return false; }
       else if (compraFilter === 'sem-registro') { if (c.diasSemCompra >= 0) return false; }
+      if (compraMinFilter || compraMaxFilter) {
+        if (!c.dataUltimaCompra) return false;
+        const compraDate = new Date(c.dataUltimaCompra);
+        if (compraMinFilter && compraDate < compraMinFilter) return false;
+        if (compraMaxFilter && compraDate > compraMaxFilter) return false;
+      }
       if (statusFilter !== 'todos' && c.status !== statusFilter) return false;
       if ((validadeMinFilter || validadeMaxFilter) && c.dataFimPromocao) {
         const promoDate = new Date(c.dataFimPromocao + 'T23:59:59');
@@ -290,7 +279,7 @@ export default function Promocoes() {
     });
 
     return result;
-  }, [comparisons, search, grupoFilter, subgrupoFilter, marcaFilter, compraFilter, statusFilter, promoFilter, validadeMinFilter, validadeMaxFilter, sortKey, sortDir, produtoMap]);
+  }, [comparisons, search, compraFilter, compraMinFilter, compraMaxFilter, statusFilter, promoFilter, validadeMinFilter, validadeMaxFilter, sortKey, sortDir, produtoMap]);
 
   const kpis = useMemo(() => {
     const total = comparisons.length;
@@ -479,7 +468,7 @@ export default function Promocoes() {
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginatedItems = useMemo(() => filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE), [filtered, page]);
 
-  useEffect(() => { setPage(0); }, [statusFilter, promoFilter, search, grupoFilter, subgrupoFilter, marcaFilter, compraFilter, validadeMinFilter, validadeMaxFilter, atualId, anteriorId]);
+  useEffect(() => { setPage(0); }, [statusFilter, promoFilter, search, compraFilter, compraMinFilter, compraMaxFilter, validadeMinFilter, validadeMaxFilter, atualId, anteriorId]);
 
   if (sortedSnapshots.length === 0) {
     return (
@@ -548,145 +537,202 @@ export default function Promocoes() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3 items-end">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por código ou descrição..."
-            value={search}
-            onChange={e => { setSearch(e.target.value); setPage(0); }}
-            className="pl-9"
-          />
+      <div className="space-y-3">
+        {/* Row 1: Search + Status + Promo + Compra select */}
+        <div className="flex flex-wrap gap-3 items-center">
+          <div className="relative flex-1 min-w-[200px] max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por código ou descrição..."
+              value={search}
+              onChange={e => { setSearch(e.target.value); setPage(0); }}
+              className="pl-9"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={v => setStatusFilter(v as StatusFilter)}>
+            <SelectTrigger className="w-[170px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os status</SelectItem>
+              <SelectItem value="vendeu">Vendeu</SelectItem>
+              <SelectItem value="sem-movimento">Sem movimento</SelectItem>
+              <SelectItem value="reposicao">Reposição</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={promoFilter} onValueChange={v => setPromoFilter(v as PromoFilter)}>
+            <SelectTrigger className="w-[190px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todas">Todas promoções</SelectItem>
+              <SelectItem value="ativa">Promoção ativa</SelectItem>
+              <SelectItem value="recem-expirada">Recém expirada (30d)</SelectItem>
+              <SelectItem value="expirada">Promoção expirada</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={compraFilter} onValueChange={v => { setCompraFilter(v); setPage(0); }}>
+            <SelectTrigger className="w-[170px]"><SelectValue placeholder="Últ. Compra" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas (compra)</SelectItem>
+              <SelectItem value="lt90">&lt; 90 dias</SelectItem>
+              <SelectItem value="90-180">90 a 180 dias</SelectItem>
+              <SelectItem value="gt180">&gt; 180 dias</SelectItem>
+              <SelectItem value="sem-registro">Sem registro</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <Select value={grupoFilter} onValueChange={v => { setGrupoFilter(v); setPage(0); }}>
-          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Grupo" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os grupos</SelectItem>
-            {grupos.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={subgrupoFilter} onValueChange={v => { setSubgrupoFilter(v); setPage(0); }}>
-          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Subgrupo" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos subgrupos</SelectItem>
-            {subgrupos.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={marcaFilter} onValueChange={v => { setMarcaFilter(v); setPage(0); }}>
-          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Marca" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas as marcas</SelectItem>
-            {marcas.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={statusFilter} onValueChange={v => setStatusFilter(v as StatusFilter)}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos os status</SelectItem>
-            <SelectItem value="vendeu">Vendeu</SelectItem>
-            <SelectItem value="sem-movimento">Sem movimento</SelectItem>
-            <SelectItem value="reposicao">Reposição</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={promoFilter} onValueChange={v => setPromoFilter(v as PromoFilter)}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todas">Todas promoções</SelectItem>
-            <SelectItem value="ativa">Promoção ativa</SelectItem>
-            <SelectItem value="recem-expirada">Recém expirada (30 dias)</SelectItem>
-            <SelectItem value="expirada">Promoção expirada</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={compraFilter} onValueChange={v => { setCompraFilter(v); setPage(0); }}>
-          <SelectTrigger className="w-[180px]"><SelectValue placeholder="Últ. Compra" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas (compra)</SelectItem>
-            <SelectItem value="lt90">&lt; 90 dias</SelectItem>
-            <SelectItem value="90-180">90 a 180 dias</SelectItem>
-            <SelectItem value="gt180">&gt; 180 dias</SelectItem>
-            <SelectItem value="sem-registro">Sem registro</SelectItem>
-          </SelectContent>
-        </Select>
-        <Popover>
-          <PopoverTrigger asChild>
+
+        {/* Row 2: Date filters + Actions */}
+        <div className="flex flex-wrap gap-3 items-center">
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Validade Promo:</span>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "w-[160px] justify-start text-left font-normal",
+                  !validadeMinFilter && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {validadeMinFilter ? format(validadeMinFilter, 'dd/MM/yyyy') : 'De...'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={validadeMinFilter}
+                onSelect={setValidadeMinFilter}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+              {validadeMinFilter && (
+                <div className="p-2 border-t">
+                  <Button variant="ghost" size="sm" className="w-full" onClick={() => setValidadeMinFilter(undefined)}>
+                    Limpar
+                  </Button>
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "w-[160px] justify-start text-left font-normal",
+                  !validadeMaxFilter && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {validadeMaxFilter ? format(validadeMaxFilter, 'dd/MM/yyyy') : 'Até...'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={validadeMaxFilter}
+                onSelect={setValidadeMaxFilter}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+              {validadeMaxFilter && (
+                <div className="p-2 border-t">
+                  <Button variant="ghost" size="sm" className="w-full" onClick={() => setValidadeMaxFilter(undefined)}>
+                    Limpar
+                  </Button>
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
+
+          <div className="w-px h-6 bg-border mx-1" />
+
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Últ. Compra:</span>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "w-[160px] justify-start text-left font-normal",
+                  !compraMinFilter && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {compraMinFilter ? format(compraMinFilter, 'dd/MM/yyyy') : 'De...'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={compraMinFilter}
+                onSelect={setCompraMinFilter}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+              {compraMinFilter && (
+                <div className="p-2 border-t">
+                  <Button variant="ghost" size="sm" className="w-full" onClick={() => setCompraMinFilter(undefined)}>
+                    Limpar
+                  </Button>
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "w-[160px] justify-start text-left font-normal",
+                  !compraMaxFilter && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {compraMaxFilter ? format(compraMaxFilter, 'dd/MM/yyyy') : 'Até...'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={compraMaxFilter}
+                onSelect={setCompraMaxFilter}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+              {compraMaxFilter && (
+                <div className="p-2 border-t">
+                  <Button variant="ghost" size="sm" className="w-full" onClick={() => setCompraMaxFilter(undefined)}>
+                    Limpar
+                  </Button>
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
+
+          <div className="ml-auto flex items-center gap-2">
             <Button
               variant="outline"
-              className={cn(
-                "w-[180px] justify-start text-left font-normal",
-                !validadeMinFilter && "text-muted-foreground"
-              )}
+              size="sm"
+              onClick={() => {
+                const codes = filtered.map(c => c.codigo).join('\n');
+                navigator.clipboard.writeText(codes);
+                toast.success(`${filtered.length} códigos copiados!`);
+              }}
             >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {validadeMinFilter ? format(validadeMinFilter, 'dd/MM/yyyy') : 'Validade de...'}
+              <Copy className="h-4 w-4 mr-1.5" />
+              Copiar Códigos
             </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={validadeMinFilter}
-              onSelect={setValidadeMinFilter}
-              initialFocus
-              className={cn("p-3 pointer-events-auto")}
-            />
-            {validadeMinFilter && (
-              <div className="p-2 border-t">
-                <Button variant="ghost" size="sm" className="w-full" onClick={() => setValidadeMinFilter(undefined)}>
-                  Limpar
-                </Button>
-              </div>
-            )}
-          </PopoverContent>
-        </Popover>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                "w-[180px] justify-start text-left font-normal",
-                !validadeMaxFilter && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {validadeMaxFilter ? format(validadeMaxFilter, 'dd/MM/yyyy') : 'Validade até...'}
+            <Button size="sm" onClick={() => setBulkDialogOpen(true)}>
+              <Upload className="h-4 w-4 mr-1.5" />
+              Subir Campanha
             </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={validadeMaxFilter}
-              onSelect={setValidadeMaxFilter}
-              initialFocus
-              className={cn("p-3 pointer-events-auto")}
-            />
-            {validadeMaxFilter && (
-              <div className="p-2 border-t">
-                <Button variant="ghost" size="sm" className="w-full" onClick={() => setValidadeMaxFilter(undefined)}>
-                  Limpar
-                </Button>
-              </div>
-            )}
-          </PopoverContent>
-        </Popover>
-        <div className="ml-auto flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => {
-              const codes = filtered.map(c => c.codigo).join('\n');
-              navigator.clipboard.writeText(codes);
-              toast.success(`${filtered.length} códigos copiados!`);
-            }}
-          >
-            <Copy className="h-4 w-4 mr-1.5" />
-            Copiar Códigos
-          </Button>
-          <Button onClick={() => setBulkDialogOpen(true)}>
-            <Upload className="h-4 w-4 mr-1.5" />
-            Subir Campanha
-          </Button>
+          </div>
         </div>
       </div>
 
