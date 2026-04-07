@@ -188,9 +188,9 @@ export function ProductDrawer({ produtoId, onClose }: ProductDrawerProps) {
               {campanhas.length > 0 ? (
                 <div className="space-y-2">
                   {campanhas.map(c => {
-                    const hoje = new Date();
-                    const inicio = new Date(c.data_inicio + 'T00:00:00');
-                    const fim = new Date(c.data_fim + 'T23:59:59');
+                    const hoje = new Date(new Date().toDateString());
+                    const inicio = parseLocalDate(c.data_inicio);
+                    const fim = parseLocalDate(c.data_fim);
                     const status = inicio > hoje ? 'Futura' : fim >= hoje ? 'Ativa' : 'Encerrada';
                     const statusClass = status === 'Ativa'
                       ? 'bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200'
