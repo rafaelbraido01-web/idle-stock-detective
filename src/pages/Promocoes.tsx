@@ -174,7 +174,7 @@ export default function Promocoes() {
 
     const anteriorMap = new Map(anteriorItems.map(i => [i.produto_id, i]));
     const produtoMap = new Map(produtos.map(p => [p.id, p]));
-    const now = new Date();
+    const now = new Date(new Date().toDateString()); // midnight local, no time component
 
     const results: PromoComparison[] = [];
 
