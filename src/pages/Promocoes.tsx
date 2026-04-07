@@ -157,7 +157,7 @@ export default function Promocoes() {
   // Auto-select last two snapshots
   useMemo(() => {
     if (sortedSnapshots.length >= 2 && !anteriorId && !atualId) {
-      setAnteriorId(sortedSnapshots[sortedSnapshots.length - 2].id);
+      setAnteriorId(sortedSnapshots[0].id);
       setAtualId(sortedSnapshots[sortedSnapshots.length - 1].id);
     } else if (sortedSnapshots.length === 1 && !atualId) {
       setAtualId(sortedSnapshots[0].id);
