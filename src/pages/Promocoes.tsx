@@ -583,9 +583,9 @@ export default function Promocoes() {
           </Select>
         </div>
 
-        {/* Row 2: Date filters + Actions */}
+        {/* Row 2: Validade Promo */}
         <div className="flex flex-wrap gap-3 items-center">
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Validade Promo:</span>
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wider min-w-[110px]">Validade Promo:</span>
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -648,10 +648,11 @@ export default function Promocoes() {
               )}
             </PopoverContent>
           </Popover>
+        </div>
 
-          <div className="w-px h-6 bg-border mx-1" />
-
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Últ. Compra:</span>
+        {/* Row 3: Última Compra + Actions */}
+        <div className="flex flex-wrap gap-3 items-center">
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wider min-w-[110px]">Últ. Compra:</span>
           <Popover>
             <PopoverTrigger asChild>
               <Button
