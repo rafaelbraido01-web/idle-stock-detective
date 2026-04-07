@@ -22,7 +22,7 @@ import { cn } from '@/lib/utils';
 
 type StatusFilter = 'todos' | 'vendeu' | 'sem-movimento' | 'reposicao';
 type PromoFilter = 'todas' | 'ativa' | 'expirada' | 'recem-expirada';
-type PromoSortKey = 'codigo' | 'descricao' | 'dataFimPromocao' | 'precoTabela' | 'valorPromocao' | 'percentualDesconto' | 'qtdAnterior' | 'qtdAtual' | 'delta' | 'status';
+type PromoSortKey = 'codigo' | 'descricao' | 'dataFimPromocao' | 'precoTabela' | 'valorPromocao' | 'percentualDesconto' | 'qtdAnterior' | 'qtdAtual' | 'delta' | 'status' | 'valorEstoque';
 
 interface PromoComparison {
   produtoId: string;
