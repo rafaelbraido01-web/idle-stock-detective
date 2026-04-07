@@ -760,7 +760,7 @@ export default function Promocoes() {
                     <span className="inline-flex items-center gap-1">Descrição <ArrowUpDown className="h-3 w-3" /></span>
                   </TableHead>
                   <TableHead className="px-2 text-center cursor-pointer select-none" onClick={() => toggleSort('dataFimPromocao')}>
-                    <span className="inline-flex items-center gap-1">Validade Promo <ArrowUpDown className="h-3 w-3" /></span>
+                    <span className="inline-flex items-center gap-1">Datas <ArrowUpDown className="h-3 w-3" /></span>
                   </TableHead>
                   <TableHead className="px-2 text-right cursor-pointer select-none" onClick={() => toggleSort('precoTabela')}>
                     <span className="inline-flex items-center gap-1 justify-end">Preço Tabela <ArrowUpDown className="h-3 w-3" /></span>
@@ -786,7 +786,6 @@ export default function Promocoes() {
                   <TableHead className="px-2 text-center cursor-pointer select-none" onClick={() => toggleSort('status')}>
                     <span className="inline-flex items-center gap-1">Status <ArrowUpDown className="h-3 w-3" /></span>
                   </TableHead>
-                  <TableHead className="px-2 text-center">Últ. Compra</TableHead>
                   <TableHead className="px-2 text-center">Mercado</TableHead>
                   <TableHead className="px-2 text-center">Campanha</TableHead>
                 </TableRow>
@@ -818,12 +817,17 @@ export default function Promocoes() {
                         </span>
                       </TableCell>
                       <TableCell className="px-2 py-1.5 text-center">
-                        <span className={item.promoAtiva ? 'text-emerald-600 font-medium' : 'text-muted-foreground'}>
-                          {formatDate(item.dataFimPromocao)}
-                        </span>
+                        <div className="flex flex-col leading-tight">
+                          <span className={item.promoAtiva ? 'text-emerald-600 font-medium text-xs' : 'text-foreground text-xs'}>
+                            {formatDate(item.dataFimPromocao) || '—'}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            Compra: {item.dataUltimaCompra ? formatDate(item.dataUltimaCompra) : '—'}
+                          </span>
+                        </div>
                       </TableCell>
-                      <TableCell className="px-2 py-1.5 text-right tabular-nums">{formatCurrency(item.precoTabela)}</TableCell>
-                      <TableCell className="px-2 py-1.5 text-right tabular-nums">{formatCurrency(item.valorPromocao)}</TableCell>
+                      <TableCell className="px-2 py-1.5 text-right tabular-nums text-foreground">{formatCurrency(item.precoTabela)}</TableCell>
+                      <TableCell className="px-2 py-1.5 text-right tabular-nums text-foreground">{formatCurrency(item.valorPromocao)}</TableCell>
                       <TableCell className="px-2 py-1.5 text-center">
                         {item.percentualDesconto > 0 && (
                           <Badge variant="secondary" className="text-xs">
@@ -831,8 +835,8 @@ export default function Promocoes() {
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell className="px-2 py-1.5 text-right tabular-nums">{formatNumber(item.qtdAnterior)}</TableCell>
-                      <TableCell className={`px-2 py-1.5 text-right tabular-nums font-medium ${item.qtdAtual >= 100 ? 'text-amber-600 dark:text-amber-400' : ''}`}>
+                      <TableCell className="px-2 py-1.5 text-right tabular-nums text-foreground">{formatNumber(item.qtdAnterior)}</TableCell>
+                      <TableCell className={`px-2 py-1.5 text-right tabular-nums font-medium ${item.qtdAtual >= 100 ? 'text-amber-600 dark:text-amber-400' : 'text-foreground'}`}>
                         {formatNumber(item.qtdAtual)}
                         {item.qtdAtual >= 100 && <span className="ml-1">🔥</span>}
                       </TableCell>
@@ -841,15 +845,7 @@ export default function Promocoes() {
                           {item.delta > 0 ? `+${formatNumber(item.delta)}` : formatNumber(item.delta)}
                         </span>
                       </TableCell>
-                      <TableCell className="px-2 py-1.5 text-right tabular-nums">{formatCurrency(item.valorEstoque)}</TableCell>
-                      <TableCell className="px-2 py-1.5 text-center">
-                        <Badge variant={cfg.variant} className={cfg.className}>
-                          {cfg.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="px-2 py-1.5 text-center text-xs text-muted-foreground">
-                        {item.dataUltimaCompra ? formatDate(item.dataUltimaCompra) : '—'}
-                      </TableCell>
+                      <TableCell className="px-2 py-1.5 text-right tabular-nums text-foreground">{formatCurrency(item.valorEstoque)}</TableCell>
                       <TableCell className="px-2 py-1.5 text-center">
                         <div className="flex items-center justify-center gap-1.5 flex-wrap">
                           <Button
