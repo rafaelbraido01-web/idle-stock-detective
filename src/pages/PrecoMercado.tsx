@@ -81,7 +81,7 @@ export default function PrecoMercado() {
     const fetchMarketPrices = async () => {
       const { data, error } = await supabase
         .from('precos_mercado')
-        .select('produto_id, preco, updated_at, fonte')
+        .select('id, produto_id, preco, updated_at, fonte')
         .order('updated_at', { ascending: false });
 
       if (error) {
