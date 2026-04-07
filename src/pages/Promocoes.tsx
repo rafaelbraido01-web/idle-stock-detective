@@ -38,6 +38,7 @@ interface PromoComparison {
   status: 'vendeu' | 'sem-movimento' | 'reposicao';
   promoAtiva: boolean;
   diasSemCompra: number;
+  valorEstoque: number;
 }
 
 const FONTES_PRECO = [
