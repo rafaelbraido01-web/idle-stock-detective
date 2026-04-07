@@ -91,6 +91,7 @@ export default function Promocoes() {
   const [atualId, setAtualId] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('todos');
   const [promoFilter, setPromoFilter] = useState<PromoFilter>('todas');
+  const [search, setSearch] = useState('');
   const [compraFilter, setCompraFilter] = useState('all');
   const [compraMinFilter, setCompraMinFilter] = useState<Date | undefined>();
   const [compraMaxFilter, setCompraMaxFilter] = useState<Date | undefined>();
