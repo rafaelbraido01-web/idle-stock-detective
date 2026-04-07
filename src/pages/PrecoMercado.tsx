@@ -101,7 +101,7 @@ export default function PrecoMercado() {
     if (onlyActivePromo) {
       items = items.filter(p =>
         p.snap.data_fim_promocao &&
-        new Date(p.snap.data_fim_promocao + 'T23:59:59') >= new Date()
+        parseLocalDate(p.snap.data_fim_promocao) >= new Date(new Date().toDateString())
       );
     }
     if (searchTerm) {
