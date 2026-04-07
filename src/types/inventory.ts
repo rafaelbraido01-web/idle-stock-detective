@@ -73,6 +73,18 @@ export function formatNumber(value: number): string {
   return new Intl.NumberFormat('pt-BR').format(value);
 }
 
+/**
+ * Parse a date-only string (YYYY-MM-DD) as local time, not UTC.
+ * new Date("2026-04-30") → UTC midnight (wrong in BR timezone)
+ * parseLocalDate("2026-04-30") → local midnight (correct)
+ */
+export function parseLocalDate(dateStr: string): Date {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return new Date(dateStr + 'T00:00:00');
+  }
+  return new Date(dateStr);
+}
+
 export function formatDate(date: string): string {
-  return new Date(date).toLocaleDateString('pt-BR');
+  return parseLocalDate(date).toLocaleDateString('pt-BR');
 }
