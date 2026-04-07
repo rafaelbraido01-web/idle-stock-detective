@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useInventory } from '@/store/InventoryContext';
-import { formatCurrency, formatNumber, formatDate } from '@/types/inventory';
+import { formatCurrency, formatNumber, formatDate, parseLocalDate } from '@/types/inventory';
 import { Textarea } from '@/components/ui/textarea';
 import { KPICard } from '@/components/KPICard';
 import { ProductDrawer } from '@/components/ProductDrawer';

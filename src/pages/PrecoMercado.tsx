@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useInventory } from '@/store/InventoryContext';
-import { formatCurrency, formatDate } from '@/types/inventory';
+import { formatCurrency, formatDate, parseLocalDate } from '@/types/inventory';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Search, ExternalLink, Loader2, CheckCircle2, ShoppingCart,
