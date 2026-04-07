@@ -95,6 +95,7 @@ export default function Promocoes() {
   const [subgrupoFilter, setSubgrupoFilter] = useState('all');
   const [marcaFilter, setMarcaFilter] = useState('all');
   const [compraFilter, setCompraFilter] = useState('all');
+  const [validadeMaxFilter, setValidadeMaxFilter] = useState<Date | undefined>();
   const [sortKey, setSortKey] = useState<PromoSortKey>('delta');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [drawerProdutoId, setDrawerProdutoId] = useState<string | null>(null);
@@ -250,6 +251,10 @@ export default function Promocoes() {
       else if (compraFilter === 'gt180') { if (c.diasSemCompra <= 180) return false; }
       else if (compraFilter === 'sem-registro') { if (c.diasSemCompra >= 0) return false; }
       if (statusFilter !== 'todos' && c.status !== statusFilter) return false;
+      if (validadeMaxFilter && c.dataFimPromocao) {
+        const promoDate = new Date(c.dataFimPromocao + 'T23:59:59');
+        if (promoDate > validadeMaxFilter) return false;
+      }
       if (promoFilter === 'ativa' && !c.promoAtiva) return false;
       if (promoFilter === 'expirada') {
         if (!c.dataFimPromocao || c.promoAtiva) return false;
@@ -282,7 +287,7 @@ export default function Promocoes() {
     });
 
     return result;
-  }, [comparisons, search, grupoFilter, subgrupoFilter, marcaFilter, compraFilter, statusFilter, promoFilter, sortKey, sortDir, produtoMap]);
+  }, [comparisons, search, grupoFilter, subgrupoFilter, marcaFilter, compraFilter, statusFilter, promoFilter, validadeMaxFilter, sortKey, sortDir, produtoMap]);
 
   const kpis = useMemo(() => {
     const total = comparisons.length;
@@ -471,7 +476,7 @@ export default function Promocoes() {
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginatedItems = useMemo(() => filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE), [filtered, page]);
 
-  useEffect(() => { setPage(0); }, [statusFilter, promoFilter, search, grupoFilter, subgrupoFilter, marcaFilter, compraFilter, atualId, anteriorId]);
+  useEffect(() => { setPage(0); }, [statusFilter, promoFilter, search, grupoFilter, subgrupoFilter, marcaFilter, compraFilter, validadeMaxFilter, atualId, anteriorId]);
 
   if (sortedSnapshots.length === 0) {
     return (
@@ -603,6 +608,36 @@ export default function Promocoes() {
             <SelectItem value="sem-registro">Sem registro</SelectItem>
           </SelectContent>
         </Select>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-[200px] justify-start text-left font-normal",
+                !validadeMaxFilter && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {validadeMaxFilter ? format(validadeMaxFilter, 'dd/MM/yyyy') : 'Validade até...'}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={validadeMaxFilter}
+              onSelect={setValidadeMaxFilter}
+              initialFocus
+              className={cn("p-3 pointer-events-auto")}
+            />
+            {validadeMaxFilter && (
+              <div className="p-2 border-t">
+                <Button variant="ghost" size="sm" className="w-full" onClick={() => setValidadeMaxFilter(undefined)}>
+                  Limpar
+                </Button>
+              </div>
+            )}
+          </PopoverContent>
+        </Popover>
         <div className="ml-auto flex items-center gap-2">
           <Button
             variant="outline"
