@@ -529,6 +529,72 @@ export default function PrecoMercado() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Price Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-md" onPointerDownOutside={e => e.preventDefault()} onEscapeKeyDown={e => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle>Editar Preço de Mercado</DialogTitle>
+            <DialogDescription>Altere o valor ou a fonte do preço registrado.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Preço (R$)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                value={editPreco}
+                onChange={e => setEditPreco(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Fonte</Label>
+              <Select value={editFonte} onValueChange={setEditFonte}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {FONTES.map(f => (
+                    <SelectItem key={f} value={f}>{f}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)} disabled={savingEdit}>Cancelar</Button>
+            <Button onClick={handleEditSave} disabled={savingEdit}>
+              {savingEdit ? <><Loader2 className="h-4 w-4 animate-spin mr-1" /> Salvando...</> : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Price Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Remover Preço de Mercado</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja remover este registro de preço? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          {editingPrice && (
+            <div className="bg-muted/50 rounded-lg p-3 text-sm">
+              <p><strong>Valor:</strong> {formatCurrency(editingPrice.preco)}</p>
+              <p><strong>Fonte:</strong> {editingPrice.fonte}</p>
+              <p><strong>Data:</strong> {formatDate(editingPrice.updated_at)}</p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={deletingPrice}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm} disabled={deletingPrice}>
+              {deletingPrice ? <><Loader2 className="h-4 w-4 animate-spin mr-1" /> Removendo...</> : 'Remover'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
