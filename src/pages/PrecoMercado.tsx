@@ -64,6 +64,17 @@ export default function PrecoMercado() {
   const [page, setPage] = useState(0);
   const [marketPrices, setMarketPrices] = useState<Record<string, MarketPrice>>({});
 
+  // Edit/Delete state
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editingPrice, setEditingPrice] = useState<MarketPrice | null>(null);
+  const [editPreco, setEditPreco] = useState('');
+  const [editFonte, setEditFonte] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [deletingPrice, setDeletingPrice] = useState(false);
+
+  const FONTES = ['Mercado Livre', 'Kabum', 'Pichau', 'Amazon', 'Magazine Luiza', 'Netshoes', 'Outro'];
+
   // Fetch saved market prices
   useEffect(() => {
     const fetchMarketPrices = async () => {
