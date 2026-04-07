@@ -36,6 +36,7 @@ interface ProductPriceData {
 }
 
 interface MarketPrice {
+  id: string;
   produto_id: string;
   preco: number;
   fonte: string;
