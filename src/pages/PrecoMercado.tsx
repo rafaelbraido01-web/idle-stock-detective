@@ -378,6 +378,7 @@ export default function PrecoMercado() {
                   <TableHead className="w-[90px] text-right cursor-pointer select-none" onClick={() => toggleSort('diff')}>
                     <span className="inline-flex items-center justify-end w-full">Dif % <SortIcon col="diff" /></span>
                   </TableHead>
+                  <TableHead className="w-[80px] text-center">Editar</TableHead>
                   {showAutoSearch && (
                     <TableHead className="w-[180px] text-center">Ação</TableHead>
                   )}
