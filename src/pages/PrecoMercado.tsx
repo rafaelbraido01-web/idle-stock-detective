@@ -5,7 +5,11 @@ import { supabase } from '@/integrations/supabase/client';
 import {
   Search, ExternalLink, Loader2, CheckCircle2, ShoppingCart,
   Eye, EyeOff, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight,
+  Pencil, Trash2,
 } from 'lucide-react';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
