@@ -207,6 +207,7 @@ export default function Promocoes() {
         status,
         promoAtiva: promoDate ? promoDate >= now : false,
         diasSemCompra: item.dias_sem_compra,
+        valorEstoque: item.valor_total,
       });
     }
 
