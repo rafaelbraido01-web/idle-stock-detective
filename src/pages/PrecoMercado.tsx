@@ -5,7 +5,11 @@ import { supabase } from '@/integrations/supabase/client';
 import {
   Search, ExternalLink, Loader2, CheckCircle2, ShoppingCart,
   Eye, EyeOff, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight,
+  Pencil, Trash2,
 } from 'lucide-react';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -32,6 +36,7 @@ interface ProductPriceData {
 }
 
 interface MarketPrice {
+  id: string;
   produto_id: string;
   preco: number;
   fonte: string;
@@ -60,12 +65,23 @@ export default function PrecoMercado() {
   const [page, setPage] = useState(0);
   const [marketPrices, setMarketPrices] = useState<Record<string, MarketPrice>>({});
 
+  // Edit/Delete state
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editingPrice, setEditingPrice] = useState<MarketPrice | null>(null);
+  const [editPreco, setEditPreco] = useState('');
+  const [editFonte, setEditFonte] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [deletingPrice, setDeletingPrice] = useState(false);
+
+  const FONTES = ['Mercado Livre', 'Kabum', 'Pichau', 'Amazon', 'Magazine Luiza', 'Netshoes', 'Outro'];
+
   // Fetch saved market prices
   useEffect(() => {
     const fetchMarketPrices = async () => {
       const { data, error } = await supabase
         .from('precos_mercado')
-        .select('produto_id, preco, updated_at, fonte')
+        .select('id, produto_id, preco, updated_at, fonte')
         .order('updated_at', { ascending: false });
 
       if (error) {
@@ -213,6 +229,73 @@ export default function PrecoMercado() {
     setDialogOpen(true);
   };
 
+  const handleEditOpen = (mp: MarketPrice) => {
+    setEditingPrice(mp);
+    setEditPreco(String(mp.preco));
+    setEditFonte(mp.fonte);
+    setEditDialogOpen(true);
+  };
+
+  const handleEditSave = async () => {
+    if (!editingPrice) return;
+    const preco = parseFloat(editPreco);
+    if (isNaN(preco) || preco <= 0) {
+      toast({ title: 'Valor inválido', description: 'Informe um preço válido.', variant: 'destructive' });
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      const { error } = await supabase
+        .from('precos_mercado')
+        .update({ preco, fonte: editFonte })
+        .eq('id', editingPrice.id);
+      if (error) throw error;
+      // Update local state
+      setMarketPrices(prev => {
+        const updated = { ...prev };
+        if (updated[editingPrice.produto_id]) {
+          updated[editingPrice.produto_id] = { ...updated[editingPrice.produto_id], preco, fonte: editFonte };
+        }
+        return updated;
+      });
+      toast({ title: 'Preço atualizado com sucesso' });
+      setEditDialogOpen(false);
+    } catch (err: any) {
+      toast({ title: 'Erro ao atualizar', description: err.message, variant: 'destructive' });
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleDeleteOpen = (mp: MarketPrice) => {
+    setEditingPrice(mp);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!editingPrice) return;
+    setDeletingPrice(true);
+    try {
+      const { error } = await supabase
+        .from('precos_mercado')
+        .delete()
+        .eq('id', editingPrice.id);
+      if (error) throw error;
+      // Remove from local state
+      setMarketPrices(prev => {
+        const updated = { ...prev };
+        delete updated[editingPrice.produto_id];
+        return updated;
+      });
+      toast({ title: 'Preço removido com sucesso' });
+      setDeleteDialogOpen(false);
+    } catch (err: any) {
+      toast({ title: 'Erro ao remover', description: err.message, variant: 'destructive' });
+    } finally {
+      setDeletingPrice(false);
+    }
+  };
+
   const selectedData = selectedProduct ? priceResults[selectedProduct] : null;
   const selectedProduto = selectedProduct ? productsWithSnapshot.find(p => p.id === selectedProduct) : null;
 
@@ -295,6 +378,7 @@ export default function PrecoMercado() {
                   <TableHead className="w-[90px] text-right cursor-pointer select-none" onClick={() => toggleSort('diff')}>
                     <span className="inline-flex items-center justify-end w-full">Dif % <SortIcon col="diff" /></span>
                   </TableHead>
+                  <TableHead className="w-[80px] text-center">Editar</TableHead>
                   {showAutoSearch && (
                     <TableHead className="w-[180px] text-center">Ação</TableHead>
                   )}
@@ -334,6 +418,18 @@ export default function PrecoMercado() {
                           <span className={diff > 0 ? 'text-green-600' : diff < 0 ? 'text-red-600' : 'text-muted-foreground'}>
                             {diff > 0 ? '+' : ''}{diff.toFixed(1)}%
                           </span>
+                        ) : '—'}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {mp ? (
+                          <div className="flex items-center justify-center gap-1">
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditOpen(mp)}>
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDeleteOpen(mp)}>
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
                         ) : '—'}
                       </TableCell>
                       {showAutoSearch && (
@@ -430,6 +526,72 @@ export default function PrecoMercado() {
 
           <DialogFooter>
             <Button onClick={() => setDialogOpen(false)}>Confirmar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Price Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-md" onPointerDownOutside={e => e.preventDefault()} onEscapeKeyDown={e => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle>Editar Preço de Mercado</DialogTitle>
+            <DialogDescription>Altere o valor ou a fonte do preço registrado.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Preço (R$)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                value={editPreco}
+                onChange={e => setEditPreco(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Fonte</Label>
+              <Select value={editFonte} onValueChange={setEditFonte}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {FONTES.map(f => (
+                    <SelectItem key={f} value={f}>{f}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)} disabled={savingEdit}>Cancelar</Button>
+            <Button onClick={handleEditSave} disabled={savingEdit}>
+              {savingEdit ? <><Loader2 className="h-4 w-4 animate-spin mr-1" /> Salvando...</> : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Price Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Remover Preço de Mercado</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja remover este registro de preço? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          {editingPrice && (
+            <div className="bg-muted/50 rounded-lg p-3 text-sm">
+              <p><strong>Valor:</strong> {formatCurrency(editingPrice.preco)}</p>
+              <p><strong>Fonte:</strong> {editingPrice.fonte}</p>
+              <p><strong>Data:</strong> {formatDate(editingPrice.updated_at)}</p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={deletingPrice}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm} disabled={deletingPrice}>
+              {deletingPrice ? <><Loader2 className="h-4 w-4 animate-spin mr-1" /> Removendo...</> : 'Remover'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
