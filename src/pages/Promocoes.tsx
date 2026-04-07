@@ -14,7 +14,7 @@ import { formatCurrency, formatNumber, formatDate } from '@/types/inventory';
 import { Textarea } from '@/components/ui/textarea';
 import { KPICard } from '@/components/KPICard';
 import { ProductDrawer } from '@/components/ProductDrawer';
-import { Tag, PackageSearch, CalendarIcon, Upload, ArrowUpDown, Search } from 'lucide-react';
+import { Tag, PackageSearch, CalendarIcon, Upload, ArrowUpDown, Search, Copy } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -603,10 +603,23 @@ export default function Promocoes() {
             <SelectItem value="sem-registro">Sem registro</SelectItem>
           </SelectContent>
         </Select>
-        <Button onClick={() => setBulkDialogOpen(true)} className="ml-auto">
-          <Upload className="h-4 w-4 mr-1.5" />
-          Subir Campanha
-        </Button>
+        <div className="ml-auto flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              const codes = filtered.map(c => c.codigo).join('\n');
+              navigator.clipboard.writeText(codes);
+              toast.success(`${filtered.length} códigos copiados!`);
+            }}
+          >
+            <Copy className="h-4 w-4 mr-1.5" />
+            Copiar Códigos
+          </Button>
+          <Button onClick={() => setBulkDialogOpen(true)}>
+            <Upload className="h-4 w-4 mr-1.5" />
+            Subir Campanha
+          </Button>
+        </div>
       </div>
 
       <p className="text-xs text-muted-foreground">{formatNumber(filtered.length)} produtos</p>
