@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { parseLocalDate } from '@/types/inventory';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -55,9 +56,9 @@ interface CampanhaGroup {
 }
 
 function getCampanhaStatus(dataInicio: string, dataFim: string): StatusCampanha {
-  const now = new Date();
-  const inicio = new Date(dataInicio + 'T00:00:00');
-  const fim = new Date(dataFim + 'T23:59:59');
+  const now = new Date(new Date().toDateString());
+  const inicio = parseLocalDate(dataInicio);
+  const fim = parseLocalDate(dataFim);
   if (now < inicio) return 'futura';
   if (now > fim) return 'encerrada';
   return 'ativa';

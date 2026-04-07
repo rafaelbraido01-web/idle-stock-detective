@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useInventory } from '@/store/InventoryContext';
 import { AgingBadge } from '@/components/AgingBadge';
-import { formatCurrency, formatNumber, formatDate } from '@/types/inventory';
+import { formatCurrency, formatNumber, formatDate, parseLocalDate } from '@/types/inventory';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
 import { Tag, TrendingDown } from 'lucide-react';
