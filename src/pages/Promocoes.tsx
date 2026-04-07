@@ -653,6 +653,10 @@ export default function Promocoes() {
                   <TableHead className="px-2 text-right cursor-pointer select-none" onClick={() => toggleSort('delta')}>
                     <span className="inline-flex items-center gap-1 justify-end">Diferença <ArrowUpDown className="h-3 w-3" /></span>
                   </TableHead>
+                  <TableHead className="px-2 text-right cursor-pointer select-none" onClick={() => toggleSort('valorEstoque')}>
+                    <span className="inline-flex items-center gap-1 justify-end">VLR Estoque <ArrowUpDown className="h-3 w-3" /></span>
+                  </TableHead>
+                  </TableHead>
                   <TableHead className="px-2 text-center cursor-pointer select-none" onClick={() => toggleSort('status')}>
                     <span className="inline-flex items-center gap-1">Status <ArrowUpDown className="h-3 w-3" /></span>
                   </TableHead>
