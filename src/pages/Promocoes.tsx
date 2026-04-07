@@ -188,7 +188,7 @@ export default function Promocoes() {
       const delta = qtdAnterior - qtdAtual;
       
       const hasPromo = !!item.data_fim_promocao;
-      const promoDate = hasPromo ? new Date(item.data_fim_promocao + 'T23:59:59') : null;
+      const promoDate = hasPromo ? parseLocalDate(item.data_fim_promocao!) : null;
 
       let status: PromoComparison['status'];
       if (delta > 0) status = 'vendeu';
@@ -236,13 +236,13 @@ export default function Promocoes() {
       else if (compraFilter === 'sem-registro') { if (c.diasSemCompra >= 0) return false; }
       if (compraMinFilter || compraMaxFilter) {
         if (!c.dataUltimaCompra) return false;
-        const compraDate = new Date(c.dataUltimaCompra);
+        const compraDate = parseLocalDate(c.dataUltimaCompra);
         if (compraMinFilter && compraDate < compraMinFilter) return false;
         if (compraMaxFilter && compraDate > compraMaxFilter) return false;
       }
       if (statusFilter !== 'todos' && c.status !== statusFilter) return false;
       if ((validadeMinFilter || validadeMaxFilter) && c.dataFimPromocao) {
-        const promoDate = new Date(c.dataFimPromocao + 'T23:59:59');
+        const promoDate = parseLocalDate(c.dataFimPromocao);
         if (validadeMinFilter && promoDate < validadeMinFilter) return false;
         if (validadeMaxFilter && promoDate > validadeMaxFilter) return false;
       }
@@ -253,7 +253,7 @@ export default function Promocoes() {
       }
       if (promoFilter === 'recem-expirada') {
         if (!c.dataFimPromocao) return false;
-        const promoDate = new Date(c.dataFimPromocao + 'T23:59:59');
+        const promoDate = parseLocalDate(c.dataFimPromocao);
         if (c.promoAtiva || promoDate < thirtyDaysAgo) return false;
       }
       return true;
