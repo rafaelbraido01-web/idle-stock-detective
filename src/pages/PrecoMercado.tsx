@@ -306,7 +306,7 @@ export default function PrecoMercado() {
                   const hasResult = !!priceResults[p.id];
                   const hasActivePromo = !!(
                     p.snap.data_fim_promocao &&
-                    new Date(p.snap.data_fim_promocao + 'T23:59:59') >= new Date()
+                    parseLocalDate(p.snap.data_fim_promocao) >= new Date(new Date().toDateString())
                   );
                   const mp = marketPrices[p.codigo];
                   const diff = getDiff(p);
