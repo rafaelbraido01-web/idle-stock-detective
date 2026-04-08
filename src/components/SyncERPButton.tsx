@@ -52,10 +52,11 @@ export function SyncERPButton() {
       if (webhookError) throw new Error(webhookError.message || 'Erro ao chamar webhook');
       if (webhookData?.error) throw new Error(webhookData.error);
 
-      // If the response is an array of products, process them
+      // Parse response: expect [{ status, resumo, produtos }] or { produtos }
       const data = webhookData;
-
-      const rows = Array.isArray(data) ? data : data?.produtos || data?.data || [];
+      const wrapper = Array.isArray(data) ? data[0] : data;
+      const resumo = wrapper?.resumo || {};
+      const rows = wrapper?.produtos || wrapper?.data || (Array.isArray(data) && !wrapper?.resumo ? data : []);
 
       if (!rows.length) {
         toast({
@@ -64,6 +65,10 @@ export function SyncERPButton() {
         });
         return;
       }
+
+      // Use data_execucao from resumo as the import date
+      const dataExecucao = resumo.data_execucao ? new Date(resumo.data_execucao) : now;
+      const importDateISO = dataExecucao.toISOString();
 
       // 2. Build produto records and upsert
       const produtosMap = new Map<string, {
