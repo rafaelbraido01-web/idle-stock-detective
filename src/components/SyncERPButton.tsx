@@ -170,10 +170,10 @@ export function SyncERPButton() {
       // Insert snapshot header
       const { error: snapErr } = await supabase.from('estoque_snapshots').insert({
         id: snapshotId,
-        data_importacao: nowISO,
-        nome_arquivo: `Sync ERP (n8n) - ${now.toISOString().split('T')[0]}`,
+        data_importacao: importDateISO,
+        nome_arquivo: `Sync ERP (n8n) - ${importDateISO.split('T')[0]}`,
         usuario: 'Sync ERP',
-        data_criacao: nowISO,
+        data_criacao: importDateISO,
         total_produtos: snapshotRows.length,
         valor_total: totalValorEstoque,
       });
