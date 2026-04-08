@@ -107,6 +107,32 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
+  // Realtime: auto-reload when new snapshots are inserted (e.g. from ERP sync)
+  useEffect(() => {
+    const channel = supabase
+      .channel('snapshot-changes')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'estoque_snapshots' },
+        () => {
+          console.log('[Realtime] Novo snapshot detectado, recarregando dados...');
+          // Small delay to ensure produto_snapshots are also inserted
+          setTimeout(() => loadAll(), 2000);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'estoque_snapshots' },
+        () => {
+          console.log('[Realtime] Snapshot removido, recarregando dados...');
+          loadAll();
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [loadAll]);
+
   const addImport = useCallback(async (
     snapshot: EstoqueSnapshot,
     newProdutos: Produto[],
