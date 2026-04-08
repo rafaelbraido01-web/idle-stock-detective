@@ -28,6 +28,20 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Auth: accept either Supabase JWT (frontend via SDK) or x-sync-secret header (n8n)
+  const secretKey = req.headers.get("x-sync-secret");
+  const expectedSecret = Deno.env.get("SYNC_ERP_SECRET");
+  const authHeader = req.headers.get("authorization");
+  const hasValidSecret = secretKey && expectedSecret && secretKey === expectedSecret;
+  const hasJWT = authHeader?.startsWith("Bearer ");
+
+  if (!hasValidSecret && !hasJWT) {
+    return new Response(
+      JSON.stringify({ error: "Unauthorized" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
