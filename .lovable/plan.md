@@ -1,35 +1,37 @@
 
 
-# Plano: Melhorar Filtros da Página de Promoções
+## Plano: Substituir edge function sync-erp por chamada ao webhook n8n
 
-## Situação Atual
-A página `/promocoes` possui apenas 2 filtros: **Status** (vendeu/sem-movimento/reposição) e **Promoção** (ativa/expirada). Não há busca por texto nem filtros por grupo, subgrupo, marca, etc.
+### Contexto
+Atualmente o botão "Sincronizar ERP" chama a edge function `sync-erp` que conecta direto ao MySQL do ERP. O objetivo é substituir essa chamada por um POST ao webhook do n8n, que retornará os dados para popular o banco.
 
-A página `/produtos` serve como referência, com: busca por código/descrição, grupo, subgrupo, marca, categoria de estoque, última compra e comissão.
+### O que será feito
 
-## O que será feito
+**1. Atualizar `src/components/SyncERPButton.tsx`**
+- Remover a chamada `supabase.functions.invoke('sync-erp', ...)`.
+- Substituir por um `fetch` POST direto ao webhook n8n:
+  - URL de produção: `https://n8n.syma.com.br/webhook/Solicitação_data_Lovable_estoque`
+  - Body: `{ "data_sync": new Date().toISOString() }` (data atual, não a do calendário)
+  - Header: `Content-Type: application/json`
+- Processar a resposta do n8n e, se retornar dados de produtos/estoque, inserir no banco via Supabase client (upsert produtos + criar snapshot + inserir produto_snapshots), reaproveitando a lógica que hoje está na edge function.
+- Manter os estados de loading e os toasts de sucesso/erro.
+- Remover o calendário de seleção de data (já que agora envia `new Date()`) ou mantê-lo — depende se o n8n precisa de data específica.
 
-### 1. Adicionar campo de busca por código/descrição
-- Input com ícone de lupa, igual ao da página de Produtos
-- Filtra por código ou descrição do produto
+**2. Decisão sobre o calendário**
+- Como o requisito diz "data atual", o dialog com calendário pode ser simplificado para uma confirmação simples, sem seleção de data. O botão abrirá um dialog de confirmação e enviará a data corrente.
 
-### 2. Adicionar filtros de Grupo, Subgrupo e Marca
-- Selects dinâmicos baseados nos produtos disponíveis nos comparisons
-- Mesma estrutura visual dos filtros em `/produtos`
+**3. Processar resposta do n8n**
+- A resposta do webhook será recebida e os dados serão inseridos no banco Supabase usando o client existente (tabelas `produtos`, `estoque_snapshots`, `estoque_produto_snapshots`).
+- Após inserção, chamar `reload()` para atualizar a interface.
 
-### 3. Reorganizar layout dos filtros
-- Linha de filtros com `flex-wrap gap-3`, busca à esquerda
-- Selects de Status e Promoção permanecem
-- Novos selects de Grupo, Subgrupo, Marca adicionados
-- Botão "Subir Campanha" continua no `ml-auto`
+**4. Remover a edge function `sync-erp`**
+- Deletar o arquivo `supabase/functions/sync-erp/index.ts`.
+- Usar a ferramenta de delete para remover a função deployada.
 
-### 4. Atualizar lógica de filtragem
-- Adicionar estados: `search`, `grupoFilter`, `subgrupoFilter`, `marcaFilter`
-- Aplicar filtros no `useMemo` de `filtered`, antes da ordenação
-- Reset de página ao mudar qualquer filtro
+### Observação importante
+Preciso entender o formato da resposta do n8n para mapear corretamente os dados. Se o webhook retornar os dados no mesmo formato que a edge function produzia (produtos com estoque, preços, datas), a migração será direta. Caso contrário, será necessário adaptar o mapeamento.
 
-### Detalhes técnicos
-- **Arquivo editado**: `src/pages/Promocoes.tsx`
-- Extrair listas de grupos/subgrupos/marcas dos `comparisons` (via lookup no array `produtos`)
-- Padrão idêntico ao usado em `Products.tsx`
+### Arquivos afetados
+- `src/components/SyncERPButton.tsx` — reescrever lógica de sync
+- `supabase/functions/sync-erp/index.ts` — deletar
 
