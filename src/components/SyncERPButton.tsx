@@ -13,8 +13,7 @@ import { useInventory } from '@/store/InventoryContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-const N8N_WEBHOOK_URL =
-  'https://n8n.syma.com.br/webhook/Solicitação_data_Lovable_estoque';
+// Proxy via edge function to avoid CORS issues
 
 function getCategoriaEstoque(dias: number): string {
   if (dias < 0) return 'sem-registro';
@@ -46,19 +45,16 @@ export function SyncERPButton() {
       const now = new Date();
 
       // 1. Call n8n webhook
-      const response = await fetch(N8N_WEBHOOK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data_sync: now.toISOString() }),
+      const { data: webhookData, error: webhookError } = await supabase.functions.invoke('sync-erp-webhook', {
+        body: { data_sync: now.toISOString() },
       });
 
-      if (!response.ok) {
-        throw new Error(`Erro do webhook: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json();
+      if (webhookError) throw new Error(webhookError.message || 'Erro ao chamar webhook');
+      if (webhookData?.error) throw new Error(webhookData.error);
 
       // If the response is an array of products, process them
+      const data = webhookData;
+
       const rows = Array.isArray(data) ? data : data?.produtos || data?.data || [];
 
       if (!rows.length) {
