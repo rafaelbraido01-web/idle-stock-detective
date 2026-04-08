@@ -36,6 +36,21 @@ serve(async (req) => {
   try {
     const body = await req.json();
 
+    // --- TRIGGER MODE: frontend sends { action: "trigger" } to proxy the webhook to n8n ---
+    if (body?.action === "trigger") {
+      const n8nUrl = "https://n8n.syma.com.br/webhook/Solicitação_data_Lovable_estoque";
+      const n8nRes = await fetch(n8nUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data_sync: body.data_sync || new Date().toISOString() }),
+      });
+      return new Response(
+        JSON.stringify({ status: "ok", message: "Trigger enviado ao n8n", n8n_status: n8nRes.status }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // --- IMPORT MODE: n8n sends the full payload ---
     // Accept [{ status, resumo, produtos }] or { resumo, produtos }
     const wrapper = Array.isArray(body) ? body[0] : body;
     const resumo = wrapper?.resumo || {};

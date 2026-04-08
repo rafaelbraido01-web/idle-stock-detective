@@ -10,8 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-
-const N8N_WEBHOOK_URL = 'https://n8n.syma.com.br/webhook/Solicitação_data_Lovable_estoque';
+import { supabase } from '@/integrations/supabase/client';
 
 export function SyncERPButton() {
   const [loading, setLoading] = useState(false);
@@ -23,12 +22,10 @@ export function SyncERPButton() {
     setLoading(true);
 
     try {
-      // Fire-and-forget: envia a data para o n8n, não espera resposta com dados
-      await fetch(N8N_WEBHOOK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data_sync: new Date().toISOString() }),
+      const { data, error } = await supabase.functions.invoke('sync-erp-webhook', {
+        body: { action: 'trigger', data_sync: new Date().toISOString() },
       });
+      if (error) throw error;
 
       toast({
         title: 'Solicitação enviada',
