@@ -135,18 +135,18 @@ serve(async (req) => {
       const produtoId = codigoToId.get(codigo);
       if (!produtoId) continue;
 
-      // Map ERP fields: estoque→quantidade, valor_estoque→valor_total, preco_venda→preco_tabela
-      const quantidade = Number(row.quantidade || row.quantity || row.estoque || 0);
-      const valorUnit = Number(row.valor_unitario || row.unit_value || 0);
-      const valorTotal = Number(row.valor_total || row.total_value || row.valor_estoque || quantidade * valorUnit);
-      const dataUltimaVenda = row.data_ultima_venda || row.last_sale_date || null;
-      const dataUltimaCompra = row.data_ultima_compra || row.last_purchase_date || null;
+      // Map ERP/n8n fields to snapshot columns
+      const quantidade = Number(row.estoque || row.quantidade || 0);
+      const valorUnit = Number(row.custo_medio || row.ult_custo || row.valor_unitario || 0);
+      const valorTotal = Number(row.valor_estoque || row.valor_total || quantidade * valorUnit);
+      const dataUltimaVenda = row.data_ultima_venda || null;
+      const dataUltimaCompra = row.ult_compra || row.data_ultima_compra || null;
       const diasSemVenda = calcDias(dataUltimaVenda, dataExecucao);
-      const diasSemCompra = calcDias(dataUltimaCompra, dataExecucao);
-      const precoTabela = Number(row.preco_tabela || row.list_price || row.preco_venda || 0);
-      const promoRaw = Number(row.valor_promocao || row.promocao || 0);
+      const diasSemCompra = row.dias_sem_compra != null ? Number(row.dias_sem_compra) : calcDias(dataUltimaCompra, dataExecucao);
+      const precoTabela = Number(row.preco_venda || row.preco_tabela || 0);
+      const promoRaw = Number(row.promocao || row.valor_promocao || 0);
       const valorPromocao = promoRaw > 0 ? promoRaw : null;
-      const dataFimPromocao = row.data_fim_promocao || null;
+      const dataFimPromocao = row.valid_prom || row.data_fim_promocao || null;
 
       let percentualDesconto: number | null = null;
       if (valorPromocao && precoTabela > 0) {
