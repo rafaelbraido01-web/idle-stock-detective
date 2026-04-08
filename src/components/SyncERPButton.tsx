@@ -13,8 +13,7 @@ import { useInventory } from '@/store/InventoryContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-const N8N_WEBHOOK_URL =
-  'https://n8n.syma.com.br/webhook/Solicitação_data_Lovable_estoque';
+// Proxy via edge function to avoid CORS issues
 
 function getCategoriaEstoque(dias: number): string {
   if (dias < 0) return 'sem-registro';
