@@ -1,44 +1,178 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
-const N8N_WEBHOOK_URL = "https://n8n.syma.com.br/webhook-test/Solicitação_data_Lovable_estoque";
+function getCategoriaEstoque(dias: number): string {
+  if (dias < 0) return "sem-registro";
+  if (dias <= 90) return "0-90";
+  if (dias <= 180) return "90-180";
+  if (dias <= 270) return "180-270";
+  if (dias <= 365) return "270-365";
+  return "365+";
+}
+
+function calcDias(dateStr: string | null, ref: Date): number {
+  if (!dateStr) return -1;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return -1;
+  return Math.max(0, Math.floor((ref.getTime() - d.getTime()) / 86400000));
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
+
   try {
     const body = await req.json();
-    const dataSync = body.data_sync || new Date().toISOString();
 
-    const n8nResponse = await fetch(N8N_WEBHOOK_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ data_sync: dataSync }),
-    });
+    // Accept [{ status, resumo, produtos }] or { resumo, produtos }
+    const wrapper = Array.isArray(body) ? body[0] : body;
+    const resumo = wrapper?.resumo || {};
+    const rows = wrapper?.produtos || [];
 
-    if (!n8nResponse.ok) {
-      const errorText = await n8nResponse.text();
+    if (!rows.length) {
       return new Response(
-        JSON.stringify({ error: `Webhook retornou ${n8nResponse.status}: ${errorText}` }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ status: "ok", message: "Nenhum produto recebido.", total: 0 }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const data = await n8nResponse.json();
+    const now = new Date();
+    const dataExecucao = resumo.data_execucao ? new Date(resumo.data_execucao) : now;
+    const importDateISO = dataExecucao.toISOString();
 
-    return new Response(JSON.stringify(data), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    // 1. Upsert produtos
+    const produtosMap = new Map<string, any>();
+    for (const row of rows) {
+      const codigo = String(row.codigo || row.code || "");
+      if (!codigo) continue;
+      if (!produtosMap.has(codigo)) {
+        produtosMap.set(codigo, {
+          codigo,
+          descricao: String(row.descricao || row.description || ""),
+          grupo: String(row.grupo || row.group || ""),
+          subgrupo: String(row.subgrupo || ""),
+          marca: String(row.marca || row.brand || ""),
+          estoque_minimo: 0,
+        });
+      }
+    }
+
+    const produtoRows = Array.from(produtosMap.values());
+    for (let i = 0; i < produtoRows.length; i += 500) {
+      const batch = produtoRows.slice(i, i + 500);
+      const { error } = await supabase.from("produtos").upsert(batch, { onConflict: "codigo" });
+      if (error) throw new Error(`Erro ao inserir produtos: ${error.message}`);
+    }
+
+    // 2. Fetch all produto IDs
+    const codigoToId = new Map<string, string>();
+    let pgFrom = 0;
+    let pgMore = true;
+    while (pgMore) {
+      const { data: pData } = await supabase.from("produtos").select("id, codigo").range(pgFrom, pgFrom + 999);
+      const r = pData || [];
+      for (const p of r) codigoToId.set(p.codigo, p.id);
+      pgMore = r.length === 1000;
+      pgFrom += 1000;
+    }
+
+    // 3. Build snapshot
+    const snapshotId = crypto.randomUUID();
+    let totalValorEstoque = 0;
+    const snapshotRows: any[] = [];
+
+    for (const row of rows) {
+      const codigo = String(row.codigo || row.code || "");
+      const produtoId = codigoToId.get(codigo);
+      if (!produtoId) continue;
+
+      const quantidade = Number(row.quantidade || row.quantity || 0);
+      const valorUnit = Number(row.valor_unitario || row.unit_value || 0);
+      const valorTotal = Number(row.valor_total || row.total_value || quantidade * valorUnit);
+      const dataUltimaVenda = row.data_ultima_venda || row.last_sale_date || null;
+      const dataUltimaCompra = row.data_ultima_compra || row.last_purchase_date || null;
+      const diasSemVenda = calcDias(dataUltimaVenda, dataExecucao);
+      const diasSemCompra = calcDias(dataUltimaCompra, dataExecucao);
+      const precoTabela = Number(row.preco_tabela || row.list_price || 0);
+      const promoRaw = Number(row.valor_promocao || 0);
+      const valorPromocao = promoRaw > 0 ? promoRaw : null;
+      const dataFimPromocao = row.data_fim_promocao || null;
+
+      let percentualDesconto: number | null = null;
+      if (valorPromocao && precoTabela > 0) {
+        percentualDesconto = Math.round(((precoTabela - valorPromocao) / precoTabela) * 10000) / 100;
+      }
+
+      totalValorEstoque += valorTotal;
+
+      snapshotRows.push({
+        snapshot_id: snapshotId,
+        produto_id: produtoId,
+        quantidade,
+        valor_unitario: valorUnit,
+        valor_total: valorTotal,
+        data_ultima_venda: dataUltimaVenda,
+        data_ultima_compra: dataUltimaCompra,
+        dias_sem_venda: diasSemVenda,
+        dias_sem_compra: diasSemCompra,
+        categoria_estoque: getCategoriaEstoque(diasSemVenda >= 0 ? diasSemVenda : diasSemCompra),
+        nome_comissao: String(row.nome_comissao || ""),
+        comissao: Number(row.comissao || 0),
+        preco_tabela: precoTabela,
+        valor_promocao: valorPromocao,
+        percentual_desconto: percentualDesconto,
+        data_fim_promocao: dataFimPromocao,
+        valor_venda_total: 0,
+      });
+    }
+
+    // 4. Insert snapshot header
+    const { error: snapErr } = await supabase.from("estoque_snapshots").insert({
+      id: snapshotId,
+      data_importacao: importDateISO,
+      nome_arquivo: `Sync ERP - ${importDateISO.split("T")[0]}`,
+      usuario: "Sync ERP",
+      data_criacao: importDateISO,
+      total_produtos: snapshotRows.length,
+      valor_total: totalValorEstoque,
     });
+    if (snapErr) throw new Error(`Erro ao criar snapshot: ${snapErr.message}`);
+
+    // 5. Insert produto snapshots in batches
+    for (let i = 0; i < snapshotRows.length; i += 500) {
+      const batch = snapshotRows.slice(i, i + 500);
+      const { error } = await supabase.from("estoque_produto_snapshots").insert(batch);
+      if (error) throw new Error(`Erro ao inserir snapshots: ${error.message}`);
+    }
+
+    console.log(`Sync ERP: ${snapshotRows.length} produtos importados, snapshot ${snapshotId}`);
+
+    return new Response(
+      JSON.stringify({
+        status: "ok",
+        snapshot_id: snapshotId,
+        total_produtos: snapshotRows.length,
+        valor_total: totalValorEstoque,
+        data_importacao: importDateISO,
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   } catch (err: any) {
     console.error("sync-erp-webhook error:", err);
     return new Response(
-      JSON.stringify({ error: err.message || "Erro ao chamar webhook n8n" }),
+      JSON.stringify({ error: err.message || "Erro ao processar importação" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
