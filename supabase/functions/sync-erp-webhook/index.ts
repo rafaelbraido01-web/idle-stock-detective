@@ -70,6 +70,13 @@ serve(async (req) => {
     const resumo = wrapper?.resumo || {};
     const rows = wrapper?.dados || wrapper?.produtos || [];
 
+    // DEBUG: Log first row keys and sample data
+    if (rows.length > 0) {
+      console.log("DEBUG KEYS:", JSON.stringify(Object.keys(rows[0])));
+      console.log("DEBUG SAMPLE:", JSON.stringify(rows[0]));
+    }
+    console.log("DEBUG RESUMO:", JSON.stringify(resumo));
+
     if (!rows.length) {
       return new Response(
         JSON.stringify({ status: "ok", message: "Nenhum produto recebido.", total: 0 }),
