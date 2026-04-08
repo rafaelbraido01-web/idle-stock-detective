@@ -52,15 +52,9 @@ export function SyncERPButton() {
       if (webhookError) throw new Error(webhookError.message || 'Erro ao chamar webhook');
       if (webhookData?.error) throw new Error(webhookData.error);
 
-      const response = webhookData;
-
-      if (!response.ok) {
-        throw new Error(`Erro do webhook: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json();
-
       // If the response is an array of products, process them
+      const data = response;
+
       const rows = Array.isArray(data) ? data : data?.produtos || data?.data || [];
 
       if (!rows.length) {
