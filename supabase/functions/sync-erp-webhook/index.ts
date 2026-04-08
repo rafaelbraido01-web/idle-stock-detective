@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const N8N_WEBHOOK_URL = "https://n8n.syma.com.br/webhook/Solicitação_data_Lovable_estoque";
+const N8N_WEBHOOK_URL = "https://n8n.syma.com.br/webhook-test/Solicitação_data_Lovable_estoque";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
