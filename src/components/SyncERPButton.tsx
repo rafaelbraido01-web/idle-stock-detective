@@ -10,8 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-
-const N8N_WEBHOOK_URL = 'https://n8n.syma.com.br/webhook/Solicitação_data_Lovable_estoque';
+import { supabase } from '@/integrations/supabase/client';
 
 export function SyncERPButton() {
   const [loading, setLoading] = useState(false);
