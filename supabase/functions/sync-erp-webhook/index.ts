@@ -16,6 +16,13 @@ function getCategoriaEstoque(dias: number): string {
   return "365+";
 }
 
+function sanitizeDate(dateStr: string | null | undefined): string | null {
+  if (!dateStr || dateStr === "0000-00-00" || dateStr === "0000-00-00 00:00:00") return null;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime()) || d.getFullYear() < 1900) return null;
+  return dateStr;
+}
+
 function calcDias(dateStr: string | null, ref: Date): number {
   if (!dateStr) return -1;
   const d = new Date(dateStr);
