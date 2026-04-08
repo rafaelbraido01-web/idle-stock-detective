@@ -45,11 +45,14 @@ export function SyncERPButton() {
       const now = new Date();
 
       // 1. Call n8n webhook
-      const response = await fetch(N8N_WEBHOOK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data_sync: now.toISOString() }),
+      const { data: webhookData, error: webhookError } = await supabase.functions.invoke('sync-erp-webhook', {
+        body: { data_sync: now.toISOString() },
       });
+
+      if (webhookError) throw new Error(webhookError.message || 'Erro ao chamar webhook');
+      if (webhookData?.error) throw new Error(webhookData.error);
+
+      const response = webhookData;
 
       if (!response.ok) {
         throw new Error(`Erro do webhook: ${response.status} ${response.statusText}`);
