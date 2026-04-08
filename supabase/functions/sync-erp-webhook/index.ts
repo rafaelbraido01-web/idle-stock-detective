@@ -65,10 +65,10 @@ serve(async (req) => {
     }
 
     // --- IMPORT MODE: n8n sends the full payload ---
-    // Accept [{ status, resumo, produtos }] or { resumo, produtos }
+    // Accept [{ status, resumo, dados/produtos }] or { resumo, dados/produtos }
     const wrapper = Array.isArray(body) ? body[0] : body;
     const resumo = wrapper?.resumo || {};
-    const rows = wrapper?.produtos || [];
+    const rows = wrapper?.dados || wrapper?.produtos || [];
 
     if (!rows.length) {
       return new Response(
@@ -81,18 +81,19 @@ serve(async (req) => {
     const dataExecucao = resumo.data_execucao ? new Date(resumo.data_execucao) : now;
     const importDateISO = dataExecucao.toISOString();
 
-    // 1. Upsert produtos
+    // 1. Upsert produtos — map field names from ERP format
     const produtosMap = new Map<string, any>();
     for (const row of rows) {
-      const codigo = String(row.codigo || row.code || "");
+      // Support both formats: codigo field or produto (name) as identifier
+      const codigo = String(row.codigo || row.code || row.produto || "").trim();
       if (!codigo) continue;
       if (!produtosMap.has(codigo)) {
         produtosMap.set(codigo, {
           codigo,
-          descricao: String(row.descricao || row.description || ""),
-          grupo: String(row.grupo || row.group || ""),
-          subgrupo: String(row.subgrupo || ""),
-          marca: String(row.marca || row.brand || ""),
+          descricao: String(row.descricao || row.description || row.produto || "").trim(),
+          grupo: String(row.grupo || row.group || "").trim(),
+          subgrupo: String(row.subgrupo || "").trim(),
+          marca: String(row.marca || row.brand || "").trim(),
           estoque_minimo: 0,
         });
       }
@@ -123,19 +124,20 @@ serve(async (req) => {
     const snapshotRows: any[] = [];
 
     for (const row of rows) {
-      const codigo = String(row.codigo || row.code || "");
+      const codigo = String(row.codigo || row.code || row.produto || "").trim();
       const produtoId = codigoToId.get(codigo);
       if (!produtoId) continue;
 
-      const quantidade = Number(row.quantidade || row.quantity || 0);
+      // Map ERP fields: estoque→quantidade, valor_estoque→valor_total, preco_venda→preco_tabela
+      const quantidade = Number(row.quantidade || row.quantity || row.estoque || 0);
       const valorUnit = Number(row.valor_unitario || row.unit_value || 0);
-      const valorTotal = Number(row.valor_total || row.total_value || quantidade * valorUnit);
+      const valorTotal = Number(row.valor_total || row.total_value || row.valor_estoque || quantidade * valorUnit);
       const dataUltimaVenda = row.data_ultima_venda || row.last_sale_date || null;
       const dataUltimaCompra = row.data_ultima_compra || row.last_purchase_date || null;
       const diasSemVenda = calcDias(dataUltimaVenda, dataExecucao);
       const diasSemCompra = calcDias(dataUltimaCompra, dataExecucao);
-      const precoTabela = Number(row.preco_tabela || row.list_price || 0);
-      const promoRaw = Number(row.valor_promocao || 0);
+      const precoTabela = Number(row.preco_tabela || row.list_price || row.preco_venda || 0);
+      const promoRaw = Number(row.valor_promocao || row.promocao || 0);
       const valorPromocao = promoRaw > 0 ? promoRaw : null;
       const dataFimPromocao = row.data_fim_promocao || null;
 
@@ -150,7 +152,7 @@ serve(async (req) => {
         snapshot_id: snapshotId,
         produto_id: produtoId,
         quantidade,
-        valor_unitario: valorUnit,
+        valor_unitario: valorUnit || (quantidade > 0 ? valorTotal / quantidade : 0),
         valor_total: valorTotal,
         data_ultima_venda: dataUltimaVenda,
         data_ultima_compra: dataUltimaCompra,
