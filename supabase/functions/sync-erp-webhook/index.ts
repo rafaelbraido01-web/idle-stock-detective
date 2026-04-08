@@ -16,6 +16,13 @@ function getCategoriaEstoque(dias: number): string {
   return "365+";
 }
 
+function sanitizeDate(dateStr: string | null | undefined): string | null {
+  if (!dateStr || dateStr === "0000-00-00" || dateStr === "0000-00-00 00:00:00") return null;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime()) || d.getFullYear() < 1900) return null;
+  return dateStr;
+}
+
 function calcDias(dateStr: string | null, ref: Date): number {
   if (!dateStr) return -1;
   const d = new Date(dateStr);
@@ -139,14 +146,14 @@ serve(async (req) => {
       const quantidade = Number(row.estoque || row.quantidade || 0);
       const valorUnit = Number(row.custo_medio || row.ult_custo || row.valor_unitario || 0);
       const valorTotal = Number(row.valor_estoque || row.valor_total || quantidade * valorUnit);
-      const dataUltimaVenda = row.data_ultima_venda || null;
-      const dataUltimaCompra = row.ult_compra || row.data_ultima_compra || null;
+      const dataUltimaVenda = sanitizeDate(row.data_ultima_venda);
+      const dataUltimaCompra = sanitizeDate(row.ult_compra || row.data_ultima_compra);
       const diasSemVenda = calcDias(dataUltimaVenda, dataExecucao);
       const diasSemCompra = row.dias_sem_compra != null ? Number(row.dias_sem_compra) : calcDias(dataUltimaCompra, dataExecucao);
       const precoTabela = Number(row.preco_venda || row.preco_tabela || 0);
       const promoRaw = Number(row.promocao || row.valor_promocao || 0);
       const valorPromocao = promoRaw > 0 ? promoRaw : null;
-      const dataFimPromocao = row.valid_prom || row.data_fim_promocao || null;
+      const dataFimPromocao = sanitizeDate(row.valid_prom || row.data_fim_promocao);
 
       let percentualDesconto: number | null = null;
       if (valorPromocao && precoTabela > 0) {
