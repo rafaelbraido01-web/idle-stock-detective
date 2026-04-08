@@ -52,10 +52,11 @@ export function SyncERPButton() {
       if (webhookError) throw new Error(webhookError.message || 'Erro ao chamar webhook');
       if (webhookData?.error) throw new Error(webhookData.error);
 
-      // If the response is an array of products, process them
+      // Parse response: expect [{ status, resumo, produtos }] or { produtos }
       const data = webhookData;
-
-      const rows = Array.isArray(data) ? data : data?.produtos || data?.data || [];
+      const wrapper = Array.isArray(data) ? data[0] : data;
+      const resumo = wrapper?.resumo || {};
+      const rows = wrapper?.produtos || wrapper?.data || (Array.isArray(data) && !wrapper?.resumo ? data : []);
 
       if (!rows.length) {
         toast({
@@ -64,6 +65,10 @@ export function SyncERPButton() {
         });
         return;
       }
+
+      // Use data_execucao from resumo as the import date
+      const dataExecucao = resumo.data_execucao ? new Date(resumo.data_execucao) : now;
+      const importDateISO = dataExecucao.toISOString();
 
       // 2. Build produto records and upsert
       const produtosMap = new Map<string, {
@@ -114,7 +119,6 @@ export function SyncERPButton() {
 
       // 3. Build snapshot
       const snapshotId = crypto.randomUUID();
-      const nowISO = now.toISOString();
       let totalValorEstoque = 0;
       const snapshotRows: any[] = [];
 
@@ -128,8 +132,8 @@ export function SyncERPButton() {
         const valorTotal = Number(row.valor_total || row.total_value || quantidade * valorUnit);
         const dataUltimaVenda = row.data_ultima_venda || row.last_sale_date || null;
         const dataUltimaCompra = row.data_ultima_compra || row.last_purchase_date || null;
-        const diasSemVenda = calcDias(dataUltimaVenda, now);
-        const diasSemCompra = calcDias(dataUltimaCompra, now);
+        const diasSemVenda = calcDias(dataUltimaVenda, dataExecucao);
+        const diasSemCompra = calcDias(dataUltimaCompra, dataExecucao);
         const precoTabela = Number(row.preco_tabela || row.list_price || 0);
         const promoRaw = Number(row.valor_promocao || 0);
         const valorPromocao = promoRaw > 0 ? promoRaw : null;
@@ -166,10 +170,10 @@ export function SyncERPButton() {
       // Insert snapshot header
       const { error: snapErr } = await supabase.from('estoque_snapshots').insert({
         id: snapshotId,
-        data_importacao: nowISO,
-        nome_arquivo: `Sync ERP (n8n) - ${now.toISOString().split('T')[0]}`,
+        data_importacao: importDateISO,
+        nome_arquivo: `Sync ERP (n8n) - ${importDateISO.split('T')[0]}`,
         usuario: 'Sync ERP',
-        data_criacao: nowISO,
+        data_criacao: importDateISO,
         total_produtos: snapshotRows.length,
         valor_total: totalValorEstoque,
       });
