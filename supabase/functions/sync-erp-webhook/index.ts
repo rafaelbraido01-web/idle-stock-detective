@@ -28,6 +28,16 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Validate secret key
+  const secretKey = req.headers.get("x-sync-secret");
+  const expectedSecret = Deno.env.get("SYNC_ERP_SECRET");
+  if (!secretKey || secretKey !== expectedSecret) {
+    return new Response(
+      JSON.stringify({ error: "Unauthorized: invalid secret key" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
