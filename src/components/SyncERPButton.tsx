@@ -119,7 +119,6 @@ export function SyncERPButton() {
 
       // 3. Build snapshot
       const snapshotId = crypto.randomUUID();
-      const nowISO = now.toISOString();
       let totalValorEstoque = 0;
       const snapshotRows: any[] = [];
 
