@@ -9,14 +9,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useInventory } from '@/store/InventoryContext';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+
+const N8N_WEBHOOK_URL = 'https://n8n.syma.com.br/webhook/Solicitação_data_Lovable_estoque';
 
 export function SyncERPButton() {
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const { reload } = useInventory();
   const { toast } = useToast();
 
   const handleConfirm = async () => {
@@ -24,24 +23,22 @@ export function SyncERPButton() {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('sync-erp-webhook', {
-        body: { data_sync: new Date().toISOString() },
+      // Fire-and-forget: envia a data para o n8n, não espera resposta com dados
+      await fetch(N8N_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data_sync: new Date().toISOString() }),
       });
 
-      if (error) throw new Error(error.message || 'Erro ao chamar função');
-      if (data?.error) throw new Error(data.error);
-
-      await reload();
-
       toast({
-        title: 'Sincronização concluída',
-        description: `${data?.total_produtos ?? 0} produtos importados.`,
-        duration: 10000,
+        title: 'Solicitação enviada',
+        description: 'A data foi enviada ao ERP. Os dados serão importados automaticamente quando o n8n concluir o processamento.',
+        duration: 8000,
       });
     } catch (err: any) {
       toast({
-        title: 'Erro na sincronização',
-        description: err.message || 'Erro ao processar importação.',
+        title: 'Erro ao enviar solicitação',
+        description: err.message || 'Não foi possível contactar o webhook.',
         variant: 'destructive',
       });
     } finally {
@@ -59,7 +56,7 @@ export function SyncERPButton() {
         size="sm"
       >
         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-        {loading ? 'Sincronizando...' : 'Sincronizar ERP'}
+        {loading ? 'Enviando...' : 'Sincronizar ERP'}
       </Button>
 
       <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) setDialogOpen(false); }}>
@@ -67,7 +64,7 @@ export function SyncERPButton() {
           <DialogHeader>
             <DialogTitle>Sincronizar com ERP</DialogTitle>
             <DialogDescription>
-              Deseja iniciar a sincronização dos dados do ERP? A data atual será enviada como referência.
+              Deseja solicitar a sincronização dos dados do ERP? A data atual será enviada como referência e os dados serão importados automaticamente.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
