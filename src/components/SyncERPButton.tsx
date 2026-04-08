@@ -132,8 +132,8 @@ export function SyncERPButton() {
         const valorTotal = Number(row.valor_total || row.total_value || quantidade * valorUnit);
         const dataUltimaVenda = row.data_ultima_venda || row.last_sale_date || null;
         const dataUltimaCompra = row.data_ultima_compra || row.last_purchase_date || null;
-        const diasSemVenda = calcDias(dataUltimaVenda, now);
-        const diasSemCompra = calcDias(dataUltimaCompra, now);
+        const diasSemVenda = calcDias(dataUltimaVenda, dataExecucao);
+        const diasSemCompra = calcDias(dataUltimaCompra, dataExecucao);
         const precoTabela = Number(row.preco_tabela || row.list_price || 0);
         const promoRaw = Number(row.valor_promocao || 0);
         const valorPromocao = promoRaw > 0 ? promoRaw : null;
