@@ -1021,6 +1021,26 @@ export default function Promocoes() {
                   onKeyDown={(e) => e.key === 'Enter' && handleSaveMercado()}
                 />
               </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Link (URL)</label>
+                <Input
+                  type="url"
+                  placeholder="https://..."
+                  value={mercadoLink}
+                  onChange={(e) => setMercadoLink(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Observação</label>
+                <Textarea
+                  placeholder="Observação..."
+                  value={mercadoObs}
+                  onChange={(e) => setMercadoObs(e.target.value)}
+                  className="min-h-[60px]"
+                />
+              </div>
             </div>
           )}
           <DialogFooter>
