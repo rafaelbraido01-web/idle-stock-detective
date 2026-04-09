@@ -75,6 +75,9 @@ export default function PrecoMercado() {
   const [editingPrice, setEditingPrice] = useState<MarketPrice | null>(null);
   const [editPreco, setEditPreco] = useState('');
   const [editFonte, setEditFonte] = useState('');
+  const [editObs, setEditObs] = useState('');
+  const [editLink, setEditLink] = useState('');
+  const [editFonteOutro, setEditFonteOutro] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
   const [deletingPrice, setDeletingPrice] = useState(false);
 
