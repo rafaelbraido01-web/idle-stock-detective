@@ -320,7 +320,15 @@ export default function Promocoes() {
     const now = new Date().toISOString();
     const { data: inserted, error } = await supabase
       .from('precos_mercado')
-      .insert({ produto_id: mercadoProdutoId, preco, updated_at: now, fonte: mercadoFonte } as any)
+      .insert({
+        produto_id: mercadoProdutoId,
+        preco,
+        updated_at: now,
+        fonte: mercadoFonte,
+        observacao: mercadoObs || null,
+        link: mercadoLink || null,
+        fonte_outro: mercadoFonte === 'Outro' ? (mercadoFonteOutro || null) : null,
+      } as any)
       .select()
       .single();
 
