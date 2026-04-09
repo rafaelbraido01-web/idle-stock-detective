@@ -294,7 +294,7 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
               <BarChart data={analysis.topCheaper} layout="vertical" margin={{ left: 8, right: 40 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                 <XAxis type="number" tickFormatter={v => `${v}%`} />
-                <YAxis type="category" dataKey="name" width={160} tick={{ fontSize: 11 }} />
+                <YAxis type="category" dataKey="name" width={0} tick={false} />
                 <ChartTooltip
                   content={({ active, payload }) => {
                     if (!active || !payload?.length) return null;
