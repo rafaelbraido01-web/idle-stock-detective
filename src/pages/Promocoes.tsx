@@ -978,7 +978,7 @@ export default function Promocoes() {
                     <p className="text-[10px] text-red-500 mt-0.5">Obs: {mercadoExisting.observacao}</p>
                   )}
                   {mercadoExisting.link && (
-                    <a href={mercadoExisting.link} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-600 dark:text-blue-400 underline mt-0.5 block truncate">
+                    <a href={mercadoExisting.link} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-600 dark:text-blue-400 underline mt-0.5 block break-all line-clamp-2">
                       {mercadoExisting.link}
                     </a>
                   )}
