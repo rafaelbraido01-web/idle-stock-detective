@@ -91,6 +91,9 @@ export default function PrecoMercado() {
         return;
       }
 
+      // Store all prices for analytics
+      setAllMarketPrices((data || []).map(r => ({ produto_id: r.produto_id, preco: r.preco, fonte: r.fonte })));
+
       // Group by produto_id keeping only the most recent
       const map: Record<string, MarketPrice> = {};
       for (const row of data || []) {
