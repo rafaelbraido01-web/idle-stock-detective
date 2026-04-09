@@ -7,7 +7,7 @@ import {
   Eye, EyeOff, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight,
   Pencil, Trash2,
 } from 'lucide-react';
-import MarketPriceAnalytics from '@/components/MarketPriceAnalytics';
+import MarketPriceAnalytics, { type ChartFilter } from '@/components/MarketPriceAnalytics';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
