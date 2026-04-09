@@ -271,7 +271,14 @@ export default function PrecoMercado() {
       setMarketPrices(prev => {
         const updated = { ...prev };
         if (updated[editingPrice.produto_id]) {
-          updated[editingPrice.produto_id] = { ...updated[editingPrice.produto_id], preco, fonte: editFonte };
+          updated[editingPrice.produto_id] = {
+            ...updated[editingPrice.produto_id],
+            preco,
+            fonte: editFonte,
+            observacao: editObs || null,
+            link: editLink || null,
+            fonte_outro: editFonte === 'Outro' ? (editFonteOutro || null) : null,
+          };
         }
         return updated;
       });
