@@ -163,6 +163,26 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
 
   if (analysis.totalWithPrice === 0) return null;
 
+  const handlePieClick = (category: 'cheaper' | 'similar' | 'expensive') => {
+    if (!onFilterChange) return;
+    if (activeFilter?.type === 'category' && activeFilter.value === category) {
+      onFilterChange(null);
+    } else {
+      onFilterChange({ type: 'category', value: category });
+    }
+  };
+
+  const handleBarClick = (codigo: string) => {
+    if (!onFilterChange) return;
+    if (activeFilter?.type === 'product' && activeFilter.codigo === codigo) {
+      onFilterChange(null);
+    } else {
+      onFilterChange({ type: 'product', codigo });
+    }
+  };
+
+  const isFilterActive = !!activeFilter;
+
   const pieConfig = {
     'Mais barato': { label: 'Mais barato', color: '#22c55e' },
     'Similar': { label: 'Similar', color: '#eab308' },
@@ -179,6 +199,21 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
 
   return (
     <div className="space-y-4">
+      {/* Active filter badge */}
+      {isFilterActive && (
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="gap-1.5 cursor-pointer" onClick={() => onFilterChange?.(null)}>
+            Filtro ativo: {activeFilter.type === 'category'
+              ? activeFilter.value === 'cheaper' ? 'Mais baratos'
+                : activeFilter.value === 'similar' ? 'Similares'
+                : 'Mais caros'
+              : `Produto ${activeFilter.codigo}`
+            }
+            <span className="ml-1 text-muted-foreground">✕</span>
+          </Badge>
+        </div>
+      )}
+
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card>
@@ -201,7 +236,10 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card
+          className={`cursor-pointer transition-all hover:ring-2 hover:ring-green-400 ${activeFilter?.type === 'category' && activeFilter.value === 'cheaper' ? 'ring-2 ring-green-500' : ''}`}
+          onClick={() => handlePieClick('cheaper')}
+        >
           <CardContent className="pt-4 pb-3 px-4">
             <div className="flex items-center gap-2 text-green-600 text-xs font-medium mb-1">
               <TrendingDown className="h-3.5 w-3.5" />
@@ -211,7 +249,10 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
             <p className="text-[10px] text-muted-foreground">abaixo do mercado</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card
+          className={`cursor-pointer transition-all hover:ring-2 hover:ring-red-400 ${activeFilter?.type === 'category' && activeFilter.value === 'expensive' ? 'ring-2 ring-red-500' : ''}`}
+          onClick={() => handlePieClick('expensive')}
+        >
           <CardContent className="pt-4 pb-3 px-4">
             <div className="flex items-center gap-2 text-red-600 text-xs font-medium mb-1">
               <TrendingUp className="h-3.5 w-3.5" />
@@ -242,22 +283,44 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
                   paddingAngle={3}
                   dataKey="value"
                   nameKey="name"
+                  className="cursor-pointer"
+                  onClick={(_: any, idx: number) => {
+                    const entry = analysis.distribution[idx];
+                    if (entry) handlePieClick(entry.category);
+                  }}
                 >
-                  {analysis.distribution.map((entry, idx) => (
-                    <Cell key={idx} fill={entry.color} />
-                  ))}
+                  {analysis.distribution.map((entry, idx) => {
+                    const isSelected = activeFilter?.type === 'category' && activeFilter.value === entry.category;
+                    const isOtherSelected = activeFilter?.type === 'category' && activeFilter.value !== entry.category;
+                    return (
+                      <Cell
+                        key={idx}
+                        fill={entry.color}
+                        opacity={isOtherSelected ? 0.3 : 1}
+                        stroke={isSelected ? entry.color : 'none'}
+                        strokeWidth={isSelected ? 3 : 0}
+                      />
+                    );
+                  })}
                 </Pie>
                 <ChartTooltip content={<ChartTooltipContent />} />
               </PieChart>
             </ChartContainer>
             <div className="flex justify-center gap-4 mt-2">
-              {analysis.distribution.map(d => (
-                <div key={d.name} className="flex items-center gap-1.5 text-xs">
-                  <div className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: d.color }} />
-                  <span className="text-muted-foreground">{d.name}</span>
-                  <span className="font-semibold">{d.value}</span>
-                </div>
-              ))}
+              {analysis.distribution.map(d => {
+                const isSelected = activeFilter?.type === 'category' && activeFilter.value === d.category;
+                return (
+                  <div
+                    key={d.name}
+                    className={`flex items-center gap-1.5 text-xs cursor-pointer rounded px-1.5 py-0.5 transition-colors ${isSelected ? 'bg-muted' : 'hover:bg-muted/50'}`}
+                    onClick={() => handlePieClick(d.category)}
+                  >
+                    <div className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: d.color }} />
+                    <span className="text-muted-foreground">{d.name}</span>
+                    <span className="font-semibold">{d.value}</span>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
@@ -290,15 +353,15 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
                       );
                     }}
                   />
-                  <Bar dataKey="diff" radius={[0, 4, 4, 0]}>
+                  <Bar dataKey="diff" radius={[0, 4, 4, 0]} className="cursor-pointer" onClick={(data: any) => handleBarClick(data.codigo)}>
                     {analysis.topExpensive.map((entry, idx) => {
                       const maxDiff = analysis.topExpensive[0]?.diff || 1;
                       const t = maxDiff > 0 ? entry.diff / maxDiff : 0;
-                      // Wine red (rgb 114,27,45) → Vivid red (rgb 239,68,68)
                       const r = Math.round(114 + (239 - 114) * t);
                       const g = Math.round(27 + (68 - 27) * t);
                       const b = Math.round(45 + (68 - 45) * t);
-                      return <Cell key={idx} fill={`rgb(${r},${g},${b})`} />;
+                      const isSelected = activeFilter?.type === 'product' && activeFilter.codigo === entry.codigo;
+                      return <Cell key={idx} fill={`rgb(${r},${g},${b})`} opacity={isSelected ? 1 : (activeFilter?.type === 'product' ? 0.4 : 1)} stroke={isSelected ? '#000' : 'none'} strokeWidth={isSelected ? 2 : 0} />;
                     })}
                   </Bar>
                 </BarChart>
@@ -336,7 +399,12 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
                     );
                   }}
                 />
-                <Bar dataKey="diff" fill="hsl(142 71% 45%)" radius={[4, 0, 0, 4]} />
+                <Bar dataKey="diff" fill="hsl(142 71% 45%)" radius={[4, 0, 0, 4]} className="cursor-pointer" onClick={(data: any) => handleBarClick(data.codigo)}>
+                  {analysis.topCheaper.map((entry, idx) => {
+                    const isSelected = activeFilter?.type === 'product' && activeFilter.codigo === entry.codigo;
+                    return <Cell key={idx} fill="hsl(142 71% 45%)" opacity={isSelected ? 1 : (activeFilter?.type === 'product' ? 0.4 : 1)} stroke={isSelected ? '#000' : 'none'} strokeWidth={isSelected ? 2 : 0} />;
+                  })}
+                </Bar>
               </BarChart>
             </ChartContainer>
           </CardContent>
