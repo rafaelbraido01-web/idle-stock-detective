@@ -240,6 +240,9 @@ export default function PrecoMercado() {
     setEditingPrice(mp);
     setEditPreco(String(mp.preco));
     setEditFonte(mp.fonte);
+    setEditObs(mp.observacao || '');
+    setEditLink(mp.link || '');
+    setEditFonteOutro(mp.fonte_outro || '');
     setEditDialogOpen(true);
   };
 
