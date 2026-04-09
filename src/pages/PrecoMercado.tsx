@@ -209,7 +209,7 @@ export default function PrecoMercado() {
   const paginated = sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   // Reset page when filters change
-  useEffect(() => { setPage(0); }, [searchTerm, onlyActivePromo, sortKey, sortDir]);
+  useEffect(() => { setPage(0); }, [searchTerm, onlyActivePromo, sortKey, sortDir, chartFilter]);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -365,6 +365,8 @@ export default function PrecoMercado() {
           <MarketPriceAnalytics
             allMarketPrices={allMarketPrices}
             productsWithSnapshot={productsWithSnapshot}
+            activeFilter={chartFilter}
+            onFilterChange={setChartFilter}
           />
           <div className="flex items-center gap-4 max-w-lg">
             <div className="relative flex-1">
