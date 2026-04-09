@@ -59,6 +59,9 @@ interface PrecoMercado {
   preco: number;
   updated_at: string;
   fonte: string;
+  observacao?: string | null;
+  link?: string | null;
+  fonte_outro?: string | null;
 }
 
 interface CampanhaProduto {
