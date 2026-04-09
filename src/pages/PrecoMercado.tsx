@@ -446,54 +446,30 @@ export default function PrecoMercado() {
                     p.snap.data_fim_promocao &&
                     parseLocalDate(p.snap.data_fim_promocao) >= new Date(new Date().toDateString())
                   );
-                  const mp = marketPrices[p.codigo];
-                  const diff = getDiff(p);
 
-                  return (
-                    <TableRow key={p.id} className={hasActivePromo ? 'bg-orange-50' : ''}>
-                      <TableCell className="font-mono text-xs">{p.codigo}</TableCell>
-                      <TableCell className="font-medium text-sm">{p.descricao}</TableCell>
-                      <TableCell className="text-right tabular-nums">{p.snap.quantidade}</TableCell>
-                      <TableCell className="text-right tabular-nums">{formatCurrency(p.snap.preco_tabela)}</TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {p.snap.valor_promocao ? formatCurrency(p.snap.valor_promocao) : '—'}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums font-semibold">
-                        {mp ? formatCurrency(mp.preco) : '—'}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {mp ? <Badge variant="secondary" className="text-xs">{mp.fonte}</Badge> : '—'}
-                      </TableCell>
-                      <TableCell className="text-center text-xs text-muted-foreground">
-                        {mp ? formatDate(mp.updated_at) : '—'}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums text-sm font-medium">
-                        {diff !== null ? (
-                          <span className={diff > 0 ? 'text-green-600' : diff < 0 ? 'text-red-600' : 'text-muted-foreground'}>
-                            {diff > 0 ? '+' : ''}{diff.toFixed(1)}%
-                          </span>
-                        ) : '—'}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {mp ? (
-                          <div className="flex items-center justify-center gap-1">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditOpen(mp)}>
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDeleteOpen(mp)}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        ) : '—'}
-                      </TableCell>
-                      {showAutoSearch && (
-                        <TableCell className="text-center">
-                          {hasResult ? (
-                            <Button variant="outline" size="sm" onClick={() => openResults(p.id)} className="gap-1.5">
-                              <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
-                              Ver resultados
-                            </Button>
-                          ) : (
+                  // When chart filter active, show all prices; otherwise show only latest
+                  const productPrices = expandedRows
+                    ? (expandedRows[p.codigo] || [])
+                    : (marketPrices[p.codigo] ? [marketPrices[p.codigo]] : []);
+
+                  if (productPrices.length === 0) {
+                    // No market price — single row
+                    return (
+                      <TableRow key={p.id} className={hasActivePromo ? 'bg-orange-50' : ''}>
+                        <TableCell className="font-mono text-xs">{p.codigo}</TableCell>
+                        <TableCell className="font-medium text-sm">{p.descricao}</TableCell>
+                        <TableCell className="text-right tabular-nums">{p.snap.quantidade}</TableCell>
+                        <TableCell className="text-right tabular-nums">{formatCurrency(p.snap.preco_tabela)}</TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {p.snap.valor_promocao ? formatCurrency(p.snap.valor_promocao) : '—'}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums font-semibold">—</TableCell>
+                        <TableCell className="text-center">—</TableCell>
+                        <TableCell className="text-center text-xs text-muted-foreground">—</TableCell>
+                        <TableCell className="text-right tabular-nums text-sm font-medium">—</TableCell>
+                        <TableCell className="text-center">—</TableCell>
+                        {showAutoSearch && (
+                          <TableCell className="text-center">
                             <Button
                               variant="default" size="sm" disabled={isLoading}
                               onClick={() => handleSearch(p.id, `${p.descricao} ${p.marca}`, p.codigo)}
@@ -505,11 +481,81 @@ export default function PrecoMercado() {
                                 <><Search className="h-3.5 w-3.5" /> Pesquisar</>
                               )}
                             </Button>
-                          )}
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    );
+                  }
+
+                  return productPrices.map((mp, mpIdx) => {
+                    const tabela = p.snap.preco_tabela;
+                    const rowDiff = tabela > 0 ? ((mp.preco - tabela) / tabela) * 100 : null;
+                    const isFirst = mpIdx === 0;
+
+                    return (
+                      <TableRow
+                        key={`${p.id}-${mp.id}`}
+                        className={`${hasActivePromo ? 'bg-orange-50' : ''} ${!isFirst && expandedRows ? 'border-t-0 bg-muted/30' : ''}`}
+                      >
+                        <TableCell className="font-mono text-xs">{isFirst ? p.codigo : ''}</TableCell>
+                        <TableCell className="font-medium text-sm">{isFirst ? p.descricao : ''}</TableCell>
+                        <TableCell className="text-right tabular-nums">{isFirst ? p.snap.quantidade : ''}</TableCell>
+                        <TableCell className="text-right tabular-nums">{isFirst ? formatCurrency(p.snap.preco_tabela) : ''}</TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {isFirst ? (p.snap.valor_promocao ? formatCurrency(p.snap.valor_promocao) : '—') : ''}
                         </TableCell>
-                      )}
-                    </TableRow>
-                  );
+                        <TableCell className="text-right tabular-nums font-semibold">
+                          {formatCurrency(mp.preco)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="secondary" className="text-xs">{mp.fonte}</Badge>
+                        </TableCell>
+                        <TableCell className="text-center text-xs text-muted-foreground">
+                          {formatDate(mp.updated_at)}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums text-sm font-medium">
+                          {rowDiff !== null ? (
+                            <span className={rowDiff > 0 ? 'text-green-600' : rowDiff < 0 ? 'text-red-600' : 'text-muted-foreground'}>
+                              {rowDiff > 0 ? '+' : ''}{rowDiff.toFixed(1)}%
+                            </span>
+                          ) : '—'}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditOpen(mp)}>
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDeleteOpen(mp)}>
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                        {showAutoSearch && isFirst && (
+                          <TableCell className="text-center" rowSpan={productPrices.length}>
+                            {hasResult ? (
+                              <Button variant="outline" size="sm" onClick={() => openResults(p.id)} className="gap-1.5">
+                                <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                                Ver resultados
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="default" size="sm" disabled={isLoading}
+                                onClick={() => handleSearch(p.id, `${p.descricao} ${p.marca}`, p.codigo)}
+                                className="gap-1.5"
+                              >
+                                {isLoading ? (
+                                  <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Pesquisando...</>
+                                ) : (
+                                  <><Search className="h-3.5 w-3.5" /> Pesquisar</>
+                                )}
+                              </Button>
+                            )}
+                          </TableCell>
+                        )}
+                        {showAutoSearch && !isFirst && expandedRows && <TableCell />}
+                      </TableRow>
+                    );
+                  });
                 })}
               </TableBody>
             </Table>
