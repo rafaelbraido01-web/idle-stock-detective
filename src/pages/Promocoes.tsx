@@ -111,6 +111,9 @@ export default function Promocoes() {
   const [mercadoPrecoInput, setMercadoPrecoInput] = useState('');
   const [mercadoSaving, setMercadoSaving] = useState(false);
   const [mercadoFonte, setMercadoFonte] = useState<FontePreco>('Outro');
+  const [mercadoObs, setMercadoObs] = useState('');
+  const [mercadoLink, setMercadoLink] = useState('');
+  const [mercadoFonteOutro, setMercadoFonteOutro] = useState('');
 
   // Campaign state
   const [campanhas, setCampanhas] = useState<Map<string, CampanhaProduto>>(new Map());
