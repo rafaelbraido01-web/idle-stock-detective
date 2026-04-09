@@ -585,6 +585,34 @@ export default function PrecoMercado() {
                 </SelectContent>
               </Select>
             </div>
+            {editFonte === 'Outro' && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Nome do local</Label>
+                <Input
+                  placeholder="Ex: Loja X, Site Y..."
+                  value={editFonteOutro}
+                  onChange={e => setEditFonteOutro(e.target.value)}
+                />
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Link (URL)</Label>
+              <Input
+                type="url"
+                placeholder="https://..."
+                value={editLink}
+                onChange={e => setEditLink(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Observação</Label>
+              <Textarea
+                placeholder="Observação..."
+                value={editObs}
+                onChange={e => setEditObs(e.target.value)}
+                className="min-h-[60px]"
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)} disabled={savingEdit}>Cancelar</Button>
