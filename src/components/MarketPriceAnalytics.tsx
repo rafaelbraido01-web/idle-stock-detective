@@ -21,12 +21,19 @@ interface ProductWithSnap {
   };
 }
 
+export type ChartFilter =
+  | { type: 'category'; value: 'cheaper' | 'similar' | 'expensive' }
+  | { type: 'product'; codigo: string }
+  | null;
+
 interface Props {
   allMarketPrices: MarketPriceRow[];
   productsWithSnapshot: ProductWithSnap[];
+  activeFilter?: ChartFilter;
+  onFilterChange?: (filter: ChartFilter) => void;
 }
 
-export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnapshot }: Props) {
+export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnapshot, activeFilter, onFilterChange }: Props) {
   const analysis = useMemo(() => {
     // Group all prices by produto_id → get min price per product
     const pricesByProduct: Record<string, number[]> = {};
