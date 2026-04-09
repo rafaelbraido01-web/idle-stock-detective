@@ -123,7 +123,7 @@ export default function PrecoMercado() {
   // Compute price category per product for chart filtering
   const priceCategories = useMemo(() => {
     const pricesByProduct: Record<string, number[]> = {};
-    for (const row of allMarketPrices) {
+    for (const row of allMarketPricesForAnalytics) {
       if (!pricesByProduct[row.produto_id]) pricesByProduct[row.produto_id] = [];
       pricesByProduct[row.produto_id].push(row.preco);
     }
