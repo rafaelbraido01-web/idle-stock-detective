@@ -14,6 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -41,6 +42,9 @@ interface MarketPrice {
   preco: number;
   fonte: string;
   updated_at: string;
+  observacao?: string | null;
+  link?: string | null;
+  fonte_outro?: string | null;
 }
 
 type SortKey = 'codigo' | 'descricao' | 'quantidade' | 'preco_tabela' | 'valor_promocao' | 'preco_mercado' | 'updated_at' | 'diff';
@@ -71,6 +75,9 @@ export default function PrecoMercado() {
   const [editingPrice, setEditingPrice] = useState<MarketPrice | null>(null);
   const [editPreco, setEditPreco] = useState('');
   const [editFonte, setEditFonte] = useState('');
+  const [editObs, setEditObs] = useState('');
+  const [editLink, setEditLink] = useState('');
+  const [editFonteOutro, setEditFonteOutro] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
   const [deletingPrice, setDeletingPrice] = useState(false);
 
@@ -81,7 +88,7 @@ export default function PrecoMercado() {
     const fetchMarketPrices = async () => {
       const { data, error } = await supabase
         .from('precos_mercado')
-        .select('id, produto_id, preco, updated_at, fonte')
+        .select('id, produto_id, preco, updated_at, fonte, observacao, link, fonte_outro')
         .order('updated_at', { ascending: false });
 
       if (error) {
@@ -233,6 +240,9 @@ export default function PrecoMercado() {
     setEditingPrice(mp);
     setEditPreco(String(mp.preco));
     setEditFonte(mp.fonte);
+    setEditObs(mp.observacao || '');
+    setEditLink(mp.link || '');
+    setEditFonteOutro(mp.fonte_outro || '');
     setEditDialogOpen(true);
   };
 
@@ -245,16 +255,30 @@ export default function PrecoMercado() {
     }
     setSavingEdit(true);
     try {
+      const updatePayload = {
+        preco,
+        fonte: editFonte,
+        observacao: editObs || null,
+        link: editLink || null,
+        fonte_outro: editFonte === 'Outro' ? (editFonteOutro || null) : null,
+      };
       const { error } = await supabase
         .from('precos_mercado')
-        .update({ preco, fonte: editFonte })
+        .update(updatePayload)
         .eq('id', editingPrice.id);
       if (error) throw error;
       // Update local state
       setMarketPrices(prev => {
         const updated = { ...prev };
         if (updated[editingPrice.produto_id]) {
-          updated[editingPrice.produto_id] = { ...updated[editingPrice.produto_id], preco, fonte: editFonte };
+          updated[editingPrice.produto_id] = {
+            ...updated[editingPrice.produto_id],
+            preco,
+            fonte: editFonte,
+            observacao: editObs || null,
+            link: editLink || null,
+            fonte_outro: editFonte === 'Outro' ? (editFonteOutro || null) : null,
+          };
         }
         return updated;
       });
@@ -560,6 +584,34 @@ export default function PrecoMercado() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            {editFonte === 'Outro' && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Nome do local</Label>
+                <Input
+                  placeholder="Ex: Loja X, Site Y..."
+                  value={editFonteOutro}
+                  onChange={e => setEditFonteOutro(e.target.value)}
+                />
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Link (URL)</Label>
+              <Input
+                type="url"
+                placeholder="https://..."
+                value={editLink}
+                onChange={e => setEditLink(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Observação</Label>
+              <Textarea
+                placeholder="Observação..."
+                value={editObs}
+                onChange={e => setEditObs(e.target.value)}
+                className="min-h-[60px]"
+              />
             </div>
           </div>
           <DialogFooter>
