@@ -972,8 +972,16 @@ export default function Promocoes() {
                   <p className="text-[10px] uppercase text-red-600 dark:text-red-400">Preço de mercado atual</p>
                   <p className="font-mono font-semibold text-red-700 dark:text-red-300">{formatCurrency(mercadoExisting.preco)}</p>
                   <p className="text-[10px] text-red-500 mt-1">
-                    Fonte: {mercadoExisting.fonte || 'Outro'} · Atualizado em {new Date(mercadoExisting.updated_at).toLocaleDateString('pt-BR')} às {new Date(mercadoExisting.updated_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                    Fonte: {mercadoExisting.fonte === 'Outro' && mercadoExisting.fonte_outro ? mercadoExisting.fonte_outro : (mercadoExisting.fonte || 'Outro')} · Atualizado em {new Date(mercadoExisting.updated_at).toLocaleDateString('pt-BR')} às {new Date(mercadoExisting.updated_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                   </p>
+                  {mercadoExisting.observacao && (
+                    <p className="text-[10px] text-red-500 mt-0.5">Obs: {mercadoExisting.observacao}</p>
+                  )}
+                  {mercadoExisting.link && (
+                    <a href={mercadoExisting.link} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-600 dark:text-blue-400 underline mt-0.5 block truncate">
+                      {mercadoExisting.link}
+                    </a>
+                  )}
                 </div>
               )}
 
