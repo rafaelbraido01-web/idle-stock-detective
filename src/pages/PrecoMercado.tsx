@@ -255,9 +255,16 @@ export default function PrecoMercado() {
     }
     setSavingEdit(true);
     try {
+      const updatePayload = {
+        preco,
+        fonte: editFonte,
+        observacao: editObs || null,
+        link: editLink || null,
+        fonte_outro: editFonte === 'Outro' ? (editFonteOutro || null) : null,
+      };
       const { error } = await supabase
         .from('precos_mercado')
-        .update({ preco, fonte: editFonte })
+        .update(updatePayload)
         .eq('id', editingPrice.id);
       if (error) throw error;
       // Update local state
