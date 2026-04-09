@@ -90,9 +90,9 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
 
     // Distribution for pie chart
     const distribution = [
-      { name: 'Mais barato', value: cheaper.length, color: 'hsl(var(--chart-3))' },
-      { name: 'Similar', value: similar.length, color: 'hsl(var(--chart-4))' },
-      { name: 'Mais caro', value: moreExpensive.length, color: 'hsl(var(--chart-1))' },
+      { name: 'Mais barato', value: cheaper.length, color: '#22c55e' },
+      { name: 'Similar', value: similar.length, color: '#eab308' },
+      { name: 'Mais caro', value: moreExpensive.length, color: '#ef4444' },
     ].filter(d => d.value > 0);
 
     // Top 10 most expensive vs market (where we're pricier)
