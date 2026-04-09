@@ -95,11 +95,16 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
       ? comparisons.reduce((sum, c) => sum + c.diffPercent, 0) / totalWithPrice 
       : 0;
 
+    // Codigo sets for filtering
+    const cheaperCodigos = cheaper.map(c => c.codigo);
+    const similarCodigos = similar.map(c => c.codigo);
+    const expensiveCodigos = moreExpensive.map(c => c.codigo);
+
     // Distribution for pie chart
     const distribution = [
-      { name: 'Mais barato', value: cheaper.length, color: '#22c55e' },
-      { name: 'Similar', value: similar.length, color: '#eab308' },
-      { name: 'Mais caro', value: moreExpensive.length, color: '#ef4444' },
+      { name: 'Mais barato', value: cheaper.length, color: '#22c55e', category: 'cheaper' as const },
+      { name: 'Similar', value: similar.length, color: '#eab308', category: 'similar' as const },
+      { name: 'Mais caro', value: moreExpensive.length, color: '#ef4444', category: 'expensive' as const },
     ].filter(d => d.value > 0);
 
     // Top 10 most expensive vs market (where we're pricier)
@@ -108,6 +113,7 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
       .sort((a, b) => b.diffPercent - a.diffPercent)
       .slice(0, 8)
       .map(c => ({
+        codigo: c.codigo,
         name: c.descricao.length > 30 ? c.descricao.slice(0, 28) + '…' : c.descricao,
         fullName: c.descricao,
         diff: Math.round(c.diffPercent),
@@ -121,6 +127,7 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
       .sort((a, b) => a.diffPercent - b.diffPercent)
       .slice(0, 8)
       .map(c => ({
+        codigo: c.codigo,
         name: c.descricao.length > 30 ? c.descricao.slice(0, 28) + '…' : c.descricao,
         fullName: c.descricao,
         diff: Math.round(c.diffPercent),
@@ -148,6 +155,9 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
       topExpensive,
       topCheaper,
       sourceData,
+      cheaperCodigos,
+      similarCodigos,
+      expensiveCodigos,
     };
   }, [allMarketPrices, productsWithSnapshot]);
 
