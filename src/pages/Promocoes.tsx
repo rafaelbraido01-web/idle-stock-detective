@@ -999,6 +999,17 @@ export default function Promocoes() {
                 </Select>
               </div>
 
+              {mercadoFonte === 'Outro' && (
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-muted-foreground">Nome do local</label>
+                  <Input
+                    placeholder="Ex: Loja X, Site Y..."
+                    value={mercadoFonteOutro}
+                    onChange={(e) => setMercadoFonteOutro(e.target.value)}
+                  />
+                </div>
+              )}
+
               <div className="space-y-1">
                 <label className="text-xs font-medium text-muted-foreground">Novo preço de mercado (R$)</label>
                 <Input
