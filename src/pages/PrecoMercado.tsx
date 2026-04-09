@@ -139,7 +139,7 @@ export default function PrecoMercado() {
       categories[p.codigo] = diff < -2 ? 'cheaper' : diff > 2 ? 'expensive' : 'similar';
     }
     return categories;
-  }, [allMarketPrices, productsWithSnapshot]);
+  }, [allMarketPricesForAnalytics, productsWithSnapshot]);
 
   const filtered = useMemo(() => {
     let items = productsWithSnapshot;
