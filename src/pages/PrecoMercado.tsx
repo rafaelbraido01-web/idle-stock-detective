@@ -42,6 +42,9 @@ interface MarketPrice {
   preco: number;
   fonte: string;
   updated_at: string;
+  observacao?: string | null;
+  link?: string | null;
+  fonte_outro?: string | null;
 }
 
 type SortKey = 'codigo' | 'descricao' | 'quantidade' | 'preco_tabela' | 'valor_promocao' | 'preco_mercado' | 'updated_at' | 'diff';
