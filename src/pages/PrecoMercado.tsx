@@ -66,6 +66,7 @@ export default function PrecoMercado() {
   const [page, setPage] = useState(0);
   const [marketPrices, setMarketPrices] = useState<Record<string, MarketPrice>>({});
   const [allMarketPrices, setAllMarketPrices] = useState<Array<{ produto_id: string; preco: number; fonte: string }>>([]);
+  const [chartFilter, setChartFilter] = useState<ChartFilter>(null);
 
   // Edit/Delete state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
