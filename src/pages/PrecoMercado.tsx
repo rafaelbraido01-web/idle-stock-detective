@@ -7,6 +7,7 @@ import {
   Eye, EyeOff, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight,
   Pencil, Trash2,
 } from 'lucide-react';
+import MarketPriceAnalytics from '@/components/MarketPriceAnalytics';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -64,6 +65,7 @@ export default function PrecoMercado() {
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [page, setPage] = useState(0);
   const [marketPrices, setMarketPrices] = useState<Record<string, MarketPrice>>({});
+  const [allMarketPrices, setAllMarketPrices] = useState<Array<{ produto_id: string; preco: number; fonte: string }>>([]);
 
   // Edit/Delete state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -88,6 +90,9 @@ export default function PrecoMercado() {
         console.error('Error fetching market prices:', error);
         return;
       }
+
+      // Store all prices for analytics
+      setAllMarketPrices((data || []).map(r => ({ produto_id: r.produto_id, preco: r.preco, fonte: r.fonte })));
 
       // Group by produto_id keeping only the most recent
       const map: Record<string, MarketPrice> = {};
@@ -327,6 +332,10 @@ export default function PrecoMercado() {
         </div>
       ) : (
         <>
+          <MarketPriceAnalytics
+            allMarketPrices={allMarketPrices}
+            productsWithSnapshot={productsWithSnapshot}
+          />
           <div className="flex items-center gap-4 max-w-lg">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
