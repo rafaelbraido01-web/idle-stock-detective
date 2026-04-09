@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { TrendingDown, TrendingUp, BarChart3, ShoppingCart } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface MarketPriceRow {
   produto_id: string;
