@@ -118,6 +118,27 @@ export default function PrecoMercado() {
     }>;
   }, [latestSnapshots, produtos]);
 
+  // Compute price category per product for chart filtering
+  const priceCategories = useMemo(() => {
+    const pricesByProduct: Record<string, number[]> = {};
+    for (const row of allMarketPrices) {
+      if (!pricesByProduct[row.produto_id]) pricesByProduct[row.produto_id] = [];
+      pricesByProduct[row.produto_id].push(row.preco);
+    }
+    const categories: Record<string, 'cheaper' | 'similar' | 'expensive'> = {};
+    for (const p of productsWithSnapshot) {
+      const prices = pricesByProduct[p.codigo];
+      if (!prices || p.snap.preco_tabela === 0) continue;
+      const validPrices = prices.filter(pr => pr > 10);
+      if (validPrices.length === 0) continue;
+      const minPrice = Math.min(...validPrices);
+      const efetivo = p.snap.valor_promocao || p.snap.preco_tabela;
+      const diff = ((efetivo - minPrice) / minPrice) * 100;
+      categories[p.codigo] = diff < -2 ? 'cheaper' : diff > 2 ? 'expensive' : 'similar';
+    }
+    return categories;
+  }, [allMarketPrices, productsWithSnapshot]);
+
   const filtered = useMemo(() => {
     let items = productsWithSnapshot;
     if (onlyActivePromo) {
@@ -134,8 +155,16 @@ export default function PrecoMercado() {
         p.marca.toLowerCase().includes(term)
       );
     }
+    // Apply chart filter
+    if (chartFilter) {
+      if (chartFilter.type === 'category') {
+        items = items.filter(p => priceCategories[p.codigo] === chartFilter.value);
+      } else if (chartFilter.type === 'product') {
+        items = items.filter(p => p.codigo === chartFilter.codigo);
+      }
+    }
     return items;
-  }, [productsWithSnapshot, searchTerm, onlyActivePromo]);
+  }, [productsWithSnapshot, searchTerm, onlyActivePromo, chartFilter, priceCategories]);
 
   const getDiff = useCallback((product: typeof productsWithSnapshot[0]) => {
     const mp = marketPrices[product.codigo];
