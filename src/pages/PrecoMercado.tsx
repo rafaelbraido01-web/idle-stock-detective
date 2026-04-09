@@ -207,6 +207,17 @@ export default function PrecoMercado() {
     return arr;
   }, [filtered, sortKey, sortDir, marketPrices, getDiff]);
 
+  // When chart filter is active, expand to show all market prices per product
+  const expandedRows = useMemo(() => {
+    if (!chartFilter) return null;
+    const pricesByProduct: Record<string, MarketPrice[]> = {};
+    for (const mp of allMarketPricesFull) {
+      if (!pricesByProduct[mp.produto_id]) pricesByProduct[mp.produto_id] = [];
+      pricesByProduct[mp.produto_id].push(mp);
+    }
+    return pricesByProduct;
+  }, [chartFilter, allMarketPricesFull]);
+
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const paginated = sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
