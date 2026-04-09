@@ -7,7 +7,7 @@ import {
   Eye, EyeOff, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight,
   Pencil, Trash2,
 } from 'lucide-react';
-import MarketPriceAnalytics from '@/components/MarketPriceAnalytics';
+import MarketPriceAnalytics, { type ChartFilter } from '@/components/MarketPriceAnalytics';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -66,6 +66,7 @@ export default function PrecoMercado() {
   const [page, setPage] = useState(0);
   const [marketPrices, setMarketPrices] = useState<Record<string, MarketPrice>>({});
   const [allMarketPrices, setAllMarketPrices] = useState<Array<{ produto_id: string; preco: number; fonte: string }>>([]);
+  const [chartFilter, setChartFilter] = useState<ChartFilter>(null);
 
   // Edit/Delete state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -117,6 +118,27 @@ export default function PrecoMercado() {
     }>;
   }, [latestSnapshots, produtos]);
 
+  // Compute price category per product for chart filtering
+  const priceCategories = useMemo(() => {
+    const pricesByProduct: Record<string, number[]> = {};
+    for (const row of allMarketPrices) {
+      if (!pricesByProduct[row.produto_id]) pricesByProduct[row.produto_id] = [];
+      pricesByProduct[row.produto_id].push(row.preco);
+    }
+    const categories: Record<string, 'cheaper' | 'similar' | 'expensive'> = {};
+    for (const p of productsWithSnapshot) {
+      const prices = pricesByProduct[p.codigo];
+      if (!prices || p.snap.preco_tabela === 0) continue;
+      const validPrices = prices.filter(pr => pr > 10);
+      if (validPrices.length === 0) continue;
+      const minPrice = Math.min(...validPrices);
+      const efetivo = p.snap.valor_promocao || p.snap.preco_tabela;
+      const diff = ((efetivo - minPrice) / minPrice) * 100;
+      categories[p.codigo] = diff < -2 ? 'cheaper' : diff > 2 ? 'expensive' : 'similar';
+    }
+    return categories;
+  }, [allMarketPrices, productsWithSnapshot]);
+
   const filtered = useMemo(() => {
     let items = productsWithSnapshot;
     if (onlyActivePromo) {
@@ -133,8 +155,16 @@ export default function PrecoMercado() {
         p.marca.toLowerCase().includes(term)
       );
     }
+    // Apply chart filter
+    if (chartFilter) {
+      if (chartFilter.type === 'category') {
+        items = items.filter(p => priceCategories[p.codigo] === chartFilter.value);
+      } else if (chartFilter.type === 'product') {
+        items = items.filter(p => p.codigo === chartFilter.codigo);
+      }
+    }
     return items;
-  }, [productsWithSnapshot, searchTerm, onlyActivePromo]);
+  }, [productsWithSnapshot, searchTerm, onlyActivePromo, chartFilter, priceCategories]);
 
   const getDiff = useCallback((product: typeof productsWithSnapshot[0]) => {
     const mp = marketPrices[product.codigo];
@@ -179,7 +209,7 @@ export default function PrecoMercado() {
   const paginated = sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   // Reset page when filters change
-  useEffect(() => { setPage(0); }, [searchTerm, onlyActivePromo, sortKey, sortDir]);
+  useEffect(() => { setPage(0); }, [searchTerm, onlyActivePromo, sortKey, sortDir, chartFilter]);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -335,6 +365,8 @@ export default function PrecoMercado() {
           <MarketPriceAnalytics
             allMarketPrices={allMarketPrices}
             productsWithSnapshot={productsWithSnapshot}
+            activeFilter={chartFilter}
+            onFilterChange={setChartFilter}
           />
           <div className="flex items-center gap-4 max-w-lg">
             <div className="relative flex-1">
