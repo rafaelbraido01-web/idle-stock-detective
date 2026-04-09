@@ -273,7 +273,17 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
                       );
                     }}
                   />
-                  <Bar dataKey="diff" fill="hsl(var(--chart-1))" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="diff" radius={[0, 4, 4, 0]}>
+                    {analysis.topExpensive.map((entry, idx) => {
+                      const maxDiff = analysis.topExpensive[0]?.diff || 1;
+                      const t = maxDiff > 0 ? entry.diff / maxDiff : 0;
+                      // Wine red (rgb 114,27,45) → Vivid red (rgb 239,68,68)
+                      const r = Math.round(114 + (239 - 114) * t);
+                      const g = Math.round(27 + (68 - 27) * t);
+                      const b = Math.round(45 + (68 - 45) * t);
+                      return <Cell key={idx} fill={`rgb(${r},${g},${b})`} />;
+                    })}
+                  </Bar>
                 </BarChart>
               </ChartContainer>
             </CardContent>
