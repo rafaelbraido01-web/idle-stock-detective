@@ -365,7 +365,7 @@ export default function PrecoMercado() {
       ) : (
         <>
           <MarketPriceAnalytics
-            allMarketPrices={allMarketPrices}
+            allMarketPrices={allMarketPricesForAnalytics}
             productsWithSnapshot={productsWithSnapshot}
             activeFilter={chartFilter}
             onFilterChange={setChartFilter}
