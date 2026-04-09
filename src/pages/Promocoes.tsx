@@ -302,6 +302,9 @@ export default function Promocoes() {
     const existing = precosMercado.get(codigo);
     setMercadoPrecoInput(existing ? String(existing.preco) : '');
     setMercadoFonte((existing?.fonte as FontePreco) || 'Outro');
+    setMercadoObs(existing?.observacao || '');
+    setMercadoLink(existing?.link || '');
+    setMercadoFonteOutro(existing?.fonte_outro || '');
     setMercadoDialogOpen(true);
   };
 
