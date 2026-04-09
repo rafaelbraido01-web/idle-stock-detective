@@ -1,0 +1,1 @@
+ALTER TABLE precos_mercado ADD COLUMN observacao text, ADD COLUMN link text, ADD COLUMN fonte_outro text;

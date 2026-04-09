@@ -59,6 +59,9 @@ interface PrecoMercado {
   preco: number;
   updated_at: string;
   fonte: string;
+  observacao?: string | null;
+  link?: string | null;
+  fonte_outro?: string | null;
 }
 
 interface CampanhaProduto {
@@ -108,6 +111,9 @@ export default function Promocoes() {
   const [mercadoPrecoInput, setMercadoPrecoInput] = useState('');
   const [mercadoSaving, setMercadoSaving] = useState(false);
   const [mercadoFonte, setMercadoFonte] = useState<FontePreco>('Outro');
+  const [mercadoObs, setMercadoObs] = useState('');
+  const [mercadoLink, setMercadoLink] = useState('');
+  const [mercadoFonteOutro, setMercadoFonteOutro] = useState('');
 
   // Campaign state
   const [campanhas, setCampanhas] = useState<Map<string, CampanhaProduto>>(new Map());
@@ -133,7 +139,7 @@ export default function Promocoes() {
     const loadPrecos = async () => {
       const { data, error } = await supabase
         .from('precos_mercado')
-        .select('produto_id, preco, updated_at, fonte');
+        .select('produto_id, preco, updated_at, fonte, observacao, link, fonte_outro');
       if (!error && data) {
         const map = new Map<string, PrecoMercado>();
         data.forEach((d: any) => map.set(d.produto_id, d));
@@ -296,6 +302,9 @@ export default function Promocoes() {
     const existing = precosMercado.get(codigo);
     setMercadoPrecoInput(existing ? String(existing.preco) : '');
     setMercadoFonte((existing?.fonte as FontePreco) || 'Outro');
+    setMercadoObs(existing?.observacao || '');
+    setMercadoLink(existing?.link || '');
+    setMercadoFonteOutro(existing?.fonte_outro || '');
     setMercadoDialogOpen(true);
   };
 
@@ -311,7 +320,15 @@ export default function Promocoes() {
     const now = new Date().toISOString();
     const { data: inserted, error } = await supabase
       .from('precos_mercado')
-      .insert({ produto_id: mercadoProdutoId, preco, updated_at: now, fonte: mercadoFonte } as any)
+      .insert({
+        produto_id: mercadoProdutoId,
+        preco,
+        updated_at: now,
+        fonte: mercadoFonte,
+        observacao: mercadoObs || null,
+        link: mercadoLink || null,
+        fonte_outro: mercadoFonte === 'Outro' ? (mercadoFonteOutro || null) : null,
+      } as any)
       .select()
       .single();
 
@@ -955,8 +972,16 @@ export default function Promocoes() {
                   <p className="text-[10px] uppercase text-red-600 dark:text-red-400">Preço de mercado atual</p>
                   <p className="font-mono font-semibold text-red-700 dark:text-red-300">{formatCurrency(mercadoExisting.preco)}</p>
                   <p className="text-[10px] text-red-500 mt-1">
-                    Fonte: {mercadoExisting.fonte || 'Outro'} · Atualizado em {new Date(mercadoExisting.updated_at).toLocaleDateString('pt-BR')} às {new Date(mercadoExisting.updated_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                    Fonte: {mercadoExisting.fonte === 'Outro' && mercadoExisting.fonte_outro ? mercadoExisting.fonte_outro : (mercadoExisting.fonte || 'Outro')} · Atualizado em {new Date(mercadoExisting.updated_at).toLocaleDateString('pt-BR')} às {new Date(mercadoExisting.updated_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                   </p>
+                  {mercadoExisting.observacao && (
+                    <p className="text-[10px] text-red-500 mt-0.5">Obs: {mercadoExisting.observacao}</p>
+                  )}
+                  {mercadoExisting.link && (
+                    <a href={mercadoExisting.link} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-600 dark:text-blue-400 underline mt-0.5 block truncate">
+                      {mercadoExisting.link}
+                    </a>
+                  )}
                 </div>
               )}
 
@@ -974,6 +999,17 @@ export default function Promocoes() {
                 </Select>
               </div>
 
+              {mercadoFonte === 'Outro' && (
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-muted-foreground">Nome do local</label>
+                  <Input
+                    placeholder="Ex: Loja X, Site Y..."
+                    value={mercadoFonteOutro}
+                    onChange={(e) => setMercadoFonteOutro(e.target.value)}
+                  />
+                </div>
+              )}
+
               <div className="space-y-1">
                 <label className="text-xs font-medium text-muted-foreground">Novo preço de mercado (R$)</label>
                 <Input
@@ -983,6 +1019,26 @@ export default function Promocoes() {
                   value={mercadoPrecoInput}
                   onChange={(e) => setMercadoPrecoInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSaveMercado()}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Link (URL)</label>
+                <Input
+                  type="url"
+                  placeholder="https://..."
+                  value={mercadoLink}
+                  onChange={(e) => setMercadoLink(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Observação</label>
+                <Textarea
+                  placeholder="Observação..."
+                  value={mercadoObs}
+                  onChange={(e) => setMercadoObs(e.target.value)}
+                  className="min-h-[60px]"
                 />
               </div>
             </div>
