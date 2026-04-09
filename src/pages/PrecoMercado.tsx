@@ -65,6 +65,7 @@ export default function PrecoMercado() {
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [page, setPage] = useState(0);
   const [marketPrices, setMarketPrices] = useState<Record<string, MarketPrice>>({});
+  const [allMarketPrices, setAllMarketPrices] = useState<Array<{ produto_id: string; preco: number; fonte: string }>>([]);
 
   // Edit/Delete state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
