@@ -147,9 +147,9 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
   if (analysis.totalWithPrice === 0) return null;
 
   const pieConfig = {
-    'Mais barato': { label: 'Mais barato', color: 'hsl(142 71% 45%)' },
-    'Similar': { label: 'Similar', color: 'hsl(var(--chart-4))' },
-    'Mais caro': { label: 'Mais caro', color: 'hsl(var(--chart-1))' },
+    'Mais barato': { label: 'Mais barato', color: '#22c55e' },
+    'Similar': { label: 'Similar', color: '#eab308' },
+    'Mais caro': { label: 'Mais caro', color: '#ef4444' },
   };
 
   const barConfig = {
