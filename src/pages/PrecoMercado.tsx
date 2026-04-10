@@ -127,7 +127,7 @@ export default function PrecoMercado() {
       if (!pricesByProduct[row.produto_id]) pricesByProduct[row.produto_id] = [];
       pricesByProduct[row.produto_id].push(row.preco);
     }
-    const categories: Record<string, 'cheaper' | 'similar' | 'expensive'> = {};
+    const categories: Record<string, 'much_cheaper' | 'cheaper' | 'more_expensive' | 'much_expensive'> = {};
     for (const p of productsWithSnapshot) {
       const prices = pricesByProduct[p.codigo];
       if (!prices || p.snap.preco_tabela === 0) continue;
@@ -136,7 +136,7 @@ export default function PrecoMercado() {
       const minPrice = Math.min(...validPrices);
       const efetivo = p.snap.valor_promocao || p.snap.preco_tabela;
       const diff = ((efetivo - minPrice) / minPrice) * 100;
-      categories[p.codigo] = diff < -2 ? 'cheaper' : diff > 2 ? 'expensive' : 'similar';
+      categories[p.codigo] = diff < -5 ? 'much_cheaper' : diff < 0 ? 'cheaper' : diff <= 5 ? 'more_expensive' : 'much_expensive';
     }
     return categories;
   }, [allMarketPricesForAnalytics, productsWithSnapshot]);
