@@ -333,8 +333,8 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
               </CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4">
-              <ChartContainer config={barConfig} className="h-[200px] w-full">
-                <BarChart data={analysis.topExpensive} margin={{ top: 8, right: 8, bottom: 4, left: 8 }}>
+              <ChartContainer config={barConfig} className="h-[350px] w-full">
+                <BarChart data={analysis.topExpensive} margin={{ top: 8, right: 8, bottom: 4, left: 8 }} barSize={10}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis type="category" dataKey="name" hide />
                   <YAxis type="number" tickFormatter={v => `+${v}%`} />
@@ -379,8 +379,8 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
             </CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4">
-            <ChartContainer config={barCheaperConfig} className="h-[200px] w-full">
-              <BarChart data={analysis.topCheaper} margin={{ top: 8, right: 8, bottom: 4, left: 8 }}>
+            <ChartContainer config={barCheaperConfig} className="h-[350px] w-full">
+              <BarChart data={analysis.topCheaper} margin={{ top: 8, right: 8, bottom: 4, left: 8 }} barSize={10}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis type="category" dataKey="name" hide />
                 <YAxis type="number" tickFormatter={v => `${v}%`} />
