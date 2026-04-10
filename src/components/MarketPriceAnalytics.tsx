@@ -316,6 +316,7 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
                     <div className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: d.color }} />
                     <span className="text-muted-foreground">{d.name}</span>
                     <span className="font-semibold">{d.value}</span>
+                    <span className="text-muted-foreground">({(d.value / analysis.totalWithPrice * 100).toFixed(0)}%)</span>
                   </div>
                 );
               })}
