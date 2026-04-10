@@ -109,7 +109,7 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
     const topExpensive = [...comparisons]
       .filter(c => c.diffPercent > 0)
       .sort((a, b) => b.diffPercent - a.diffPercent)
-      .slice(0, 8)
+      .slice(0, 25)
       .map(c => ({
         codigo: c.codigo,
         name: c.descricao.length > 30 ? c.descricao.slice(0, 28) + '…' : c.descricao,
@@ -123,7 +123,7 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
     const topCheaper = [...comparisons]
       .filter(c => c.diffPercent < 0)
       .sort((a, b) => a.diffPercent - b.diffPercent)
-      .slice(0, 8)
+      .slice(0, 25)
       .map(c => ({
         codigo: c.codigo,
         name: c.descricao.length > 30 ? c.descricao.slice(0, 28) + '…' : c.descricao,
@@ -333,8 +333,8 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
               </CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4">
-              <ChartContainer config={barConfig} className="h-[200px] w-full">
-                <BarChart data={analysis.topExpensive} margin={{ top: 8, right: 8, bottom: 4, left: 8 }}>
+              <ChartContainer config={barConfig} className="h-[350px] w-full">
+                <BarChart data={analysis.topExpensive} margin={{ top: 8, right: 8, bottom: 4, left: 8 }} barSize={10}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis type="category" dataKey="name" hide />
                   <YAxis type="number" tickFormatter={v => `+${v}%`} />
@@ -379,8 +379,8 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
             </CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4">
-            <ChartContainer config={barCheaperConfig} className="h-[200px] w-full">
-              <BarChart data={analysis.topCheaper} margin={{ top: 8, right: 8, bottom: 4, left: 8 }}>
+            <ChartContainer config={barCheaperConfig} className="h-[350px] w-full">
+              <BarChart data={analysis.topCheaper} margin={{ top: 8, right: 8, bottom: 4, left: 8 }} barSize={10}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis type="category" dataKey="name" hide />
                 <YAxis type="number" tickFormatter={v => `${v}%`} />
