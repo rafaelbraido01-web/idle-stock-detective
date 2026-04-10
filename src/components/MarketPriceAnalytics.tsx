@@ -334,10 +334,10 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
             </CardHeader>
             <CardContent className="px-4 pb-4">
               <ChartContainer config={barConfig} className="h-[200px] w-full">
-                <BarChart data={analysis.topExpensive} layout="vertical" margin={{ left: 8, right: 40 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" tickFormatter={v => `+${v}%`} />
-                  <YAxis type="category" dataKey="name" width={160} tick={{ fontSize: 11 }} />
+                <BarChart data={analysis.topExpensive} margin={{ top: 8, right: 8, bottom: 4, left: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis type="category" dataKey="name" hide />
+                  <YAxis type="number" tickFormatter={v => `+${v}%`} />
                   <ChartTooltip
                     content={({ active, payload }) => {
                       if (!active || !payload?.length) return null;
@@ -352,7 +352,7 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
                       );
                     }}
                   />
-                  <Bar dataKey="diff" radius={[0, 4, 4, 0]} className="cursor-pointer" onClick={(data: any) => handleBarClick(data.codigo)}>
+                  <Bar dataKey="diff" radius={[4, 4, 0, 0]} className="cursor-pointer" onClick={(data: any) => handleBarClick(data.codigo)}>
                     {analysis.topExpensive.map((entry, idx) => {
                       const maxDiff = analysis.topExpensive[0]?.diff || 1;
                       const t = maxDiff > 0 ? entry.diff / maxDiff : 0;
@@ -380,10 +380,10 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
           </CardHeader>
           <CardContent className="px-4 pb-4">
             <ChartContainer config={barCheaperConfig} className="h-[200px] w-full">
-              <BarChart data={analysis.topCheaper} layout="vertical" margin={{ left: 8, right: 40 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                <XAxis type="number" tickFormatter={v => `${v}%`} />
-                <YAxis type="category" dataKey="name" width={0} tick={false} />
+              <BarChart data={analysis.topCheaper} margin={{ top: 8, right: 8, bottom: 4, left: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis type="category" dataKey="name" hide />
+                <YAxis type="number" tickFormatter={v => `${v}%`} />
                 <ChartTooltip
                   content={({ active, payload }) => {
                     if (!active || !payload?.length) return null;
@@ -398,7 +398,7 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
                     );
                   }}
                 />
-                <Bar dataKey="diff" fill="hsl(142 71% 45%)" radius={[4, 0, 0, 4]} className="cursor-pointer" onClick={(data: any) => handleBarClick(data.codigo)}>
+                <Bar dataKey="diff" fill="hsl(142 71% 45%)" radius={[4, 4, 0, 0]} className="cursor-pointer" onClick={(data: any) => handleBarClick(data.codigo)}>
                   {analysis.topCheaper.map((entry, idx) => {
                     const isSelected = activeFilter?.type === 'product' && activeFilter.codigo === entry.codigo;
                     return <Cell key={idx} fill="hsl(142 71% 45%)" opacity={isSelected ? 1 : (activeFilter?.type === 'product' ? 0.4 : 1)} stroke={isSelected ? '#000' : 'none'} strokeWidth={isSelected ? 2 : 0} />;
