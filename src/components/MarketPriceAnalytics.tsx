@@ -23,7 +23,7 @@ interface ProductWithSnap {
 }
 
 export type ChartFilter =
-  | { type: 'category'; value: 'cheaper' | 'similar' | 'expensive' }
+  | { type: 'category'; value: 'much_cheaper' | 'cheaper' | 'more_expensive' | 'much_expensive' }
   | { type: 'product'; codigo: string }
   | null;
 
@@ -89,23 +89,20 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
 
     // KPIs
     const totalWithPrice = comparisons.length;
-    const cheaper = comparisons.filter(c => c.diffPercent < -2);
-    const similar = comparisons.filter(c => c.diffPercent >= -2 && c.diffPercent <= 2);
-    const moreExpensive = comparisons.filter(c => c.diffPercent > 2);
+    const muchCheaper = comparisons.filter(c => c.diffPercent < -5);
+    const cheaper = comparisons.filter(c => c.diffPercent >= -5 && c.diffPercent < 0);
+    const moreExpensive = comparisons.filter(c => c.diffPercent >= 0 && c.diffPercent <= 5);
+    const muchExpensive = comparisons.filter(c => c.diffPercent > 5);
     const avgDiff = totalWithPrice > 0 
       ? comparisons.reduce((sum, c) => sum + c.diffPercent, 0) / totalWithPrice 
       : 0;
 
-    // Codigo sets for filtering
-    const cheaperCodigos = cheaper.map(c => c.codigo);
-    const similarCodigos = similar.map(c => c.codigo);
-    const expensiveCodigos = moreExpensive.map(c => c.codigo);
-
     // Distribution for pie chart
     const distribution = [
-      { name: 'Mais barato', value: cheaper.length, color: '#22c55e', category: 'cheaper' as const },
-      { name: 'Similar', value: similar.length, color: '#eab308', category: 'similar' as const },
-      { name: 'Mais caro', value: moreExpensive.length, color: '#ef4444', category: 'expensive' as const },
+      { name: 'Mais barato >5%', value: muchCheaper.length, color: '#15803d', category: 'much_cheaper' as const },
+      { name: 'Mais barato 0-5%', value: cheaper.length, color: '#86efac', category: 'cheaper' as const },
+      { name: 'Mais caro 0-5%', value: moreExpensive.length, color: '#fca5a5', category: 'more_expensive' as const },
+      { name: 'Mais caro >5%', value: muchExpensive.length, color: '#dc2626', category: 'much_expensive' as const },
     ].filter(d => d.value > 0);
 
     // Top 10 most expensive vs market (where we're pricier)
@@ -148,9 +145,10 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
 
     return {
       totalWithPrice,
+      muchCheaper: muchCheaper.length,
       cheaper: cheaper.length,
       moreExpensive: moreExpensive.length,
-      similar: similar.length,
+      muchExpensive: muchExpensive.length,
       avgDiff,
       distribution,
       topExpensive,
