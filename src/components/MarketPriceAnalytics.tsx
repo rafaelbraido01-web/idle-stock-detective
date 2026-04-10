@@ -154,15 +154,12 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
       topExpensive,
       topCheaper,
       sourceData,
-      cheaperCodigos,
-      similarCodigos,
-      expensiveCodigos,
     };
   }, [allMarketPrices, productsWithSnapshot]);
 
   if (analysis.totalWithPrice === 0) return null;
 
-  const handlePieClick = (category: 'cheaper' | 'similar' | 'expensive') => {
+  const handlePieClick = (category: 'much_cheaper' | 'cheaper' | 'more_expensive' | 'much_expensive') => {
     if (!onFilterChange) return;
     if (activeFilter?.type === 'category' && activeFilter.value === category) {
       onFilterChange(null);
@@ -183,9 +180,10 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
   const isFilterActive = !!activeFilter;
 
   const pieConfig = {
-    'Mais barato': { label: 'Mais barato', color: '#22c55e' },
-    'Similar': { label: 'Similar', color: '#eab308' },
-    'Mais caro': { label: 'Mais caro', color: '#ef4444' },
+    'Mais barato >5%': { label: 'Mais barato >5%', color: '#15803d' },
+    'Mais barato 0-5%': { label: 'Mais barato 0-5%', color: '#86efac' },
+    'Mais caro 0-5%': { label: 'Mais caro 0-5%', color: '#fca5a5' },
+    'Mais caro >5%': { label: 'Mais caro >5%', color: '#dc2626' },
   };
 
   const barConfig = {
@@ -202,10 +200,11 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
       {isFilterActive && (
         <div className="flex items-center gap-2">
           <Badge variant="secondary" className="gap-1.5 cursor-pointer" onClick={() => onFilterChange?.(null)}>
-            Filtro ativo: {activeFilter.type === 'category'
-              ? activeFilter.value === 'cheaper' ? 'Mais baratos'
-                : activeFilter.value === 'similar' ? 'Similares'
-                : 'Mais caros'
+           Filtro ativo: {activeFilter.type === 'category'
+              ? activeFilter.value === 'much_cheaper' ? 'Mais barato >5%'
+                : activeFilter.value === 'cheaper' ? 'Mais barato 0-5%'
+                : activeFilter.value === 'more_expensive' ? 'Mais caro 0-5%'
+                : 'Mais caro >5%'
               : `Produto ${activeFilter.codigo}`
             }
             <span className="ml-1 text-muted-foreground">✕</span>
@@ -236,28 +235,28 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
           </CardContent>
         </Card>
         <Card
-          className={`cursor-pointer transition-all hover:ring-2 hover:ring-green-400 ${activeFilter?.type === 'category' && activeFilter.value === 'cheaper' ? 'ring-2 ring-green-500' : ''}`}
-          onClick={() => handlePieClick('cheaper')}
+          className={`cursor-pointer transition-all hover:ring-2 hover:ring-green-400 ${activeFilter?.type === 'category' && (activeFilter.value === 'much_cheaper' || activeFilter.value === 'cheaper') ? 'ring-2 ring-green-500' : ''}`}
+          onClick={() => handlePieClick('much_cheaper')}
         >
           <CardContent className="pt-4 pb-3 px-4">
             <div className="flex items-center gap-2 text-green-600 text-xs font-medium mb-1">
               <TrendingDown className="h-3.5 w-3.5" />
               Mais Baratos
             </div>
-            <p className="text-2xl font-bold text-green-600">{analysis.cheaper}</p>
+            <p className="text-2xl font-bold text-green-600">{analysis.muchCheaper + analysis.cheaper}</p>
             <p className="text-[10px] text-muted-foreground">abaixo do mercado</p>
           </CardContent>
         </Card>
         <Card
-          className={`cursor-pointer transition-all hover:ring-2 hover:ring-red-400 ${activeFilter?.type === 'category' && activeFilter.value === 'expensive' ? 'ring-2 ring-red-500' : ''}`}
-          onClick={() => handlePieClick('expensive')}
+          className={`cursor-pointer transition-all hover:ring-2 hover:ring-red-400 ${activeFilter?.type === 'category' && (activeFilter.value === 'more_expensive' || activeFilter.value === 'much_expensive') ? 'ring-2 ring-red-500' : ''}`}
+          onClick={() => handlePieClick('much_expensive')}
         >
           <CardContent className="pt-4 pb-3 px-4">
             <div className="flex items-center gap-2 text-red-600 text-xs font-medium mb-1">
               <TrendingUp className="h-3.5 w-3.5" />
               Mais Caros
             </div>
-            <p className="text-2xl font-bold text-red-600">{analysis.moreExpensive}</p>
+            <p className="text-2xl font-bold text-red-600">{analysis.moreExpensive + analysis.muchExpensive}</p>
             <p className="text-[10px] text-muted-foreground">acima do mercado</p>
           </CardContent>
         </Card>
