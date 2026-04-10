@@ -109,7 +109,7 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
     const topExpensive = [...comparisons]
       .filter(c => c.diffPercent > 0)
       .sort((a, b) => b.diffPercent - a.diffPercent)
-      .slice(0, 8)
+      .slice(0, 25)
       .map(c => ({
         codigo: c.codigo,
         name: c.descricao.length > 30 ? c.descricao.slice(0, 28) + '…' : c.descricao,
@@ -123,7 +123,7 @@ export default function MarketPriceAnalytics({ allMarketPrices, productsWithSnap
     const topCheaper = [...comparisons]
       .filter(c => c.diffPercent < 0)
       .sort((a, b) => a.diffPercent - b.diffPercent)
-      .slice(0, 8)
+      .slice(0, 25)
       .map(c => ({
         codigo: c.codigo,
         name: c.descricao.length > 30 ? c.descricao.slice(0, 28) + '…' : c.descricao,
