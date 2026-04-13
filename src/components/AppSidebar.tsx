@@ -35,7 +35,14 @@ export function AppSidebar() {
   const location = useLocation();
   const { isPageVisible } = usePageVisibility();
 
-  const visibleItems = navItems.filter(item => !item.toggleKey || isPageVisible(item.toggleKey));
+  const { isPageVisible, allowedPages } = usePageVisibility();
+  const hasRestriction = allowedPages !== null;
+
+  const visibleItems = navItems.filter(item => {
+    // Hide Dashboard and Configurações for restricted users
+    if (hasRestriction && (item.url === '/' || item.url === '/configuracoes')) return false;
+    return !item.toggleKey || isPageVisible(item.toggleKey);
+  });
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
