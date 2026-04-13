@@ -33,8 +33,6 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const location = useLocation();
-  const { isPageVisible } = usePageVisibility();
-
   const { isPageVisible, allowedPages } = usePageVisibility();
   const hasRestriction = allowedPages !== null;
 
