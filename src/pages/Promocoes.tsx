@@ -22,7 +22,7 @@ import { cn } from '@/lib/utils';
 
 type StatusFilter = 'todos' | 'vendeu' | 'sem-movimento' | 'reposicao';
 type PromoFilter = 'todas' | 'ativa' | 'expirada' | 'recem-expirada';
-type PromoSortKey = 'codigo' | 'descricao' | 'dataFimPromocao' | 'precoTabela' | 'valorPromocao' | 'percentualDesconto' | 'qtdAnterior' | 'qtdAtual' | 'delta' | 'status' | 'valorEstoque';
+type PromoSortKey = 'codigo' | 'descricao' | 'dataFimPromocao' | 'precoTabela' | 'valorPromocao' | 'percentualDesconto' | 'qtdAnterior' | 'qtdAtual' | 'delta' | 'status' | 'valorEstoque' | 'dataUltimaCompra' | 'diasSemCompra';
 
 interface PromoComparison {
   produtoId: string;
@@ -804,7 +804,9 @@ export default function Promocoes() {
                   <TableHead className="px-2 text-center cursor-pointer select-none" onClick={() => toggleSort('status')}>
                     <span className="inline-flex items-center gap-1">Status <ArrowUpDown className="h-3 w-3" /></span>
                   </TableHead>
-                  <TableHead className="px-2 text-center">Últ. Compra</TableHead>
+                  <TableHead className="px-2 text-center cursor-pointer select-none" onClick={() => toggleSort('dataUltimaCompra')}>
+                    <span className="inline-flex items-center gap-1">Últ. Compra <ArrowUpDown className="h-3 w-3" /></span>
+                  </TableHead>
                   <TableHead className="px-2 text-center">Mercado</TableHead>
                   <TableHead className="px-2 text-center">Campanha</TableHead>
                 </TableRow>
