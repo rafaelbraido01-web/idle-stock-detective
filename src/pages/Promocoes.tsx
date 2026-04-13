@@ -267,7 +267,7 @@ export default function Promocoes() {
 
     result.sort((a, b) => {
       let va: any, vb: any;
-      if (sortKey === 'codigo' || sortKey === 'descricao' || sortKey === 'status') {
+      if (sortKey === 'codigo' || sortKey === 'descricao' || sortKey === 'status' || sortKey === 'dataUltimaCompra') {
         va = a[sortKey] || '';
         vb = b[sortKey] || '';
       } else if (sortKey === 'dataFimPromocao') {
