@@ -120,6 +120,15 @@ export default function PrecoMercado() {
     }>;
   }, [latestSnapshots, produtos]);
 
+  // Helper: returns effective price considering active promotions
+  const getEffectivePrice = useCallback((snap: typeof latestSnapshots[0]) => {
+    const today = new Date(new Date().toDateString());
+    if (snap.valor_promocao && snap.data_fim_promocao && parseLocalDate(snap.data_fim_promocao) >= today) {
+      return snap.valor_promocao;
+    }
+    return snap.preco_tabela;
+  }, []);
+
   // Compute price category per product for chart filtering
   const priceCategories = useMemo(() => {
     const pricesByProduct: Record<string, number[]> = {};
@@ -134,12 +143,12 @@ export default function PrecoMercado() {
       const validPrices = prices.filter(pr => pr > 10);
       if (validPrices.length === 0) continue;
       const minPrice = Math.min(...validPrices);
-      const efetivo = p.snap.valor_promocao || p.snap.preco_tabela;
+      const efetivo = getEffectivePrice(p.snap);
       const diff = ((efetivo - minPrice) / minPrice) * 100;
       categories[p.codigo] = diff < -5 ? 'much_cheaper' : diff < 0 ? 'cheaper' : diff <= 5 ? 'more_expensive' : 'much_expensive';
     }
     return categories;
-  }, [allMarketPricesForAnalytics, productsWithSnapshot]);
+  }, [allMarketPricesForAnalytics, productsWithSnapshot, getEffectivePrice]);
 
   const filtered = useMemo(() => {
     let items = productsWithSnapshot;
@@ -171,10 +180,10 @@ export default function PrecoMercado() {
   const getDiff = useCallback((product: typeof productsWithSnapshot[0]) => {
     const mp = marketPrices[product.codigo];
     if (!mp) return null;
-    const tabela = product.snap.preco_tabela;
-    if (tabela === 0) return null;
-    return ((mp.preco - tabela) / tabela) * 100;
-  }, [marketPrices]);
+    const efetivo = getEffectivePrice(product.snap);
+    if (efetivo === 0 || mp.preco === 0) return null;
+    return ((efetivo - mp.preco) / mp.preco) * 100;
+  }, [marketPrices, getEffectivePrice]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
@@ -488,8 +497,8 @@ export default function PrecoMercado() {
                   }
 
                   return productPrices.map((mp, mpIdx) => {
-                    const tabela = p.snap.preco_tabela;
-                    const rowDiff = tabela > 0 ? ((mp.preco - tabela) / tabela) * 100 : null;
+                    const efetivo = getEffectivePrice(p.snap);
+                    const rowDiff = efetivo > 0 && mp.preco > 0 ? ((efetivo - mp.preco) / mp.preco) * 100 : null;
                     const isFirst = mpIdx === 0;
 
                     return (
