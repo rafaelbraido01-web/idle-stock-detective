@@ -1,28 +1,25 @@
 
 
-## Plano: Adicionar campos Obs, Link e "Outro local" no popup de Preço de Mercado
+## Plano: Corrigir cálculo da coluna "Dif %" na página Preço de Mercado
 
-### O que muda
+### Problema atual
+A coluna "Dif %" sempre calcula `(preço_mercado - preço_tabela) / preço_tabela`, ignorando se o produto tem promoção ativa.
 
-**1. Banco de dados** — Adicionar 3 colunas na tabela `precos_mercado`:
-- `observacao` (text, nullable)
-- `link` (text, nullable)
-- `fonte_outro` (text, nullable) — para guardar o nome quando a fonte é "Outro"
+### Lógica correta
+- **Se promoção ativa** (`data_fim_promocao` >= hoje E `valor_promocao` preenchido): `Dif = ((nosso_preco_promocao - preco_mercado) / preco_mercado) * 100`
+- **Caso contrário**: `Dif = ((nosso_preco_tabela - preco_mercado) / preco_mercado) * 100`
 
-**2. Frontend (src/pages/Promocoes.tsx)**
+### Alterações em `src/pages/PrecoMercado.tsx`
 
-- Adicionar 3 novos estados: `mercadoObs`, `mercadoLink`, `mercadoFonteOutro`
-- No `handleOpenMercado`: carregar valores existentes (se houver) para os novos campos
-- No dialog, após o campo de preço:
-  - Campo **Link** (Input, tipo url, placeholder "https://...")
-  - Campo **Obs** (Textarea, placeholder "Observação...")
-  - Quando fonte = "Outro": campo **Local** (Input, placeholder "Nome do local")
-- No `handleSaveMercado`: incluir `observacao`, `link` e `fonte_outro` no insert
-- No bloco de "Preço de mercado atual": exibir obs, link e fonte_outro quando preenchidos
+1. **Criar função auxiliar** `getEffectivePrice(snap)` que retorna `valor_promocao` se a promoção estiver ativa, senão `preco_tabela`.
 
-### Detalhes técnicos
+2. **Corrigir `priceCategories`** (linha ~137): trocar `const efetivo = p.snap.valor_promocao || p.snap.preco_tabela` pela lógica condicional com verificação de `data_fim_promocao` e calcular `diff = ((efetivo - minPrice) / minPrice) * 100`.
 
-- Migration SQL: `ALTER TABLE precos_mercado ADD COLUMN observacao text, ADD COLUMN link text, ADD COLUMN fonte_outro text;`
-- O campo "Local" só aparece condicionalmente quando `mercadoFonte === 'Outro'`
-- Interface `PrecoMercado` atualizada com os 3 novos campos opcionais
+3. **Corrigir `getDiff`** (linha ~171-177): usar `getEffectivePrice` ao invés de sempre usar `preco_tabela`, e calcular `((efetivo - mp.preco) / mp.preco) * 100`.
+
+4. **Corrigir `rowDiff`** na renderização da tabela (linha ~492): usar `getEffectivePrice` ao invés de `tabela`, e calcular `((efetivo - mp.preco) / mp.preco) * 100`.
+
+### Impacto
+- Os gráficos de pizza e barras também serão corrigidos automaticamente (usam `priceCategories`)
+- A ordenação pela coluna Dif % continuará funcionando (usa `getDiff`)
 
