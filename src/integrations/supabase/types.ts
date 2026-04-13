@@ -226,6 +226,24 @@ export type Database = {
         }
         Relationships: []
       }
+      user_allowed_pages: {
+        Row: {
+          allowed_pages: string[]
+          id: string
+          user_id: string
+        }
+        Insert: {
+          allowed_pages: string[]
+          id?: string
+          user_id: string
+        }
+        Update: {
+          allowed_pages?: string[]
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
