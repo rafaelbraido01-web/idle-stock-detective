@@ -312,7 +312,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useInventory() {
+export function useInventory(): InventoryContextType {
   const ctx = useContext(InventoryContext);
   if (!ctx) throw new Error('useInventory must be used within InventoryProvider');
   return ctx;
