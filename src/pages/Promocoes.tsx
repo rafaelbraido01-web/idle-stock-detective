@@ -210,6 +210,7 @@ export default function Promocoes() {
         precoTabela: item.preco_tabela,
         valorPromocao: item.valor_promocao ?? item.preco_tabela,
         percentualDesconto: item.percentual_desconto ?? 0,
+        precoAtacado: item.preco_atacado ?? 0,
         qtdAnterior,
         qtdAtual,
         delta,
