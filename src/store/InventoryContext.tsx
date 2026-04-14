@@ -103,6 +103,11 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
         preco_internet: Number(ps.preco_internet) || 0,
         preco_marketplace: Number(ps.preco_marketplace) || 0,
         margem: ps.margem != null ? Number(ps.margem) : null,
+        preco_filial_sp: Number(ps.preco_filial_sp) || 0,
+        preco_filial_sc: Number(ps.preco_filial_sc) || 0,
+        preco_software_by_maringa: Number(ps.preco_software_by_maringa) || 0,
+        preco_corporativo: Number(ps.preco_corporativo) || 0,
+        preco_maff: Number(ps.preco_maff) || 0,
       }));
 
       setState({ produtos, snapshots, produtoSnapshots, loading: false });

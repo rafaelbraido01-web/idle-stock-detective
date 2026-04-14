@@ -152,7 +152,10 @@ serve(async (req) => {
       const dataUltimaCompra = sanitizeDate(row.ult_compra || row.data_ultima_compra);
       const diasSemVenda = calcDias(dataUltimaVenda, dataExecucao);
       const diasSemCompra = row.dias_sem_compra != null ? Number(row.dias_sem_compra) : calcDias(dataUltimaCompra, dataExecucao);
-      const precoTabela = Number(row.preco_venda || row.preco_tabela || 0);
+      const precoVendaRaw = Number(row.preco_venda || row.preco_tabela || 0);
+      const precoAtacado = Number(row.preco_atacado || 0);
+      // Fallback: when preco_venda is 0, use first available price > 0
+      const precoTabela = precoVendaRaw > 0 ? precoVendaRaw : (precoAtacado > 0 ? precoAtacado : Number(row.preco_padrao || row.preco_internet || row.preco_marketplace || 0));
       const promoRaw = Number(row.promocao || row.valor_promocao || 0);
       const valorPromocao = promoRaw > 0 ? promoRaw : null;
       const dataFimPromocao = sanitizeDate(row.valid_prom || row.data_fim_promocao);
@@ -183,10 +186,15 @@ serve(async (req) => {
         data_fim_promocao: dataFimPromocao,
         valor_venda_total: 0,
         preco_padrao: Number(row.preco_padrao || 0),
-        preco_atacado: Number(row.preco_atacado || 0),
+        preco_atacado: precoAtacado,
         preco_internet: Number(row.preco_internet || 0),
         preco_marketplace: Number(row.preco_marketplace || 0),
         margem: row.margem != null ? Number(row.margem) : null,
+        preco_filial_sp: Number(row.preco_filial_sp || 0),
+        preco_filial_sc: Number(row.preco_filial_sc || 0),
+        preco_software_by_maringa: Number(row.preco_software_by_maringa || row.preco_maringa || 0),
+        preco_corporativo: Number(row.preco_corporativo || 0),
+        preco_maff: Number(row.preco_maff || 0),
       });
     }
 

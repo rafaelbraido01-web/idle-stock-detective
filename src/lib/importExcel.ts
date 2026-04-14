@@ -381,6 +381,11 @@ export function processExcelFile(file: File, existingProdutos: Produto[], refere
             preco_internet: 0,
             preco_marketplace: 0,
             margem: null,
+            preco_filial_sp: 0,
+            preco_filial_sc: 0,
+            preco_software_by_maringa: 0,
+            preco_corporativo: 0,
+            preco_maff: 0,
           });
         }
 
