@@ -281,6 +281,8 @@ export function processExcelFile(file: File, existingProdutos: Produto[], refere
               marca: String(row[colMarca] || '').trim(),
               estoque_minimo: estoqueMinimo,
               data_criacao: now.toISOString(),
+              sku_mktplace: '',
+              no_mktplace: 'N',
             };
             produtos.push(produto);
             existingMap.set(codigo, produto);
@@ -374,6 +376,11 @@ export function processExcelFile(file: File, existingProdutos: Produto[], refere
             percentual_desconto: percentualDesconto,
             data_fim_promocao: agg.dataFimPromocao,
             valor_venda_total: agg.valorVendaTotal,
+            preco_padrao: 0,
+            preco_atacado: 0,
+            preco_internet: 0,
+            preco_marketplace: 0,
+            margem: null,
           });
         }
 
