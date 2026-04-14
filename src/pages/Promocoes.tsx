@@ -22,7 +22,7 @@ import { cn } from '@/lib/utils';
 
 type StatusFilter = 'todos' | 'vendeu' | 'sem-movimento' | 'reposicao';
 type PromoFilter = 'todas' | 'ativa' | 'expirada' | 'recem-expirada';
-type PromoSortKey = 'codigo' | 'descricao' | 'dataFimPromocao' | 'precoTabela' | 'valorPromocao' | 'percentualDesconto' | 'qtdAnterior' | 'qtdAtual' | 'delta' | 'status' | 'valorEstoque' | 'dataUltimaCompra' | 'diasSemCompra';
+type PromoSortKey = 'codigo' | 'descricao' | 'dataFimPromocao' | 'precoTabela' | 'valorPromocao' | 'percentualDesconto' | 'qtdAnterior' | 'qtdAtual' | 'delta' | 'status' | 'valorEstoque' | 'dataUltimaCompra' | 'diasSemCompra' | 'precoAtacado';
 
 interface PromoComparison {
   produtoId: string;
@@ -32,6 +32,7 @@ interface PromoComparison {
   precoTabela: number;
   valorPromocao: number;
   percentualDesconto: number;
+  precoAtacado: number;
   qtdAnterior: number;
   qtdAtual: number;
   delta: number;
