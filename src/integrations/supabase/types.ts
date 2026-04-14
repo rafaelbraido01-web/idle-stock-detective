@@ -58,9 +58,14 @@ export type Database = {
           nome_comissao: string
           percentual_desconto: number | null
           preco_atacado: number | null
+          preco_corporativo: number | null
+          preco_filial_sc: number | null
+          preco_filial_sp: number | null
           preco_internet: number | null
+          preco_maff: number | null
           preco_marketplace: number | null
           preco_padrao: number | null
+          preco_software_by_maringa: number | null
           preco_tabela: number
           produto_id: string
           quantidade: number
@@ -83,9 +88,14 @@ export type Database = {
           nome_comissao?: string
           percentual_desconto?: number | null
           preco_atacado?: number | null
+          preco_corporativo?: number | null
+          preco_filial_sc?: number | null
+          preco_filial_sp?: number | null
           preco_internet?: number | null
+          preco_maff?: number | null
           preco_marketplace?: number | null
           preco_padrao?: number | null
+          preco_software_by_maringa?: number | null
           preco_tabela?: number
           produto_id: string
           quantidade?: number
@@ -108,9 +118,14 @@ export type Database = {
           nome_comissao?: string
           percentual_desconto?: number | null
           preco_atacado?: number | null
+          preco_corporativo?: number | null
+          preco_filial_sc?: number | null
+          preco_filial_sp?: number | null
           preco_internet?: number | null
+          preco_maff?: number | null
           preco_marketplace?: number | null
           preco_padrao?: number | null
+          preco_software_by_maringa?: number | null
           preco_tabela?: number
           produto_id?: string
           quantidade?: number

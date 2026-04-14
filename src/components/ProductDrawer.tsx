@@ -110,7 +110,7 @@ export function ProductDrawer({ produtoId, onClose }: ProductDrawerProps) {
                 </div>
               )}
               {/* Additional prices */}
-              {(latestSnap.preco_atacado > 0 || latestSnap.preco_internet > 0 || latestSnap.preco_marketplace > 0 || latestSnap.preco_padrao > 0) && (
+              {(latestSnap.preco_atacado > 0 || latestSnap.preco_internet > 0 || latestSnap.preco_marketplace > 0 || latestSnap.preco_padrao > 0 || latestSnap.preco_filial_sp > 0 || latestSnap.preco_filial_sc > 0 || latestSnap.preco_software_by_maringa > 0 || latestSnap.preco_corporativo > 0 || latestSnap.preco_maff > 0) && (
                 <div className="col-span-2 bg-muted/50 rounded-lg p-3">
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-2">Outros Preços</p>
                   <div className="grid grid-cols-2 gap-2">
@@ -125,6 +125,21 @@ export function ProductDrawer({ produtoId, onClose }: ProductDrawerProps) {
                     )}
                     {latestSnap.preco_marketplace > 0 && (
                       <div><span className="text-[10px] text-muted-foreground">Marketplace:</span> <span className="text-sm font-mono">{formatCurrency(latestSnap.preco_marketplace)}</span></div>
+                    )}
+                    {latestSnap.preco_filial_sp > 0 && (
+                      <div><span className="text-[10px] text-muted-foreground">Filial SP:</span> <span className="text-sm font-mono">{formatCurrency(latestSnap.preco_filial_sp)}</span></div>
+                    )}
+                    {latestSnap.preco_filial_sc > 0 && (
+                      <div><span className="text-[10px] text-muted-foreground">Filial SC:</span> <span className="text-sm font-mono">{formatCurrency(latestSnap.preco_filial_sc)}</span></div>
+                    )}
+                    {latestSnap.preco_software_by_maringa > 0 && (
+                      <div><span className="text-[10px] text-muted-foreground">Software by Maringá:</span> <span className="text-sm font-mono">{formatCurrency(latestSnap.preco_software_by_maringa)}</span></div>
+                    )}
+                    {latestSnap.preco_corporativo > 0 && (
+                      <div><span className="text-[10px] text-muted-foreground">Corporativo:</span> <span className="text-sm font-mono">{formatCurrency(latestSnap.preco_corporativo)}</span></div>
+                    )}
+                    {latestSnap.preco_maff > 0 && (
+                      <div><span className="text-[10px] text-muted-foreground">MAFF:</span> <span className="text-sm font-mono">{formatCurrency(latestSnap.preco_maff)}</span></div>
                     )}
                   </div>
                 </div>

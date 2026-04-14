@@ -45,6 +45,11 @@ export interface EstoqueProdutoSnapshot {
   preco_internet: number;
   preco_marketplace: number;
   margem: number | null;
+  preco_filial_sp: number;
+  preco_filial_sc: number;
+  preco_software_by_maringa: number;
+  preco_corporativo: number;
+  preco_maff: number;
 }
 
 export type CategoriaEstoque = '0-90' | '90-180' | '180-270' | '270-365' | '365+' | 'sem-registro';
