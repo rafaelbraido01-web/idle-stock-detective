@@ -109,6 +109,26 @@ export function ProductDrawer({ produtoId, onClose }: ProductDrawerProps) {
                   <p className="text-sm font-mono text-muted-foreground">Sem promoção</p>
                 </div>
               )}
+              {/* Additional prices */}
+              {(latestSnap.preco_atacado > 0 || latestSnap.preco_internet > 0 || latestSnap.preco_marketplace > 0 || latestSnap.preco_padrao > 0) && (
+                <div className="col-span-2 bg-muted/50 rounded-lg p-3">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-2">Outros Preços</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {latestSnap.preco_padrao > 0 && (
+                      <div><span className="text-[10px] text-muted-foreground">Padrão:</span> <span className="text-sm font-mono">{formatCurrency(latestSnap.preco_padrao)}</span></div>
+                    )}
+                    {latestSnap.preco_atacado > 0 && (
+                      <div><span className="text-[10px] text-muted-foreground">Atacado:</span> <span className="text-sm font-mono">{formatCurrency(latestSnap.preco_atacado)}</span></div>
+                    )}
+                    {latestSnap.preco_internet > 0 && (
+                      <div><span className="text-[10px] text-muted-foreground">Internet:</span> <span className="text-sm font-mono">{formatCurrency(latestSnap.preco_internet)}</span></div>
+                    )}
+                    {latestSnap.preco_marketplace > 0 && (
+                      <div><span className="text-[10px] text-muted-foreground">Marketplace:</span> <span className="text-sm font-mono">{formatCurrency(latestSnap.preco_marketplace)}</span></div>
+                    )}
+                  </div>
+                </div>
+              )}
               <div className="bg-muted/50 rounded-lg p-3">
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Valor em Estoque</p>
                 <p className="text-lg font-mono font-semibold">{formatCurrency(latestSnap.valor_total)}</p>

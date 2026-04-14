@@ -7,6 +7,8 @@ export interface Produto {
   marca: string;
   estoque_minimo: number;
   data_criacao: string;
+  sku_mktplace: string;
+  no_mktplace: string;
 }
 
 export interface EstoqueSnapshot {
@@ -38,6 +40,11 @@ export interface EstoqueProdutoSnapshot {
   percentual_desconto: number | null;
   data_fim_promocao: string | null;
   valor_venda_total: number;
+  preco_padrao: number;
+  preco_atacado: number;
+  preco_internet: number;
+  preco_marketplace: number;
+  margem: number | null;
 }
 
 export type CategoriaEstoque = '0-90' | '90-180' | '180-270' | '270-365' | '365+' | 'sem-registro';

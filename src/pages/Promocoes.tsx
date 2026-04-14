@@ -22,7 +22,7 @@ import { cn } from '@/lib/utils';
 
 type StatusFilter = 'todos' | 'vendeu' | 'sem-movimento' | 'reposicao';
 type PromoFilter = 'todas' | 'ativa' | 'expirada' | 'recem-expirada';
-type PromoSortKey = 'codigo' | 'descricao' | 'dataFimPromocao' | 'precoTabela' | 'valorPromocao' | 'percentualDesconto' | 'qtdAnterior' | 'qtdAtual' | 'delta' | 'status' | 'valorEstoque' | 'dataUltimaCompra' | 'diasSemCompra';
+type PromoSortKey = 'codigo' | 'descricao' | 'dataFimPromocao' | 'precoTabela' | 'valorPromocao' | 'percentualDesconto' | 'qtdAnterior' | 'qtdAtual' | 'delta' | 'status' | 'valorEstoque' | 'dataUltimaCompra' | 'diasSemCompra' | 'precoAtacado';
 
 interface PromoComparison {
   produtoId: string;
@@ -32,6 +32,7 @@ interface PromoComparison {
   precoTabela: number;
   valorPromocao: number;
   percentualDesconto: number;
+  precoAtacado: number;
   qtdAnterior: number;
   qtdAtual: number;
   delta: number;
@@ -209,6 +210,7 @@ export default function Promocoes() {
         precoTabela: item.preco_tabela,
         valorPromocao: item.valor_promocao ?? item.preco_tabela,
         percentualDesconto: item.percentual_desconto ?? 0,
+        precoAtacado: item.preco_atacado ?? 0,
         qtdAnterior,
         qtdAtual,
         delta,
@@ -789,6 +791,9 @@ export default function Promocoes() {
                   <TableHead className="px-2 text-center cursor-pointer select-none" onClick={() => toggleSort('percentualDesconto')}>
                     <span className="inline-flex items-center gap-1">Desconto <ArrowUpDown className="h-3 w-3" /></span>
                   </TableHead>
+                  <TableHead className="px-2 text-right cursor-pointer select-none" onClick={() => toggleSort('precoAtacado')}>
+                    <span className="inline-flex items-center gap-1 justify-end">Atacado <ArrowUpDown className="h-3 w-3" /></span>
+                  </TableHead>
                   <TableHead className="px-2 text-right cursor-pointer select-none" onClick={() => toggleSort('qtdAnterior')}>
                     <span className="inline-flex items-center gap-1 justify-end">Qtd Anterior <ArrowUpDown className="h-3 w-3" /></span>
                   </TableHead>
@@ -850,6 +855,9 @@ export default function Promocoes() {
                             -{item.percentualDesconto.toFixed(0)}%
                           </Badge>
                         )}
+                      </TableCell>
+                      <TableCell className="px-2 py-1.5 text-right tabular-nums text-muted-foreground">
+                        {item.precoAtacado > 0 ? formatCurrency(item.precoAtacado) : '—'}
                       </TableCell>
                       <TableCell className="px-2 py-1.5 text-right tabular-nums">{formatNumber(item.qtdAnterior)}</TableCell>
                       <TableCell className={`px-2 py-1.5 text-right tabular-nums font-medium ${item.qtdAtual >= 100 ? 'text-amber-600 dark:text-amber-400' : ''}`}>

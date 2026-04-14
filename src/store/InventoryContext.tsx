@@ -65,6 +65,8 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
         marca: p.marca,
         estoque_minimo: Number(p.estoque_minimo) || 0,
         data_criacao: p.data_criacao,
+        sku_mktplace: p.sku_mktplace || '',
+        no_mktplace: p.no_mktplace || 'N',
       }));
 
       const snapshots: EstoqueSnapshot[] = (snapData).map((s: any) => ({
@@ -96,6 +98,11 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
         percentual_desconto: ps.percentual_desconto != null ? Number(ps.percentual_desconto) : null,
         data_fim_promocao: ps.data_fim_promocao,
         valor_venda_total: Number(ps.valor_venda_total),
+        preco_padrao: Number(ps.preco_padrao) || 0,
+        preco_atacado: Number(ps.preco_atacado) || 0,
+        preco_internet: Number(ps.preco_internet) || 0,
+        preco_marketplace: Number(ps.preco_marketplace) || 0,
+        margem: ps.margem != null ? Number(ps.margem) : null,
       }));
 
       setState({ produtos, snapshots, produtoSnapshots, loading: false });

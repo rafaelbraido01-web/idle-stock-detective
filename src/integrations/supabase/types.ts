@@ -54,8 +54,13 @@ export type Database = {
           dias_sem_compra: number
           dias_sem_venda: number
           id: string
+          margem: number | null
           nome_comissao: string
           percentual_desconto: number | null
+          preco_atacado: number | null
+          preco_internet: number | null
+          preco_marketplace: number | null
+          preco_padrao: number | null
           preco_tabela: number
           produto_id: string
           quantidade: number
@@ -74,8 +79,13 @@ export type Database = {
           dias_sem_compra?: number
           dias_sem_venda?: number
           id?: string
+          margem?: number | null
           nome_comissao?: string
           percentual_desconto?: number | null
+          preco_atacado?: number | null
+          preco_internet?: number | null
+          preco_marketplace?: number | null
+          preco_padrao?: number | null
           preco_tabela?: number
           produto_id: string
           quantidade?: number
@@ -94,8 +104,13 @@ export type Database = {
           dias_sem_compra?: number
           dias_sem_venda?: number
           id?: string
+          margem?: number | null
           nome_comissao?: string
           percentual_desconto?: number | null
+          preco_atacado?: number | null
+          preco_internet?: number | null
+          preco_marketplace?: number | null
+          preco_padrao?: number | null
           preco_tabela?: number
           produto_id?: string
           quantidade?: number
@@ -202,6 +217,8 @@ export type Database = {
           grupo: string
           id: string
           marca: string
+          no_mktplace: string | null
+          sku_mktplace: string | null
           subgrupo: string
         }
         Insert: {
@@ -212,6 +229,8 @@ export type Database = {
           grupo?: string
           id?: string
           marca?: string
+          no_mktplace?: string | null
+          sku_mktplace?: string | null
           subgrupo?: string
         }
         Update: {
@@ -222,6 +241,8 @@ export type Database = {
           grupo?: string
           id?: string
           marca?: string
+          no_mktplace?: string | null
+          sku_mktplace?: string | null
           subgrupo?: string
         }
         Relationships: []

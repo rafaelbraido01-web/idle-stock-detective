@@ -109,6 +109,8 @@ serve(async (req) => {
           subgrupo: String(row.subgrupo || "").trim(),
           marca: String(row.marca || row.brand || "").trim(),
           estoque_minimo: 0,
+          sku_mktplace: String(row.sku_mktplace || "").trim(),
+          no_mktplace: String(row.no_mktplace || "N").trim(),
         });
       }
     }
@@ -180,6 +182,11 @@ serve(async (req) => {
         percentual_desconto: percentualDesconto,
         data_fim_promocao: dataFimPromocao,
         valor_venda_total: 0,
+        preco_padrao: Number(row.preco_padrao || 0),
+        preco_atacado: Number(row.preco_atacado || 0),
+        preco_internet: Number(row.preco_internet || 0),
+        preco_marketplace: Number(row.preco_marketplace || 0),
+        margem: row.margem != null ? Number(row.margem) : null,
       });
     }
 
