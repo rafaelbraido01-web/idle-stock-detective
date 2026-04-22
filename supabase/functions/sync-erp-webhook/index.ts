@@ -115,7 +115,50 @@ serve(async (req) => {
       }
     }
 
+    // 1b. Fetch known brands from DB to auto-fill empty marca from description
+    const knownBrands: string[] = [];
+    let brandFrom = 0;
+    let brandMore = true;
+    while (brandMore) {
+      const { data: bData } = await supabase
+        .from("produtos")
+        .select("marca")
+        .neq("marca", "")
+        .range(brandFrom, brandFrom + 999);
+      const br = bData || [];
+      for (const b of br) {
+        if (b.marca && !knownBrands.includes(b.marca)) knownBrands.push(b.marca);
+      }
+      brandMore = br.length === 1000;
+      brandFrom += 1000;
+    }
+    // Sort by length descending so longer brand names match first (e.g. "WESTERN DIGITAL" before "DIGITAL")
+    knownBrands.sort((a, b) => b.length - a.length);
+
+    // Auto-fill marca when empty by searching the description for known brands
     const produtoRows = Array.from(produtosMap.values());
+    let marcasPreenchidas = 0;
+    for (const p of produtoRows) {
+      if (!p.marca) {
+        const descUpper = p.descricao.toUpperCase();
+        for (const brand of knownBrands) {
+          // Match as a whole word using word boundary check
+          const brandUpper = brand.toUpperCase();
+          const idx = descUpper.indexOf(brandUpper);
+          if (idx !== -1) {
+            const before = idx === 0 ? " " : descUpper[idx - 1];
+            const after = idx + brandUpper.length >= descUpper.length ? " " : descUpper[idx + brandUpper.length];
+            if (/[\s\-\/\(]/.test(before) && /[\s\-\/\)]/.test(after) || idx === 0 && /[\s\-\/\)]/.test(after)) {
+              p.marca = brand;
+              marcasPreenchidas++;
+              break;
+            }
+          }
+        }
+      }
+    }
+    console.log(`Auto-fill marca: ${marcasPreenchidas} produtos preenchidos de ${produtoRows.filter(p => !p.marca).length + marcasPreenchidas} sem marca`);
+
     for (let i = 0; i < produtoRows.length; i += 500) {
       const batch = produtoRows.slice(i, i + 500);
       const { error } = await supabase.from("produtos").upsert(batch, { onConflict: "codigo" });
