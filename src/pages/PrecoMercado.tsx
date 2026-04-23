@@ -400,8 +400,8 @@ export default function PrecoMercado() {
             activeFilter={chartFilter}
             onFilterChange={setChartFilter}
           />
-          <div className="flex items-center gap-4 max-w-lg">
-            <div className="relative flex-1">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="relative flex-1 min-w-[200px] max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar por descrição, código ou marca..."
@@ -410,6 +410,15 @@ export default function PrecoMercado() {
                 className="pl-10"
               />
             </div>
+            <Select value={marcaFilter} onValueChange={v => setMarcaFilter(v)}>
+              <SelectTrigger className="w-[170px]"><SelectValue placeholder="Marca" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas marcas</SelectItem>
+                {marcasUnicas.map(m => (
+                  <SelectItem key={m} value={m}>{m}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <div className="flex items-center gap-2">
               <Checkbox
                 id="promo-filter"
