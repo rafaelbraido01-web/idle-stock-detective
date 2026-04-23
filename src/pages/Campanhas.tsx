@@ -75,8 +75,10 @@ export default function Campanhas() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('todas');
+  const [marcaFilter, setMarcaFilter] = useState('todas');
   const [sortKey, setSortKey] = useState<SortKey>('data_fim');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [produtoMarcaMap, setProdutoMarcaMap] = useState<Map<string, string>>(new Map());
 
   // Single campaign dialog
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -126,6 +128,25 @@ export default function Campanhas() {
   };
 
   useEffect(() => { loadCampanhas(); }, []);
+
+  // Load produtos for marca filter
+  useEffect(() => {
+    const loadProdutos = async () => {
+      const { data } = await supabase.from('produtos').select('codigo, marca');
+      if (data) {
+        const map = new Map<string, string>();
+        data.forEach((p: any) => { if (p.marca) map.set(p.codigo, p.marca); });
+        setProdutoMarcaMap(map);
+      }
+    };
+    loadProdutos();
+  }, []);
+
+  const marcasUnicas = useMemo(() => {
+    const set = new Set<string>();
+    produtoMarcaMap.forEach(m => { if (m) set.add(m); });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [produtoMarcaMap]);
 
   const enriched = useMemo(() => {
     return campanhas.map(c => ({
