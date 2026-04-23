@@ -183,6 +183,12 @@ export default function Campanhas() {
       result = result.filter(g => g.status === statusFilter);
     }
 
+    if (marcaFilter !== 'todas') {
+      result = result.filter(g =>
+        g.produtos.some(p => produtoMarcaMap.get(p.produto_id) === marcaFilter)
+      );
+    }
+
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
       result = result.filter(g =>
@@ -210,7 +216,7 @@ export default function Campanhas() {
     });
 
     return result;
-  }, [grouped, statusFilter, searchTerm, sortKey, sortDir]);
+  }, [grouped, statusFilter, marcaFilter, searchTerm, sortKey, sortDir, produtoMarcaMap]);
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = useMemo(() => filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE), [filtered, page]);
