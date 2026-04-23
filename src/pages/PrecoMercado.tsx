@@ -55,6 +55,7 @@ export default function PrecoMercado() {
   const { toast } = useToast();
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [marcaFilter, setMarcaFilter] = useState('todas');
   const [onlyActivePromo, setOnlyActivePromo] = useState(false);
   const [showAutoSearch, setShowAutoSearch] = useState(false);
   const [loadingProducts, setLoadingProducts] = useState<Record<string, boolean>>({});
@@ -120,6 +121,12 @@ export default function PrecoMercado() {
     }>;
   }, [latestSnapshots, produtos]);
 
+  const marcasUnicas = useMemo(() => {
+    const set = new Set<string>();
+    productsWithSnapshot.forEach(p => { if (p.marca) set.add(p.marca); });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [productsWithSnapshot]);
+
   // Helper: returns effective price considering active promotions
   const getEffectivePrice = useCallback((snap: typeof latestSnapshots[0]) => {
     const today = new Date(new Date().toDateString());
@@ -152,6 +159,9 @@ export default function PrecoMercado() {
 
   const filtered = useMemo(() => {
     let items = productsWithSnapshot;
+    if (marcaFilter !== 'todas') {
+      items = items.filter(p => p.marca === marcaFilter);
+    }
     if (onlyActivePromo) {
       items = items.filter(p =>
         p.snap.data_fim_promocao &&
@@ -175,7 +185,7 @@ export default function PrecoMercado() {
       }
     }
     return items;
-  }, [productsWithSnapshot, searchTerm, onlyActivePromo, chartFilter, priceCategories]);
+  }, [productsWithSnapshot, searchTerm, marcaFilter, onlyActivePromo, chartFilter, priceCategories]);
 
   const getDiff = useCallback((product: typeof productsWithSnapshot[0]) => {
     const mp = marketPrices[product.codigo];
