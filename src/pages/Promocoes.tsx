@@ -96,6 +96,7 @@ export default function Promocoes() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('todos');
   const [promoFilter, setPromoFilter] = useState<PromoFilter>('todas');
   const [search, setSearch] = useState('');
+  const [marcaFilter, setMarcaFilter] = useState('todas');
   const [compraFilter, setCompraFilter] = useState('all');
   const [compraMinFilter, setCompraMinFilter] = useState<Date | undefined>();
   const [compraMaxFilter, setCompraMaxFilter] = useState<Date | undefined>();
@@ -227,6 +228,11 @@ export default function Promocoes() {
 
   const produtoMap = useMemo(() => new Map(produtos.map(p => [p.id, p])), [produtos]);
 
+  const marcasUnicas = useMemo(() => {
+    const set = new Set<string>();
+    produtos.forEach(p => { if (p.marca) set.add(p.marca); });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [produtos]);
 
   const filtered = useMemo(() => {
     const now = new Date();
@@ -237,6 +243,10 @@ export default function Promocoes() {
       if (search) {
         const q = search.toLowerCase();
         if (!c.codigo.toLowerCase().includes(q) && !c.descricao.toLowerCase().includes(q)) return false;
+      }
+      if (marcaFilter !== 'todas') {
+        const prod = produtoMap.get(c.produtoId);
+        if (!prod || prod.marca !== marcaFilter) return false;
       }
       if (compraFilter === 'lt90') { if (c.diasSemCompra < 0 || c.diasSemCompra >= 90) return false; }
       else if (compraFilter === '90-180') { if (c.diasSemCompra < 90 || c.diasSemCompra > 180) return false; }
@@ -287,7 +297,7 @@ export default function Promocoes() {
     });
 
     return result;
-  }, [comparisons, search, compraFilter, compraMinFilter, compraMaxFilter, statusFilter, promoFilter, validadeMinFilter, validadeMaxFilter, sortKey, sortDir, produtoMap]);
+  }, [comparisons, search, marcaFilter, compraFilter, compraMinFilter, compraMaxFilter, statusFilter, promoFilter, validadeMinFilter, validadeMaxFilter, sortKey, sortDir, produtoMap]);
 
   const kpis = useMemo(() => {
     const total = comparisons.length;
@@ -588,6 +598,15 @@ export default function Promocoes() {
               <SelectItem value="ativa">Promoção ativa</SelectItem>
               <SelectItem value="recem-expirada">Recém expirada (30d)</SelectItem>
               <SelectItem value="expirada">Promoção expirada</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={marcaFilter} onValueChange={v => { setMarcaFilter(v); setPage(0); }}>
+            <SelectTrigger className="w-[170px]"><SelectValue placeholder="Marca" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todas">Todas marcas</SelectItem>
+              {marcasUnicas.map(m => (
+                <SelectItem key={m} value={m}>{m}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Select value={compraFilter} onValueChange={v => { setCompraFilter(v); setPage(0); }}>

@@ -75,8 +75,10 @@ export default function Campanhas() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('todas');
+  const [marcaFilter, setMarcaFilter] = useState('todas');
   const [sortKey, setSortKey] = useState<SortKey>('data_fim');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [produtoMarcaMap, setProdutoMarcaMap] = useState<Map<string, string>>(new Map());
 
   // Single campaign dialog
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -127,6 +129,25 @@ export default function Campanhas() {
 
   useEffect(() => { loadCampanhas(); }, []);
 
+  // Load produtos for marca filter
+  useEffect(() => {
+    const loadProdutos = async () => {
+      const { data } = await supabase.from('produtos').select('codigo, marca');
+      if (data) {
+        const map = new Map<string, string>();
+        data.forEach((p: any) => { if (p.marca) map.set(p.codigo, p.marca); });
+        setProdutoMarcaMap(map);
+      }
+    };
+    loadProdutos();
+  }, []);
+
+  const marcasUnicas = useMemo(() => {
+    const set = new Set<string>();
+    produtoMarcaMap.forEach(m => { if (m) set.add(m); });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [produtoMarcaMap]);
+
   const enriched = useMemo(() => {
     return campanhas.map(c => ({
       ...c,
@@ -162,6 +183,12 @@ export default function Campanhas() {
       result = result.filter(g => g.status === statusFilter);
     }
 
+    if (marcaFilter !== 'todas') {
+      result = result.filter(g =>
+        g.produtos.some(p => produtoMarcaMap.get(p.produto_id) === marcaFilter)
+      );
+    }
+
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
       result = result.filter(g =>
@@ -189,7 +216,7 @@ export default function Campanhas() {
     });
 
     return result;
-  }, [grouped, statusFilter, searchTerm, sortKey, sortDir]);
+  }, [grouped, statusFilter, marcaFilter, searchTerm, sortKey, sortDir, produtoMarcaMap]);
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = useMemo(() => filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE), [filtered, page]);
@@ -356,6 +383,18 @@ export default function Campanhas() {
               <SelectItem value="ativa">Ativas</SelectItem>
               <SelectItem value="futura">Futuras</SelectItem>
               <SelectItem value="encerrada">Encerradas</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Marca</label>
+          <Select value={marcaFilter} onValueChange={v => setMarcaFilter(v)}>
+            <SelectTrigger className="w-[170px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todas">Todas</SelectItem>
+              {marcasUnicas.map(m => (
+                <SelectItem key={m} value={m}>{m}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
