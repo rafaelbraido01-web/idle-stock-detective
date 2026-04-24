@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-export type ToggleablePage = 'produtos' | 'comparacao' | 'preco-mercado' | 'importacoes' | 'promocoes' | 'campanhas';
+export type ToggleablePage = 'produtos' | 'comparacao' | 'preco-mercado' | 'importacoes' | 'promocoes' | 'campanhas' | 'alertas';
 
 const STORAGE_KEY = 'hidden-pages';
 
