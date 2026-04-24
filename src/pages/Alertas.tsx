@@ -39,9 +39,10 @@ export default function Alertas() {
   const [search, setSearch] = useState('');
   const [marcaFilter, setMarcaFilter] = useState<string[]>(config.marcasPadrao);
   const [marcaSearch, setMarcaSearch] = useState('');
-  const [tipoFilter, setTipoFilter] = useState<{ estoque: boolean; preco: boolean }>({ estoque: true, preco: true });
+  const [tipoEstoqueOnly, setTipoEstoqueOnly] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>('valor');
   const [drawerProdutoId, setDrawerProdutoId] = useState<string | null>(null);
+  const [updateTarget, setUpdateTarget] = useState<{ codigo: string; descricao: string; marca: string; precoTabela: number } | null>(null);
 
   // Sync default brands when config loads first time
   useEffect(() => {
