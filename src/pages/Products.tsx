@@ -1,12 +1,14 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowUpDown, Search, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
+import { ArrowUpDown, Search, ChevronLeft, ChevronRight, AlertTriangle, Check, X } from 'lucide-react';
 import { useInventory } from '@/store/InventoryContext';
 import { AgingBadge } from '@/components/AgingBadge';
 import { formatCurrency, formatNumber, formatDate, AGING_CATEGORIES, type CategoriaEstoque } from '@/types/inventory';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
 import { ProductDrawer } from '@/components/ProductDrawer';
 
 type SortKey = 'codigo' | 'descricao' | 'grupo' | 'marca' | 'quantidade' | 'valor_unitario' | 'preco_tabela' | 'valor_promocao' | 'valor_total' | 'valor_venda_total' | 'dias_sem_venda' | 'categoria_estoque';
