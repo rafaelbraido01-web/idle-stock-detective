@@ -324,6 +324,12 @@ export default function Alertas() {
               data={a}
               index={idx}
               onOpen={() => setDrawerProdutoId(a.produto!.id)}
+              onUpdatePrice={() => setUpdateTarget({
+                codigo: a.produto!.codigo,
+                descricao: a.produto!.descricao,
+                marca: a.produto!.marca || '',
+                precoTabela: a.ps.preco_tabela,
+              })}
               diasVerde={config.precoMercado.diasVerde}
               diasVermelho={config.precoMercado.diasVermelho}
             />
@@ -332,6 +338,20 @@ export default function Alertas() {
       )}
 
       <ProductDrawer produtoId={drawerProdutoId} onClose={() => setDrawerProdutoId(null)} />
+
+      {updateTarget && (
+        <MarketPriceUpdateDialog
+          open={!!updateTarget}
+          onOpenChange={(o) => { if (!o) setUpdateTarget(null); }}
+          produtoCodigo={updateTarget.codigo}
+          produtoDescricao={updateTarget.descricao}
+          produtoMarca={updateTarget.marca}
+          precoTabela={updateTarget.precoTabela}
+          onSaved={(codigo, preco, updatedAt) => {
+            setPrecosMap(prev => ({ ...prev, [codigo]: { preco, updated_at: updatedAt } }));
+          }}
+        />
+      )}
     </div>
   );
 }
