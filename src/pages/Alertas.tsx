@@ -444,9 +444,20 @@ function AlertaCard({
         ))}
       </div>
 
-      <Button variant="outline" size="sm" className="w-full h-8" onClick={onOpen}>
-        Ver detalhes
-      </Button>
+      <div className="grid grid-cols-2 gap-2">
+        <Button variant="outline" size="sm" className="h-8" onClick={onOpen}>
+          Ver detalhes
+        </Button>
+        <Button
+          variant="default"
+          size="sm"
+          className="h-8 gap-1.5"
+          onClick={(e) => { e.stopPropagation(); onUpdatePrice(); }}
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+          Atualizar preço
+        </Button>
+      </div>
     </motion.div>
   );
 }
