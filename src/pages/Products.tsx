@@ -224,6 +224,7 @@ export default function Products() {
                         <td className="px-4 py-2.5 font-mono text-xs text-foreground">{item.produto?.codigo}</td>
                         <td className="px-4 py-2.5 text-foreground max-w-[250px] truncate">{item.produto?.descricao}</td>
                         <td className="px-4 py-2.5 text-muted-foreground text-xs">{item.produto?.grupo}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground text-xs">{item.produto?.marca || '—'}</td>
                         <td className={`px-4 py-2.5 text-right font-mono ${isBelowMin ? 'text-destructive font-bold' : isHighQty ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-foreground'}`}>
                           {isBelowMin && <AlertTriangle className="inline h-3 w-3 mr-1" />}
                           {formatNumber(item.quantidade)}
