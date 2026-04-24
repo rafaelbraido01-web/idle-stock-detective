@@ -350,12 +350,9 @@ export default function Alertas() {
 /* ---------------------------- helpers ---------------------------- */
 
 function GlassKpi({ label, value, accent }: { label: string; value: string; accent: Severity }) {
-  const ring = accent === 'red' ? 'before:bg-aging-critical' : accent === 'amber' ? 'before:bg-aging-warning' : 'before:bg-aging-healthy';
+  const sev = accent === 'red' ? 'sev-red' : accent === 'amber' ? 'sev-amber' : 'sev-green';
   return (
-    <div className={cn(
-      'glass-card relative overflow-hidden rounded-2xl p-4',
-      'before:absolute before:left-0 before:top-0 before:h-full before:w-1', ring
-    )}>
+    <div className={cn('glass-card relative overflow-hidden rounded-2xl p-4', sev)}>
       <p className="text-xs text-muted-foreground uppercase tracking-wide">{label}</p>
       <p className="text-2xl font-bold mt-1 font-mono">{value}</p>
     </div>
