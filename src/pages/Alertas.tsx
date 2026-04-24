@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Check, ChevronDown, Copy, Search, X } from 'lucide-react';
+import { AlertTriangle, Check, ChevronDown, Copy, RefreshCw, Search, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useInventory } from '@/store/InventoryContext';
 import { useAlertasConfig } from '@/hooks/useAlertasConfig';
@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ProductDrawer } from '@/components/ProductDrawer';
+import { MarketPriceUpdateDialog } from '@/components/MarketPriceUpdateDialog';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
