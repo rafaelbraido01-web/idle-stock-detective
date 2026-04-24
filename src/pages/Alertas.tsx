@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 type Severity = 'red' | 'amber' | 'green';
-type SortKey = 'valor' | 'antigo' | 'marca';
+type SortKey = 'recente' | 'valor' | 'antigo' | 'marca' | 'preco_recente' | 'preco_antigo';
 
 interface PrecoMercadoMap {
   [produtoCodigo: string]: { preco: number; updated_at: string };
@@ -40,7 +40,7 @@ export default function Alertas() {
   const [marcaFilter, setMarcaFilter] = useState<string[]>(config.marcasPadrao);
   const [marcaSearch, setMarcaSearch] = useState('');
   const [tipoEstoqueOnly, setTipoEstoqueOnly] = useState(false);
-  const [sortKey, setSortKey] = useState<SortKey>('valor');
+  const [sortKey, setSortKey] = useState<SortKey>('recente');
   const [drawerProdutoId, setDrawerProdutoId] = useState<string | null>(null);
   const [updateTarget, setUpdateTarget] = useState<{ codigo: string; descricao: string; marca: string; precoTabela: number } | null>(null);
 
@@ -163,6 +163,24 @@ export default function Alertas() {
     arr = [...arr].sort((a, b) => {
       if (sortKey === 'valor') return b.ps.valor_total - a.ps.valor_total;
       if (sortKey === 'antigo') return b.ps.dias_sem_compra - a.ps.dias_sem_compra;
+      if (sortKey === 'recente') {
+        // Mais recentes pela última compra (data mais nova primeiro)
+        const ad = a.ps.data_ultima_compra ? parseLocalDate(a.ps.data_ultima_compra).getTime() : 0;
+        const bd = b.ps.data_ultima_compra ? parseLocalDate(b.ps.data_ultima_compra).getTime() : 0;
+        return bd - ad;
+      }
+      if (sortKey === 'preco_recente') {
+        // Preço de mercado atualizado mais recentemente primeiro (sem preço vai para o fim)
+        const ad = a.precoMercadoDias === null ? Number.POSITIVE_INFINITY : a.precoMercadoDias;
+        const bd = b.precoMercadoDias === null ? Number.POSITIVE_INFINITY : b.precoMercadoDias;
+        return ad - bd;
+      }
+      if (sortKey === 'preco_antigo') {
+        // Preço de mercado mais antigo primeiro (sem preço vai para o topo)
+        const ad = a.precoMercadoDias === null ? Number.POSITIVE_INFINITY : a.precoMercadoDias;
+        const bd = b.precoMercadoDias === null ? Number.POSITIVE_INFINITY : b.precoMercadoDias;
+        return bd - ad;
+      }
       return (a.produto!.marca || '').localeCompare(b.produto!.marca || '');
     });
 
@@ -301,10 +319,13 @@ export default function Alertas() {
 
         {/* Ordenação */}
         <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
-          <SelectTrigger className="h-9 w-[170px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="h-9 w-[210px]"><SelectValue /></SelectTrigger>
           <SelectContent>
+            <SelectItem value="recente">Mais recentes (última compra)</SelectItem>
+            <SelectItem value="antigo">Mais antigos (sem compra)</SelectItem>
             <SelectItem value="valor">Maior valor</SelectItem>
-            <SelectItem value="antigo">Mais antigo</SelectItem>
+            <SelectItem value="preco_recente">Preço atualizado recente</SelectItem>
+            <SelectItem value="preco_antigo">Preço mais desatualizado</SelectItem>
             <SelectItem value="marca">Marca (A-Z)</SelectItem>
           </SelectContent>
         </Select>
