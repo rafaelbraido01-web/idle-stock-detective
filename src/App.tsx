@@ -13,6 +13,7 @@ import Comparacao from "./pages/Comparacao";
 import Promocoes from "./pages/Promocoes";
 import PrecoMercado from "./pages/PrecoMercado";
 import Campanhas from "./pages/Campanhas";
+import Alertas from "./pages/Alertas";
 import Configuracoes from "./pages/Configuracoes";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
@@ -27,6 +28,7 @@ function GuardedRoute({ page, children }: { page: ToggleablePage; children: Reac
     const routeMap: Record<string, string> = {
       'produtos': '/produtos', 'importacoes': '/importacoes', 'comparacao': '/comparacao',
       'promocoes': '/promocoes', 'campanhas': '/campanhas', 'preco-mercado': '/preco-mercado',
+      'alertas': '/alertas',
     };
     return <Navigate to={routeMap[firstAllowed] || '/'} replace />;
   }
@@ -52,6 +54,7 @@ const AppRoutes = () => {
         <Route path="/promocoes" element={<GuardedRoute page="promocoes"><Promocoes /></GuardedRoute>} />
         <Route path="/campanhas" element={<GuardedRoute page="campanhas"><Campanhas /></GuardedRoute>} />
         <Route path="/preco-mercado" element={<GuardedRoute page="preco-mercado"><PrecoMercado /></GuardedRoute>} />
+        <Route path="/alertas" element={<GuardedRoute page="alertas"><Alertas /></GuardedRoute>} />
         <Route path="/configuracoes" element={hasRestriction ? <Navigate to="/" replace /> : <Configuracoes />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

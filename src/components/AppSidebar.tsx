@@ -1,4 +1,4 @@
-import { BarChart3, Box, DollarSign, FileSpreadsheet, GitCompareArrows, LayoutDashboard, LogOut, Megaphone, Settings, Tag } from 'lucide-react';
+import { AlertTriangle, BarChart3, Box, DollarSign, FileSpreadsheet, GitCompareArrows, LayoutDashboard, LogOut, Megaphone, Settings, Tag } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import { usePageVisibility, type ToggleablePage } from '@/store/PageVisibilityContext';
@@ -20,6 +20,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 
 const navItems: Array<{ title: string; url: string; icon: any; toggleKey?: ToggleablePage }> = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
+  { title: 'Alertas', url: '/alertas', icon: AlertTriangle, toggleKey: 'alertas' },
   { title: 'Produtos', url: '/produtos', icon: Box, toggleKey: 'produtos' },
   { title: 'Importações', url: '/importacoes', icon: FileSpreadsheet, toggleKey: 'importacoes' },
   { title: 'Comparação', url: '/comparacao', icon: GitCompareArrows, toggleKey: 'comparacao' },
