@@ -319,10 +319,13 @@ export default function Alertas() {
 
         {/* Ordenação */}
         <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
-          <SelectTrigger className="h-9 w-[170px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="h-9 w-[210px]"><SelectValue /></SelectTrigger>
           <SelectContent>
+            <SelectItem value="recente">Mais recentes (última compra)</SelectItem>
+            <SelectItem value="antigo">Mais antigos (sem compra)</SelectItem>
             <SelectItem value="valor">Maior valor</SelectItem>
-            <SelectItem value="antigo">Mais antigo</SelectItem>
+            <SelectItem value="preco_recente">Preço atualizado recente</SelectItem>
+            <SelectItem value="preco_antigo">Preço mais desatualizado</SelectItem>
             <SelectItem value="marca">Marca (A-Z)</SelectItem>
           </SelectContent>
         </Select>
