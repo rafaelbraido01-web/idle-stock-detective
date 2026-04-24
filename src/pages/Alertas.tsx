@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Check, ChevronDown, Copy, Search, X } from 'lucide-react';
+import { AlertTriangle, Check, ChevronDown, Copy, RefreshCw, Search, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useInventory } from '@/store/InventoryContext';
 import { useAlertasConfig } from '@/hooks/useAlertasConfig';
@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ProductDrawer } from '@/components/ProductDrawer';
+import { MarketPriceUpdateDialog } from '@/components/MarketPriceUpdateDialog';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -38,9 +39,10 @@ export default function Alertas() {
   const [search, setSearch] = useState('');
   const [marcaFilter, setMarcaFilter] = useState<string[]>(config.marcasPadrao);
   const [marcaSearch, setMarcaSearch] = useState('');
-  const [tipoFilter, setTipoFilter] = useState<{ estoque: boolean; preco: boolean }>({ estoque: true, preco: true });
+  const [tipoEstoqueOnly, setTipoEstoqueOnly] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>('valor');
   const [drawerProdutoId, setDrawerProdutoId] = useState<string | null>(null);
+  const [updateTarget, setUpdateTarget] = useState<{ codigo: string; descricao: string; marca: string; precoTabela: number } | null>(null);
 
   // Sync default brands when config loads first time
   useEffect(() => {
@@ -154,14 +156,9 @@ export default function Alertas() {
       arr = arr.filter(a => a.produto!.marca && marcaFilter.includes(a.produto!.marca));
     }
 
-    arr = arr.filter(a => {
-      const isParado = a.regras.some(r => r.startsWith('Parado'));
-      const isPreco = a.regras.some(r => r.includes('preço') || r.includes('Preço') || r.includes('Sem preço'));
-      if (isParado && !tipoFilter.estoque && !isPreco) return false;
-      if (isPreco && !tipoFilter.preco && !isParado) return false;
-      if (!tipoFilter.estoque && !tipoFilter.preco) return false;
-      return true;
-    });
+    if (tipoEstoqueOnly) {
+      arr = arr.filter(a => a.regras.some(r => r.startsWith('Parado')));
+    }
 
     arr = [...arr].sort((a, b) => {
       if (sortKey === 'valor') return b.ps.valor_total - a.ps.valor_total;
@@ -170,7 +167,7 @@ export default function Alertas() {
     });
 
     return arr;
-  }, [alertas, search, marcaFilter, tipoFilter, sortKey]);
+  }, [alertas, search, marcaFilter, tipoEstoqueOnly, sortKey]);
 
   const kpis = useMemo(() => ({
     total: filtered.length,
@@ -292,22 +289,14 @@ export default function Alertas() {
           </PopoverContent>
         </Popover>
 
-        {/* Chips de tipo */}
+        {/* Chip de tipo */}
         <Button
-          variant={tipoFilter.estoque ? 'default' : 'outline'}
+          variant={tipoEstoqueOnly ? 'default' : 'outline'}
           size="sm"
           className="h-9"
-          onClick={() => setTipoFilter(t => ({ ...t, estoque: !t.estoque }))}
+          onClick={() => setTipoEstoqueOnly(v => !v)}
         >
-          Estoque parado
-        </Button>
-        <Button
-          variant={tipoFilter.preco ? 'default' : 'outline'}
-          size="sm"
-          className="h-9"
-          onClick={() => setTipoFilter(t => ({ ...t, preco: !t.preco }))}
-        >
-          Preço desatualizado
+          Apenas estoque parado
         </Button>
 
         {/* Ordenação */}
@@ -335,6 +324,12 @@ export default function Alertas() {
               data={a}
               index={idx}
               onOpen={() => setDrawerProdutoId(a.produto!.id)}
+              onUpdatePrice={() => setUpdateTarget({
+                codigo: a.produto!.codigo,
+                descricao: a.produto!.descricao,
+                marca: a.produto!.marca || '',
+                precoTabela: a.ps.preco_tabela,
+              })}
               diasVerde={config.precoMercado.diasVerde}
               diasVermelho={config.precoMercado.diasVermelho}
             />
@@ -343,6 +338,20 @@ export default function Alertas() {
       )}
 
       <ProductDrawer produtoId={drawerProdutoId} onClose={() => setDrawerProdutoId(null)} />
+
+      {updateTarget && (
+        <MarketPriceUpdateDialog
+          open={!!updateTarget}
+          onOpenChange={(o) => { if (!o) setUpdateTarget(null); }}
+          produtoCodigo={updateTarget.codigo}
+          produtoDescricao={updateTarget.descricao}
+          produtoMarca={updateTarget.marca}
+          precoTabela={updateTarget.precoTabela}
+          onSaved={(codigo, preco, updatedAt) => {
+            setPrecosMap(prev => ({ ...prev, [codigo]: { preco, updated_at: updatedAt } }));
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -360,9 +369,9 @@ function GlassKpi({ label, value, accent }: { label: string; value: string; acce
 }
 
 function AlertaCard({
-  data, index, onOpen, diasVerde, diasVermelho,
+  data, index, onOpen, onUpdatePrice, diasVerde, diasVermelho,
 }: {
-  data: any; index: number; onOpen: () => void; diasVerde: number; diasVermelho: number;
+  data: any; index: number; onOpen: () => void; onUpdatePrice: () => void; diasVerde: number; diasVermelho: number;
 }) {
   const { ps, produto, severity, precoMercadoDias, precoMercadoValor, regras } = data;
 
@@ -435,9 +444,20 @@ function AlertaCard({
         ))}
       </div>
 
-      <Button variant="outline" size="sm" className="w-full h-8" onClick={onOpen}>
-        Ver detalhes
-      </Button>
+      <div className="grid grid-cols-2 gap-2">
+        <Button variant="outline" size="sm" className="h-8" onClick={onOpen}>
+          Ver detalhes
+        </Button>
+        <Button
+          variant="default"
+          size="sm"
+          className="h-8 gap-1.5"
+          onClick={(e) => { e.stopPropagation(); onUpdatePrice(); }}
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+          Atualizar preço
+        </Button>
+      </div>
     </motion.div>
   );
 }
