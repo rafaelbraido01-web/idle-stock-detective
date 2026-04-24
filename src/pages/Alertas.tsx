@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 type Severity = 'red' | 'amber' | 'green';
-type SortKey = 'valor' | 'antigo' | 'marca';
+type SortKey = 'recente' | 'valor' | 'antigo' | 'marca' | 'preco_recente' | 'preco_antigo';
 
 interface PrecoMercadoMap {
   [produtoCodigo: string]: { preco: number; updated_at: string };
