@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { ProductDrawer } from '@/components/ProductDrawer';
 
-type SortKey = 'codigo' | 'descricao' | 'grupo' | 'quantidade' | 'valor_unitario' | 'preco_tabela' | 'valor_promocao' | 'valor_total' | 'valor_venda_total' | 'dias_sem_venda' | 'categoria_estoque';
+type SortKey = 'codigo' | 'descricao' | 'grupo' | 'marca' | 'quantidade' | 'valor_unitario' | 'preco_tabela' | 'valor_promocao' | 'valor_total' | 'valor_venda_total' | 'dias_sem_venda' | 'categoria_estoque';
 const PAGE_SIZE = 50;
 
 export default function Products() {
@@ -67,6 +67,7 @@ export default function Products() {
       if (sortKey === 'codigo') { va = a.produto?.codigo || ''; vb = b.produto?.codigo || ''; }
       else if (sortKey === 'descricao') { va = a.produto?.descricao || ''; vb = b.produto?.descricao || ''; }
       else if (sortKey === 'grupo') { va = a.produto?.grupo || ''; vb = b.produto?.grupo || ''; }
+      else if (sortKey === 'marca') { va = a.produto?.marca || ''; vb = b.produto?.marca || ''; }
       else { va = a[sortKey] ?? 0; vb = b[sortKey] ?? 0; }
       if (typeof va === 'string') {
         const cmp = va.localeCompare(vb as string);
@@ -182,8 +183,8 @@ export default function Products() {
                     <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('grupo')}>
                       <span className="inline-flex items-center gap-1">Grupo <ArrowUpDown className="h-3 w-3" /></span>
                     </th>
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Marca
+                    <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('marca')}>
+                      <span className="inline-flex items-center gap-1">Marca <ArrowUpDown className="h-3 w-3" /></span>
                     </th>
                     <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('quantidade')}>
                       <span className="inline-flex items-center gap-1">Qtd <ArrowUpDown className="h-3 w-3" /></span>
