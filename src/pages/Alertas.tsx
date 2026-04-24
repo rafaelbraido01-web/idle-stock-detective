@@ -156,14 +156,9 @@ export default function Alertas() {
       arr = arr.filter(a => a.produto!.marca && marcaFilter.includes(a.produto!.marca));
     }
 
-    arr = arr.filter(a => {
-      const isParado = a.regras.some(r => r.startsWith('Parado'));
-      const isPreco = a.regras.some(r => r.includes('preço') || r.includes('Preço') || r.includes('Sem preço'));
-      if (isParado && !tipoFilter.estoque && !isPreco) return false;
-      if (isPreco && !tipoFilter.preco && !isParado) return false;
-      if (!tipoFilter.estoque && !tipoFilter.preco) return false;
-      return true;
-    });
+    if (tipoEstoqueOnly) {
+      arr = arr.filter(a => a.regras.some(r => r.startsWith('Parado')));
+    }
 
     arr = [...arr].sort((a, b) => {
       if (sortKey === 'valor') return b.ps.valor_total - a.ps.valor_total;
@@ -172,7 +167,7 @@ export default function Alertas() {
     });
 
     return arr;
-  }, [alertas, search, marcaFilter, tipoFilter, sortKey]);
+  }, [alertas, search, marcaFilter, tipoEstoqueOnly, sortKey]);
 
   const kpis = useMemo(() => ({
     total: filtered.length,
