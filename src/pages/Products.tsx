@@ -129,13 +129,68 @@ export default function Products() {
                 {subgrupos.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Select value={marcaFilter} onValueChange={v => { setMarcaFilter(v); setPage(0); }}>
-              <SelectTrigger className="w-[160px]"><SelectValue placeholder="Marca" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas as marcas</SelectItem>
-                {marcas.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-[180px] justify-between font-normal">
+                  <span className="truncate">
+                    {marcaFilter.length === 0
+                      ? 'Todas as marcas'
+                      : marcaFilter.length === 1
+                        ? marcaFilter[0]
+                        : `${marcaFilter.length} marcas`}
+                  </span>
+                  {marcaFilter.length > 0 && (
+                    <X
+                      className="h-3.5 w-3.5 opacity-60 hover:opacity-100"
+                      onClick={(e) => { e.stopPropagation(); setMarcaFilter([]); setPage(0); }}
+                    />
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[260px] p-2" align="start">
+                <Input
+                  placeholder="Buscar marca..."
+                  value={marcaSearch}
+                  onChange={e => setMarcaSearch(e.target.value)}
+                  className="h-8 mb-2"
+                />
+                <div className="flex items-center justify-between mb-1 px-1">
+                  <span className="text-xs text-muted-foreground">
+                    {marcaFilter.length} selecionada{marcaFilter.length === 1 ? '' : 's'}
+                  </span>
+                  {marcaFilter.length > 0 && (
+                    <button
+                      onClick={() => { setMarcaFilter([]); setPage(0); }}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      Limpar
+                    </button>
+                  )}
+                </div>
+                <div className="max-h-[280px] overflow-y-auto">
+                  {marcas
+                    .filter(m => m.toLowerCase().includes(marcaSearch.toLowerCase()))
+                    .map(m => {
+                      const checked = marcaFilter.includes(m);
+                      return (
+                        <button
+                          key={m}
+                          onClick={() => {
+                            setMarcaFilter(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m]);
+                            setPage(0);
+                          }}
+                          className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-muted text-left"
+                        >
+                          <div className={`h-4 w-4 rounded border flex items-center justify-center ${checked ? 'bg-primary border-primary' : 'border-input'}`}>
+                            {checked && <Check className="h-3 w-3 text-primary-foreground" />}
+                          </div>
+                          <span className="truncate">{m}</span>
+                        </button>
+                      );
+                    })}
+                </div>
+              </PopoverContent>
+            </Popover>
             <Select value={categoriaFilter} onValueChange={v => { setCategoriaFilter(v); setPage(0); }}>
               <SelectTrigger className="w-[160px]"><SelectValue placeholder="Categoria" /></SelectTrigger>
               <SelectContent>
