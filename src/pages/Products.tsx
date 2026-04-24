@@ -21,7 +21,8 @@ export default function Products() {
   const [search, setSearch] = useState('');
   const [grupoFilter, setGrupoFilter] = useState('all');
   const [subgrupoFilter, setSubgrupoFilter] = useState('all');
-  const [marcaFilter, setMarcaFilter] = useState('all');
+  const [marcaFilter, setMarcaFilter] = useState<string[]>([]);
+  const [marcaSearch, setMarcaSearch] = useState('');
   const [comissaoFilter, setComissaoFilter] = useState('all');
   const [compraFilter, setCompraFilter] = useState('all');
   const [categoriaFilter, setCategoriaFilter] = useState<string>('all');
