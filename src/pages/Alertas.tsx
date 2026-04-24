@@ -163,6 +163,24 @@ export default function Alertas() {
     arr = [...arr].sort((a, b) => {
       if (sortKey === 'valor') return b.ps.valor_total - a.ps.valor_total;
       if (sortKey === 'antigo') return b.ps.dias_sem_compra - a.ps.dias_sem_compra;
+      if (sortKey === 'recente') {
+        // Mais recentes pela última compra (data mais nova primeiro)
+        const ad = a.ps.data_ultima_compra ? parseLocalDate(a.ps.data_ultima_compra).getTime() : 0;
+        const bd = b.ps.data_ultima_compra ? parseLocalDate(b.ps.data_ultima_compra).getTime() : 0;
+        return bd - ad;
+      }
+      if (sortKey === 'preco_recente') {
+        // Preço de mercado atualizado mais recentemente primeiro (sem preço vai para o fim)
+        const ad = a.precoMercadoDias === null ? Number.POSITIVE_INFINITY : a.precoMercadoDias;
+        const bd = b.precoMercadoDias === null ? Number.POSITIVE_INFINITY : b.precoMercadoDias;
+        return ad - bd;
+      }
+      if (sortKey === 'preco_antigo') {
+        // Preço de mercado mais antigo primeiro (sem preço vai para o topo)
+        const ad = a.precoMercadoDias === null ? Number.POSITIVE_INFINITY : a.precoMercadoDias;
+        const bd = b.precoMercadoDias === null ? Number.POSITIVE_INFINITY : b.precoMercadoDias;
+        return bd - ad;
+      }
       return (a.produto!.marca || '').localeCompare(b.produto!.marca || '');
     });
 
