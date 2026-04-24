@@ -369,9 +369,9 @@ function GlassKpi({ label, value, accent }: { label: string; value: string; acce
 }
 
 function AlertaCard({
-  data, index, onOpen, diasVerde, diasVermelho,
+  data, index, onOpen, onUpdatePrice, diasVerde, diasVermelho,
 }: {
-  data: any; index: number; onOpen: () => void; diasVerde: number; diasVermelho: number;
+  data: any; index: number; onOpen: () => void; onUpdatePrice: () => void; diasVerde: number; diasVermelho: number;
 }) {
   const { ps, produto, severity, precoMercadoDias, precoMercadoValor, regras } = data;
 
