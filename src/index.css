@@ -80,4 +80,25 @@
   .bg-aging-warning { background-color: hsl(var(--aging-warning) / 0.1); }
   .bg-aging-alert { background-color: hsl(var(--aging-alert) / 0.1); }
   .bg-aging-critical { background-color: hsl(var(--aging-critical) / 0.1); }
+
+  /* Glass surface used by Alertas page */
+  .glass-card {
+    background: linear-gradient(135deg, hsl(var(--card) / 0.7), hsl(var(--card) / 0.4));
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid hsl(var(--border) / 0.6);
+    box-shadow: 0 4px 24px -8px hsl(var(--foreground) / 0.08), inset 0 1px 0 hsl(0 0% 100% / 0.6);
+  }
+  .glass-card.sev-red::before,
+  .glass-card.sev-amber::before,
+  .glass-card.sev-green::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0;
+    height: 100%;
+    width: 6px;
+  }
+  .glass-card.sev-red::before { background: hsl(var(--aging-critical)); }
+  .glass-card.sev-amber::before { background: hsl(var(--aging-warning)); }
+  .glass-card.sev-green::before { background: hsl(var(--aging-healthy)); }
 }
