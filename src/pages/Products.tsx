@@ -67,6 +67,7 @@ export default function Products() {
       if (sortKey === 'codigo') { va = a.produto?.codigo || ''; vb = b.produto?.codigo || ''; }
       else if (sortKey === 'descricao') { va = a.produto?.descricao || ''; vb = b.produto?.descricao || ''; }
       else if (sortKey === 'grupo') { va = a.produto?.grupo || ''; vb = b.produto?.grupo || ''; }
+      else if (sortKey === 'marca') { va = a.produto?.marca || ''; vb = b.produto?.marca || ''; }
       else { va = a[sortKey] ?? 0; vb = b[sortKey] ?? 0; }
       if (typeof va === 'string') {
         const cmp = va.localeCompare(vb as string);
