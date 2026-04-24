@@ -40,7 +40,7 @@ export default function Alertas() {
   const [marcaFilter, setMarcaFilter] = useState<string[]>(config.marcasPadrao);
   const [marcaSearch, setMarcaSearch] = useState('');
   const [tipoEstoqueOnly, setTipoEstoqueOnly] = useState(false);
-  const [sortKey, setSortKey] = useState<SortKey>('valor');
+  const [sortKey, setSortKey] = useState<SortKey>('recente');
   const [drawerProdutoId, setDrawerProdutoId] = useState<string | null>(null);
   const [updateTarget, setUpdateTarget] = useState<{ codigo: string; descricao: string; marca: string; precoTabela: number } | null>(null);
 
