@@ -182,6 +182,9 @@ export default function Products() {
                     <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('grupo')}>
                       <span className="inline-flex items-center gap-1">Grupo <ArrowUpDown className="h-3 w-3" /></span>
                     </th>
+                    <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Marca
+                    </th>
                     <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('quantidade')}>
                       <span className="inline-flex items-center gap-1">Qtd <ArrowUpDown className="h-3 w-3" /></span>
                     </th>
@@ -221,6 +224,7 @@ export default function Products() {
                         <td className="px-4 py-2.5 font-mono text-xs text-foreground">{item.produto?.codigo}</td>
                         <td className="px-4 py-2.5 text-foreground max-w-[250px] truncate">{item.produto?.descricao}</td>
                         <td className="px-4 py-2.5 text-muted-foreground text-xs">{item.produto?.grupo}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground text-xs">{item.produto?.marca || '—'}</td>
                         <td className={`px-4 py-2.5 text-right font-mono ${isBelowMin ? 'text-destructive font-bold' : isHighQty ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-foreground'}`}>
                           {isBelowMin && <AlertTriangle className="inline h-3 w-3 mr-1" />}
                           {formatNumber(item.quantidade)}
