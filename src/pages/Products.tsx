@@ -54,7 +54,7 @@ export default function Products() {
     }
     if (grupoFilter !== 'all') result = result.filter(r => r.produto?.grupo === grupoFilter);
     if (subgrupoFilter !== 'all') result = result.filter(r => r.produto?.subgrupo === subgrupoFilter);
-    if (marcaFilter !== 'all') result = result.filter(r => r.produto?.marca === marcaFilter);
+    if (marcaFilter.length > 0) result = result.filter(r => r.produto?.marca && marcaFilter.includes(r.produto.marca));
     if (comissaoFilter === 'com-fixa') result = result.filter(r => r.nome_comissao && r.nome_comissao.toLowerCase().includes('fix'));
     else if (comissaoFilter === 'com-comissao') result = result.filter(r => r.nome_comissao);
     else if (comissaoFilter === 'sem-comissao') result = result.filter(r => !r.nome_comissao);
