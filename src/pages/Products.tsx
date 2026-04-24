@@ -183,8 +183,8 @@ export default function Products() {
                     <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('grupo')}>
                       <span className="inline-flex items-center gap-1">Grupo <ArrowUpDown className="h-3 w-3" /></span>
                     </th>
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Marca
+                    <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('marca')}>
+                      <span className="inline-flex items-center gap-1">Marca <ArrowUpDown className="h-3 w-3" /></span>
                     </th>
                     <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('quantidade')}>
                       <span className="inline-flex items-center gap-1">Qtd <ArrowUpDown className="h-3 w-3" /></span>
