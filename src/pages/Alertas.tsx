@@ -122,12 +122,12 @@ export default function Alertas() {
 
       if (regras.length === 0) continue;
 
-      // Card severity = pior caso entre regras disparadas
-      const isParadoCritico = ps.dias_sem_compra >= config.estoqueParado.diasMin * 2;
-      let severity: Severity = precoSev;
-      if (config.estoqueParado.enabled && regras.some(r => r.startsWith('Parado'))) {
-        severity = isParadoCritico || precoSev === 'red' ? 'red' : (precoSev === 'amber' ? 'amber' : 'amber');
-      }
+      // Severidade do card baseada em quantas regras de alerta dispararam
+      // - Vermelho: ambas (estoque parado + preço sem registro/desatualizado)
+      // - Amarelo: apenas uma das regras dispara
+      const paradoAtivo = regras.some(r => r.startsWith('Parado'));
+      const precoAtivo = regras.some(r => r.includes('preço') || r.includes('Preço'));
+      const severity: Severity = (paradoAtivo && precoAtivo) ? 'red' : 'amber';
 
       result.push({
         ps,
