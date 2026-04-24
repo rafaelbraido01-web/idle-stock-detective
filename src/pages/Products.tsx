@@ -1,12 +1,14 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowUpDown, Search, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
+import { ArrowUpDown, Search, ChevronLeft, ChevronRight, AlertTriangle, Check, X } from 'lucide-react';
 import { useInventory } from '@/store/InventoryContext';
 import { AgingBadge } from '@/components/AgingBadge';
 import { formatCurrency, formatNumber, formatDate, AGING_CATEGORIES, type CategoriaEstoque } from '@/types/inventory';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
 import { ProductDrawer } from '@/components/ProductDrawer';
 
 type SortKey = 'codigo' | 'descricao' | 'grupo' | 'marca' | 'quantidade' | 'valor_unitario' | 'preco_tabela' | 'valor_promocao' | 'valor_total' | 'valor_venda_total' | 'dias_sem_venda' | 'categoria_estoque';
@@ -19,7 +21,8 @@ export default function Products() {
   const [search, setSearch] = useState('');
   const [grupoFilter, setGrupoFilter] = useState('all');
   const [subgrupoFilter, setSubgrupoFilter] = useState('all');
-  const [marcaFilter, setMarcaFilter] = useState('all');
+  const [marcaFilter, setMarcaFilter] = useState<string[]>([]);
+  const [marcaSearch, setMarcaSearch] = useState('');
   const [comissaoFilter, setComissaoFilter] = useState('all');
   const [compraFilter, setCompraFilter] = useState('all');
   const [categoriaFilter, setCategoriaFilter] = useState<string>('all');
@@ -51,7 +54,7 @@ export default function Products() {
     }
     if (grupoFilter !== 'all') result = result.filter(r => r.produto?.grupo === grupoFilter);
     if (subgrupoFilter !== 'all') result = result.filter(r => r.produto?.subgrupo === subgrupoFilter);
-    if (marcaFilter !== 'all') result = result.filter(r => r.produto?.marca === marcaFilter);
+    if (marcaFilter.length > 0) result = result.filter(r => r.produto?.marca && marcaFilter.includes(r.produto.marca));
     if (comissaoFilter === 'com-fixa') result = result.filter(r => r.nome_comissao && r.nome_comissao.toLowerCase().includes('fix'));
     else if (comissaoFilter === 'com-comissao') result = result.filter(r => r.nome_comissao);
     else if (comissaoFilter === 'sem-comissao') result = result.filter(r => !r.nome_comissao);
@@ -126,13 +129,68 @@ export default function Products() {
                 {subgrupos.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Select value={marcaFilter} onValueChange={v => { setMarcaFilter(v); setPage(0); }}>
-              <SelectTrigger className="w-[160px]"><SelectValue placeholder="Marca" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas as marcas</SelectItem>
-                {marcas.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-[180px] justify-between font-normal">
+                  <span className="truncate">
+                    {marcaFilter.length === 0
+                      ? 'Todas as marcas'
+                      : marcaFilter.length === 1
+                        ? marcaFilter[0]
+                        : `${marcaFilter.length} marcas`}
+                  </span>
+                  {marcaFilter.length > 0 && (
+                    <X
+                      className="h-3.5 w-3.5 opacity-60 hover:opacity-100"
+                      onClick={(e) => { e.stopPropagation(); setMarcaFilter([]); setPage(0); }}
+                    />
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[260px] p-2" align="start">
+                <Input
+                  placeholder="Buscar marca..."
+                  value={marcaSearch}
+                  onChange={e => setMarcaSearch(e.target.value)}
+                  className="h-8 mb-2"
+                />
+                <div className="flex items-center justify-between mb-1 px-1">
+                  <span className="text-xs text-muted-foreground">
+                    {marcaFilter.length} selecionada{marcaFilter.length === 1 ? '' : 's'}
+                  </span>
+                  {marcaFilter.length > 0 && (
+                    <button
+                      onClick={() => { setMarcaFilter([]); setPage(0); }}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      Limpar
+                    </button>
+                  )}
+                </div>
+                <div className="max-h-[280px] overflow-y-auto">
+                  {marcas
+                    .filter(m => m.toLowerCase().includes(marcaSearch.toLowerCase()))
+                    .map(m => {
+                      const checked = marcaFilter.includes(m);
+                      return (
+                        <button
+                          key={m}
+                          onClick={() => {
+                            setMarcaFilter(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m]);
+                            setPage(0);
+                          }}
+                          className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-muted text-left"
+                        >
+                          <div className={`h-4 w-4 rounded border flex items-center justify-center ${checked ? 'bg-primary border-primary' : 'border-input'}`}>
+                            {checked && <Check className="h-3 w-3 text-primary-foreground" />}
+                          </div>
+                          <span className="truncate">{m}</span>
+                        </button>
+                      );
+                    })}
+                </div>
+              </PopoverContent>
+            </Popover>
             <Select value={categoriaFilter} onValueChange={v => { setCategoriaFilter(v); setPage(0); }}>
               <SelectTrigger className="w-[160px]"><SelectValue placeholder="Categoria" /></SelectTrigger>
               <SelectContent>
