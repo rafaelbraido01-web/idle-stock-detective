@@ -366,9 +366,9 @@ function AlertaCard({
 }) {
   const { ps, produto, severity, precoMercadoDias, precoMercadoValor, regras } = data;
 
-  const sevBorder =
-    severity === 'red' ? 'before:bg-aging-critical' :
-    severity === 'amber' ? 'before:bg-aging-warning' : 'before:bg-aging-healthy';
+  const sevClass =
+    severity === 'red' ? 'sev-red' :
+    severity === 'amber' ? 'sev-amber' : 'sev-green';
 
   let pmBadgeClass = 'bg-muted text-muted-foreground';
   let pmLabel = 'Sem preço';
@@ -394,9 +394,8 @@ function AlertaCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, delay: Math.min(index * 0.02, 0.3) }}
       className={cn(
-        'glass-card relative overflow-hidden rounded-2xl p-5 hover:shadow-xl transition-all',
-        'before:absolute before:left-0 before:top-0 before:h-full before:w-1.5',
-        sevBorder
+        'glass-card relative overflow-hidden rounded-2xl p-5 pl-6 hover:shadow-xl transition-all cursor-pointer',
+        sevClass
       )}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
