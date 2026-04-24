@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { ProductDrawer } from '@/components/ProductDrawer';
 
-type SortKey = 'codigo' | 'descricao' | 'grupo' | 'quantidade' | 'valor_unitario' | 'preco_tabela' | 'valor_promocao' | 'valor_total' | 'valor_venda_total' | 'dias_sem_venda' | 'categoria_estoque';
+type SortKey = 'codigo' | 'descricao' | 'grupo' | 'marca' | 'quantidade' | 'valor_unitario' | 'preco_tabela' | 'valor_promocao' | 'valor_total' | 'valor_venda_total' | 'dias_sem_venda' | 'categoria_estoque';
 const PAGE_SIZE = 50;
 
 export default function Products() {
