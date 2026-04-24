@@ -289,22 +289,14 @@ export default function Alertas() {
           </PopoverContent>
         </Popover>
 
-        {/* Chips de tipo */}
+        {/* Chip de tipo */}
         <Button
-          variant={tipoFilter.estoque ? 'default' : 'outline'}
+          variant={tipoEstoqueOnly ? 'default' : 'outline'}
           size="sm"
           className="h-9"
-          onClick={() => setTipoFilter(t => ({ ...t, estoque: !t.estoque }))}
+          onClick={() => setTipoEstoqueOnly(v => !v)}
         >
-          Estoque parado
-        </Button>
-        <Button
-          variant={tipoFilter.preco ? 'default' : 'outline'}
-          size="sm"
-          className="h-9"
-          onClick={() => setTipoFilter(t => ({ ...t, preco: !t.preco }))}
-        >
-          Preço desatualizado
+          Apenas estoque parado
         </Button>
 
         {/* Ordenação */}
