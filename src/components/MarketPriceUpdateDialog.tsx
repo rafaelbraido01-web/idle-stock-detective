@@ -111,6 +111,21 @@ export function MarketPriceUpdateDialog({
       } as any);
     if (error) throw error;
     onSaved(produtoCodigo, preco, now);
+
+    // Notifica n8n via webhook (fire-and-forget)
+    supabase.functions.invoke('notify-market-price-update', {
+      body: {
+        codigo: produtoCodigo,
+        produto: produtoDescricao,
+        marca: produtoMarca,
+        preco_mercado: preco,
+        fonte: fonteVal === 'Outro' ? (fonteOutroVal || fonteVal) : fonteVal,
+        link: linkVal,
+        observacao: obsVal,
+        updated_at: now,
+      },
+    }).catch(err => console.error('notify-market-price-update failed:', err));
+
     toast({ title: 'Preço de mercado salvo!', description: `${formatCurrency(preco)} · ${fonteVal}` });
     onOpenChange(false);
   };
