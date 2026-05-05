@@ -32,15 +32,27 @@ serve(async (req) => {
       updated_at: body.updated_at || new Date().toISOString(),
     };
 
-    const n8nUrl = "https://n8n.syma.com.br/webhook/Atualização_preco_mercado";
-    const n8nRes = await fetch(n8nUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    const n8nUrls = [
+      "https://n8n.syma.com.br/webhook/Atualização_preco_mercado",
+      "https://n8n.syma.com.br/webhook-test/Atualização_preco_mercado",
+    ];
+
+    const results = await Promise.allSettled(
+      n8nUrls.map((url) =>
+        fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }),
+      ),
+    );
+
+    const statuses = results.map((r) =>
+      r.status === "fulfilled" ? r.value.status : `error: ${r.reason}`,
+    );
 
     return new Response(
-      JSON.stringify({ status: "ok", n8n_status: n8nRes.status }),
+      JSON.stringify({ status: "ok", n8n_statuses: statuses }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err: any) {
