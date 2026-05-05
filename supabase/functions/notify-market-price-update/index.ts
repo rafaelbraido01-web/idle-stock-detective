@@ -33,8 +33,8 @@ serve(async (req) => {
     };
 
     const n8nUrls = [
-      "https://n8n.syma.com.br/webhook/Atualização_preco_mercado",
-      "https://n8n.syma.com.br/webhook-test/Atualização_preco_mercado",
+      "https://n8n.syma.com.br/webhook/Atualizacao_preco_mercado",
+      "https://n8n.syma.com.br/webhook-test/Atualizacao_preco_mercado",
     ];
 
     const results = await Promise.allSettled(
