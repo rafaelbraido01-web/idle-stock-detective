@@ -1,33 +1,53 @@
-## Plano final — pronto para implementar
+## Mudanças
 
-### 1. `src/pages/Alertas.tsx`
-- **Remover** o chip/botão "Preço desatualizado" da barra de filtros e o estado `tipoFilter.preco` correspondente; manter apenas o chip "Estoque parado" (vira um toggle único). Simplificar a lógica de `filtered` removendo o filtro por tipo de preço.
-- **Adicionar** estado `updateDialog: { codigo, descricao, marca, precoTabela } | null` para controlar o diálogo de atualização.
-- **Adicionar** função `updatePrecoLocal(codigo, preco, updatedAt)` que atualiza `precosMap` no `setState` — o `useMemo` de `alertas` recalcula severidade e badges automaticamente (vermelho → verde na hora).
-- **No `AlertaCard`**: adicionar prop `onUpdatePrice` e um segundo botão **"Atualizar preço"** (ícone `RefreshCw`) ao lado de "Ver detalhes", em grid de 2 colunas (`grid-cols-2 gap-2`).
-- **Renderizar** `<MarketPriceUpdateDialog>` no final do componente, controlado pelo estado novo, passando `onSaved={updatePrecoLocal}`.
+### 1. `src/hooks/useAlertasConfig.ts`
+Adicionar campo `estoqueMin` em `estoqueParado`:
+```ts
+estoqueParado: { enabled, diasMin, valorMin, estoqueMin: number }  // default 0
+```
+Atualizar `DEFAULT_ALERTAS_CONFIG` e o merge no `loadConfig`.
 
-### 2. `src/components/MarketPriceUpdateDialog.tsx` (novo)
-Diálogo unificado com **2 abas** (Tabs do shadcn):
+### 2. `src/pages/Configuracoes.tsx`
+No card "Estoque parado", adicionar terceiro input "Estoque mínimo ≥" ao lado de "Dias sem compra ≥" e "Valor estoque ≥". Layout passa de `grid-cols-2` para `grid-cols-3`. Persiste via `persistEstoque({ estoqueMin })`.
 
-**Aba "Buscar online"**
-- Botão "Pesquisar agora" → chama `supabase.functions.invoke()` lendo o provider de `localStorage.getItem('preco-mercado-provider')` (default `scraper`):
-  - `scraper` → `search-product-scraper` com `{ productName, productCode }`
-  - `chatgpt`/`perplexity` → `search-product-price` com `{ productName, productCode, provider }`
-- Lista resultados (source, productName, price, link "Validar") com botão **"Usar este preço"** que faz `INSERT` em `precos_mercado` (mapeando `source` para uma fonte conhecida, ou `Outro` + `fonte_outro`) e fecha o diálogo.
+### 3. `src/pages/Alertas.tsx`
 
-**Aba "Cadastro manual"**
-- Campos: `preco`, `fonte` (select com `Mercado Livre`, `Kabum`, `Pichau`, `Amazon`, `Magazine Luiza`, `Netshoes`, `Outro`), `fonte_outro` (quando `Outro`), `link` (opcional), `observacao` (opcional).
-- Botão "Salvar preço" → mesmo `INSERT`.
+**a) Aplicar filtro de estoque mínimo na regra de alerta** (junto com diasMin e valorMin):
+```ts
+ps.quantidade >= config.estoqueParado.estoqueMin
+```
 
-**Comportamento comum**
-- Após `INSERT` bem-sucedido: chama `onSaved(codigo, preco, now)`, exibe toast e fecha.
-- `onPointerDownOutside` e `onEscapeKeyDown` bloqueados (regra de UX vigente para diálogos de preço).
-- Reset de estado ao abrir.
+**b) Adicionar duas opções novas no Select de ordenação:**
+- `estoque_desc` → "Maior estoque"
+- `estoque_asc` → "Menor estoque"
 
-### 3. Sem mudanças em outros arquivos
-- `PrecoMercado.tsx` permanece como está (a refatoração para extrair helper compartilhado era opcional e foi descartada para evitar risco de regressão na página crítica). O `MarketPriceUpdateDialog` consome diretamente as Edge Functions, replicando o mesmo padrão já validado em `PrecoMercado.tsx` e `Promocoes.tsx`.
-- Sem migrações de banco. Sem novos secrets.
+Ordena por `ps.quantidade`.
 
-### Resultado esperado
-Em qualquer card vermelho/âmbar de `/alertas`, o usuário clica **"Atualizar preço"** → escolhe Buscar online ou Cadastro manual → salva → o card recalcula a severidade na hora (badge "Atualizado há 0d", borda verde) sem precisar recarregar a página.
+**c) Filtro por data da última pesquisa de preço de mercado (Date Picker)**
+
+Adicionar um botão com `CalendarIcon` ao lado dos demais filtros. Ao clicar, abre um `Popover` contendo o componente `Calendar` (shadcn) em modo `single`.
+
+- O usuário escolhe uma **data inicial** (`desdeData`); o filtro mantém apenas alertas cujo `precoMercado.updated_at >= desdeData` e `<= hoje`.
+- `disabled={(date) => date > new Date()}` — não permite datas futuras.
+- Botão exibe `format(desdeData, 'dd/MM/yyyy')` quando selecionado, ou "Preço pesquisado desde…" quando vazio.
+- Ícone `X` no botão para limpar a seleção.
+- Quando vazio, não filtra nada (mostra todos, inclusive sem preço).
+
+Implementação:
+```tsx
+const [desdeData, setDesdeData] = useState<Date | undefined>();
+// no filtered:
+if (desdeData) {
+  arr = arr.filter(a => {
+    if (!a.precoMercadoValor) return false;
+    // updated_at já está em precosMap[codigo]
+    const upd = parseLocalDate(precosMap[a.produto.codigo].updated_at.slice(0,10));
+    return upd >= desdeData;
+  });
+}
+```
+
+## Detalhes técnicos
+- `estoqueMin` armazenado em localStorage junto com o resto da config.
+- Calendar usa `className={cn("p-3 pointer-events-auto")}` para funcionar dentro do Popover.
+- Comparação de datas no horário local (meia-noite) via `parseLocalDate`.
