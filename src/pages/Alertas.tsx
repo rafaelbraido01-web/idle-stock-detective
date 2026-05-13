@@ -330,6 +330,36 @@ export default function Alertas() {
           Apenas estoque parado
         </Button>
 
+        {/* Filtro: data da última pesquisa de preço */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="h-9 justify-between font-normal min-w-[220px]">
+              <span className="flex items-center gap-2 truncate">
+                <CalendarIcon className="h-3.5 w-3.5 opacity-70" />
+                {desdeData ? `Pesquisado desde ${format(desdeData, 'dd/MM/yyyy')}` : 'Preço pesquisado desde…'}
+              </span>
+              {desdeData ? (
+                <X
+                  className="h-3.5 w-3.5 opacity-60 hover:opacity-100"
+                  onClick={(e) => { e.stopPropagation(); setDesdeData(undefined); }}
+                />
+              ) : (
+                <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={desdeData}
+              onSelect={setDesdeData}
+              disabled={(date) => date > new Date()}
+              initialFocus
+              className={cn('p-3 pointer-events-auto')}
+            />
+          </PopoverContent>
+        </Popover>
+
         {/* Ordenação */}
         <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
           <SelectTrigger className="h-9 w-[210px]"><SelectValue /></SelectTrigger>
@@ -337,6 +367,8 @@ export default function Alertas() {
             <SelectItem value="recente">Mais recentes (última compra)</SelectItem>
             <SelectItem value="antigo">Mais antigos (sem compra)</SelectItem>
             <SelectItem value="valor">Maior valor</SelectItem>
+            <SelectItem value="estoque_desc">Maior estoque</SelectItem>
+            <SelectItem value="estoque_asc">Menor estoque</SelectItem>
             <SelectItem value="preco_recente">Preço atualizado recente</SelectItem>
             <SelectItem value="preco_antigo">Preço mais desatualizado</SelectItem>
             <SelectItem value="marca">Marca (A-Z)</SelectItem>
