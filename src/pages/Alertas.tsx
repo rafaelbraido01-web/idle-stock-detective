@@ -104,7 +104,8 @@ export default function Alertas() {
       if (
         config.estoqueParado.enabled &&
         ps.dias_sem_compra >= config.estoqueParado.diasMin &&
-        ps.valor_total >= config.estoqueParado.valorMin
+        ps.valor_total >= config.estoqueParado.valorMin &&
+        ps.quantidade >= (config.estoqueParado.estoqueMin ?? 0)
       ) {
         regras.push(`Parado +${config.estoqueParado.diasMin}d`);
       }
@@ -163,23 +164,32 @@ export default function Alertas() {
       arr = arr.filter(a => a.regras.some(r => r.startsWith('Parado')));
     }
 
+    if (desdeData) {
+      const desdeMs = new Date(desdeData.getFullYear(), desdeData.getMonth(), desdeData.getDate()).getTime();
+      arr = arr.filter(a => {
+        const pm = precosMap[a.produto!.codigo];
+        if (!pm) return false;
+        const upd = parseLocalDate(pm.updated_at.slice(0, 10)).getTime();
+        return upd >= desdeMs;
+      });
+    }
+
     arr = [...arr].sort((a, b) => {
       if (sortKey === 'valor') return b.ps.valor_total - a.ps.valor_total;
       if (sortKey === 'antigo') return b.ps.dias_sem_compra - a.ps.dias_sem_compra;
+      if (sortKey === 'estoque_desc') return b.ps.quantidade - a.ps.quantidade;
+      if (sortKey === 'estoque_asc') return a.ps.quantidade - b.ps.quantidade;
       if (sortKey === 'recente') {
-        // Mais recentes pela última compra (data mais nova primeiro)
         const ad = a.ps.data_ultima_compra ? parseLocalDate(a.ps.data_ultima_compra).getTime() : 0;
         const bd = b.ps.data_ultima_compra ? parseLocalDate(b.ps.data_ultima_compra).getTime() : 0;
         return bd - ad;
       }
       if (sortKey === 'preco_recente') {
-        // Preço de mercado atualizado mais recentemente primeiro (sem preço vai para o fim)
         const ad = a.precoMercadoDias === null ? Number.POSITIVE_INFINITY : a.precoMercadoDias;
         const bd = b.precoMercadoDias === null ? Number.POSITIVE_INFINITY : b.precoMercadoDias;
         return ad - bd;
       }
       if (sortKey === 'preco_antigo') {
-        // Preço de mercado mais antigo primeiro (sem preço vai para o topo)
         const ad = a.precoMercadoDias === null ? Number.POSITIVE_INFINITY : a.precoMercadoDias;
         const bd = b.precoMercadoDias === null ? Number.POSITIVE_INFINITY : b.precoMercadoDias;
         return bd - ad;
@@ -188,7 +198,7 @@ export default function Alertas() {
     });
 
     return arr;
-  }, [alertas, search, marcaFilter, tipoEstoqueOnly, sortKey]);
+  }, [alertas, search, marcaFilter, tipoEstoqueOnly, sortKey, desdeData, precosMap]);
 
   const kpis = useMemo(() => ({
     total: filtered.length,
