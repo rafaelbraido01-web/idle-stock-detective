@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 
 export interface AlertasConfig {
-  estoqueParado: { enabled: boolean; diasMin: number; valorMin: number };
+  estoqueParado: { enabled: boolean; diasMin: number; valorMin: number; estoqueMin: number };
   precoMercado: { enabled: boolean; diasVerde: number; diasVermelho: number };
   marcasPadrao: string[];
 }
@@ -9,7 +9,7 @@ export interface AlertasConfig {
 const STORAGE_KEY = 'alertas-config';
 
 export const DEFAULT_ALERTAS_CONFIG: AlertasConfig = {
-  estoqueParado: { enabled: true, diasMin: 90, valorMin: 10000 },
+  estoqueParado: { enabled: true, diasMin: 90, valorMin: 10000, estoqueMin: 0 },
   precoMercado: { enabled: true, diasVerde: 15, diasVermelho: 25 },
   marcasPadrao: [],
 };

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Check, ChevronDown, Copy, RefreshCw, Search, X } from 'lucide-react';
+import { AlertTriangle, Calendar as CalendarIcon, Check, ChevronDown, Copy, RefreshCw, Search, X } from 'lucide-react';
+import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { useInventory } from '@/store/InventoryContext';
 import { useAlertasConfig } from '@/hooks/useAlertasConfig';
@@ -8,6 +9,7 @@ import { formatCurrency, parseLocalDate } from '@/types/inventory';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ProductDrawer } from '@/components/ProductDrawer';
@@ -16,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 type Severity = 'red' | 'amber' | 'green';
-type SortKey = 'recente' | 'valor' | 'antigo' | 'marca' | 'preco_recente' | 'preco_antigo';
+type SortKey = 'recente' | 'valor' | 'antigo' | 'marca' | 'preco_recente' | 'preco_antigo' | 'estoque_desc' | 'estoque_asc';
 
 interface PrecoMercadoMap {
   [produtoCodigo: string]: { preco: number; updated_at: string };
@@ -42,6 +44,7 @@ export default function Alertas() {
   const [tipoEstoqueOnly, setTipoEstoqueOnly] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>('recente');
   const [drawerProdutoId, setDrawerProdutoId] = useState<string | null>(null);
+  const [desdeData, setDesdeData] = useState<Date | undefined>(undefined);
   const [updateTarget, setUpdateTarget] = useState<{ codigo: string; descricao: string; marca: string; precoTabela: number } | null>(null);
 
   // Sync default brands when config loads first time
@@ -101,7 +104,8 @@ export default function Alertas() {
       if (
         config.estoqueParado.enabled &&
         ps.dias_sem_compra >= config.estoqueParado.diasMin &&
-        ps.valor_total >= config.estoqueParado.valorMin
+        ps.valor_total >= config.estoqueParado.valorMin &&
+        ps.quantidade >= (config.estoqueParado.estoqueMin ?? 0)
       ) {
         regras.push(`Parado +${config.estoqueParado.diasMin}d`);
       }
@@ -160,23 +164,32 @@ export default function Alertas() {
       arr = arr.filter(a => a.regras.some(r => r.startsWith('Parado')));
     }
 
+    if (desdeData) {
+      const desdeMs = new Date(desdeData.getFullYear(), desdeData.getMonth(), desdeData.getDate()).getTime();
+      arr = arr.filter(a => {
+        const pm = precosMap[a.produto!.codigo];
+        if (!pm) return false;
+        const upd = parseLocalDate(pm.updated_at.slice(0, 10)).getTime();
+        return upd >= desdeMs;
+      });
+    }
+
     arr = [...arr].sort((a, b) => {
       if (sortKey === 'valor') return b.ps.valor_total - a.ps.valor_total;
       if (sortKey === 'antigo') return b.ps.dias_sem_compra - a.ps.dias_sem_compra;
+      if (sortKey === 'estoque_desc') return b.ps.quantidade - a.ps.quantidade;
+      if (sortKey === 'estoque_asc') return a.ps.quantidade - b.ps.quantidade;
       if (sortKey === 'recente') {
-        // Mais recentes pela última compra (data mais nova primeiro)
         const ad = a.ps.data_ultima_compra ? parseLocalDate(a.ps.data_ultima_compra).getTime() : 0;
         const bd = b.ps.data_ultima_compra ? parseLocalDate(b.ps.data_ultima_compra).getTime() : 0;
         return bd - ad;
       }
       if (sortKey === 'preco_recente') {
-        // Preço de mercado atualizado mais recentemente primeiro (sem preço vai para o fim)
         const ad = a.precoMercadoDias === null ? Number.POSITIVE_INFINITY : a.precoMercadoDias;
         const bd = b.precoMercadoDias === null ? Number.POSITIVE_INFINITY : b.precoMercadoDias;
         return ad - bd;
       }
       if (sortKey === 'preco_antigo') {
-        // Preço de mercado mais antigo primeiro (sem preço vai para o topo)
         const ad = a.precoMercadoDias === null ? Number.POSITIVE_INFINITY : a.precoMercadoDias;
         const bd = b.precoMercadoDias === null ? Number.POSITIVE_INFINITY : b.precoMercadoDias;
         return bd - ad;
@@ -185,7 +198,7 @@ export default function Alertas() {
     });
 
     return arr;
-  }, [alertas, search, marcaFilter, tipoEstoqueOnly, sortKey]);
+  }, [alertas, search, marcaFilter, tipoEstoqueOnly, sortKey, desdeData, precosMap]);
 
   const kpis = useMemo(() => ({
     total: filtered.length,
@@ -317,6 +330,36 @@ export default function Alertas() {
           Apenas estoque parado
         </Button>
 
+        {/* Filtro: data da última pesquisa de preço */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="h-9 justify-between font-normal min-w-[220px]">
+              <span className="flex items-center gap-2 truncate">
+                <CalendarIcon className="h-3.5 w-3.5 opacity-70" />
+                {desdeData ? `Pesquisado desde ${format(desdeData, 'dd/MM/yyyy')}` : 'Preço pesquisado desde…'}
+              </span>
+              {desdeData ? (
+                <X
+                  className="h-3.5 w-3.5 opacity-60 hover:opacity-100"
+                  onClick={(e) => { e.stopPropagation(); setDesdeData(undefined); }}
+                />
+              ) : (
+                <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={desdeData}
+              onSelect={setDesdeData}
+              disabled={(date) => date > new Date()}
+              initialFocus
+              className={cn('p-3 pointer-events-auto')}
+            />
+          </PopoverContent>
+        </Popover>
+
         {/* Ordenação */}
         <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
           <SelectTrigger className="h-9 w-[210px]"><SelectValue /></SelectTrigger>
@@ -324,6 +367,8 @@ export default function Alertas() {
             <SelectItem value="recente">Mais recentes (última compra)</SelectItem>
             <SelectItem value="antigo">Mais antigos (sem compra)</SelectItem>
             <SelectItem value="valor">Maior valor</SelectItem>
+            <SelectItem value="estoque_desc">Maior estoque</SelectItem>
+            <SelectItem value="estoque_asc">Menor estoque</SelectItem>
             <SelectItem value="preco_recente">Preço atualizado recente</SelectItem>
             <SelectItem value="preco_antigo">Preço mais desatualizado</SelectItem>
             <SelectItem value="marca">Marca (A-Z)</SelectItem>
