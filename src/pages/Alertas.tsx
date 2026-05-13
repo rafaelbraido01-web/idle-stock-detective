@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Check, ChevronDown, Copy, RefreshCw, Search, X } from 'lucide-react';
+import { AlertTriangle, Calendar as CalendarIcon, Check, ChevronDown, Copy, RefreshCw, Search, X } from 'lucide-react';
+import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { useInventory } from '@/store/InventoryContext';
 import { useAlertasConfig } from '@/hooks/useAlertasConfig';
@@ -8,6 +9,7 @@ import { formatCurrency, parseLocalDate } from '@/types/inventory';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ProductDrawer } from '@/components/ProductDrawer';
@@ -16,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 type Severity = 'red' | 'amber' | 'green';
-type SortKey = 'recente' | 'valor' | 'antigo' | 'marca' | 'preco_recente' | 'preco_antigo';
+type SortKey = 'recente' | 'valor' | 'antigo' | 'marca' | 'preco_recente' | 'preco_antigo' | 'estoque_desc' | 'estoque_asc';
 
 interface PrecoMercadoMap {
   [produtoCodigo: string]: { preco: number; updated_at: string };
@@ -42,6 +44,7 @@ export default function Alertas() {
   const [tipoEstoqueOnly, setTipoEstoqueOnly] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>('recente');
   const [drawerProdutoId, setDrawerProdutoId] = useState<string | null>(null);
+  const [desdeData, setDesdeData] = useState<Date | undefined>(undefined);
   const [updateTarget, setUpdateTarget] = useState<{ codigo: string; descricao: string; marca: string; precoTabela: number } | null>(null);
 
   // Sync default brands when config loads first time
