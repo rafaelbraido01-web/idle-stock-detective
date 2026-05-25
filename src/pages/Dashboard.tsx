@@ -445,8 +445,10 @@ export default function Dashboard() {
                     <YAxis tick={{ fontSize: 11 }} stroke="hsl(215 16% 47%)" tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
                     <Tooltip formatter={(v: number) => formatCurrency(v)} />
                     <Area type="monotone" dataKey="total" stroke="hsl(222 47% 11%)" fill="hsl(222 47% 11% / 0.08)" name="Total" />
-                    <Area type="monotone" dataKey="saudavel" stroke="hsl(160 60% 36%)" fill="hsl(160 60% 36% / 0.08)" name="Saudável" />
-                    <Area type="monotone" dataKey="parado" stroke="hsl(0 72% 51%)" fill="hsl(0 72% 51% / 0.08)" name="Parado (>180d)" />
+                    <Area type="monotone" dataKey="saudavel" stroke="hsl(160 60% 36%)" fill="hsl(160 60% 36% / 0.08)" name="<90d" />
+                    <Area type="monotone" dataKey="medio" stroke="hsl(38 92% 50%)" fill="hsl(38 92% 50% / 0.08)" name="90-180d" />
+                    <Area type="monotone" dataKey="parado" stroke="hsl(0 72% 51%)" fill="hsl(0 72% 51% / 0.08)" name=">180d" />
+
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
