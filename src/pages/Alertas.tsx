@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Calendar as CalendarIcon, Check, ChevronDown, Copy, RefreshCw, Search, X } from 'lucide-react';
+import { AlertTriangle, Calendar as CalendarIcon, Check, ChevronDown, Copy, FileDown, RefreshCw, Search, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { useInventory } from '@/store/InventoryContext';
 import { useAlertasConfig } from '@/hooks/useAlertasConfig';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +14,16 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ProductDrawer } from '@/components/ProductDrawer';
 import { MarketPriceUpdateDialog } from '@/components/MarketPriceUpdateDialog';
 import { useToast } from '@/hooks/use-toast';
@@ -46,6 +58,7 @@ export default function Alertas() {
   const [drawerProdutoId, setDrawerProdutoId] = useState<string | null>(null);
   const [desdeData, setDesdeData] = useState<Date | undefined>(undefined);
   const [updateTarget, setUpdateTarget] = useState<{ codigo: string; descricao: string; marca: string; precoTabela: number } | null>(null);
+  const [showPdfConfirm, setShowPdfConfirm] = useState(false);
 
   // Sync default brands when config loads first time
   useEffect(() => {
@@ -221,6 +234,42 @@ export default function Alertas() {
     toast({ title: 'Códigos copiados', description: `${filtered.length} códigos na área de transferência.` });
   };
 
+  const generatePDF = () => {
+    const doc = new jsPDF('landscape');
+    const tableData = filtered.map(a => [
+      a.produto!.codigo,
+      a.produto!.descricao,
+      a.produto!.marca || '',
+      formatCurrency(a.ps.valor_total),
+      a.ps.quantidade.toString(),
+      a.ps.data_ultima_compra ? formatDateBR(a.ps.data_ultima_compra) : '—',
+      a.ps.dias_sem_compra.toString(),
+      a.regras.join(', ')
+    ]);
+
+    doc.text('Relatório de Alertas de Inventário', 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 14, 22);
+
+    autoTable(doc, {
+      startY: 25,
+      head: [['Código', 'Descrição', 'Marca', 'Valor Total', 'Qtd', 'Últ. Compra', 'Dias S/ Compra', 'Alertas']],
+      body: tableData,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [66, 66, 66] }
+    });
+
+    doc.save(`alertas-inventario-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  };
+
+  const handlePdfRequest = () => {
+    if (filtered.length > 100) {
+      setShowPdfConfirm(true);
+    } else {
+      generatePDF();
+    }
+  };
+
   if (loading) {
     return <div className="text-muted-foreground text-sm">Carregando alertas...</div>;
   }
@@ -247,9 +296,14 @@ export default function Alertas() {
             {kpis.total} {kpis.total === 1 ? 'alerta exibido' : 'alertas exibidos'} · snapshot de {formatDateBR(latestSnap.data_importacao.slice(0, 10))}
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={handleCopy} disabled={filtered.length === 0}>
-          <Copy className="h-4 w-4 mr-2" /> Copiar códigos
-        </Button>
+        <div className="flex gap-2 items-center flex-wrap">
+          <Button variant="outline" size="sm" onClick={handlePdfRequest} disabled={filtered.length === 0} className="border-primary/20 hover:border-primary/50">
+            <FileDown className="h-4 w-4 mr-2" /> Gerar PDF
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleCopy} disabled={filtered.length === 0}>
+            <Copy className="h-4 w-4 mr-2" /> Copiar códigos
+          </Button>
+        </div>
       </div>
 
       {/* KPIs glass */}
@@ -427,6 +481,26 @@ export default function Alertas() {
           }}
         />
       )}
+
+      <AlertDialog open={showPdfConfirm} onOpenChange={setShowPdfConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmação de exportação</AlertDialogTitle>
+            <AlertDialogDescription>
+              O arquivo terá mais de 100 linhas ({filtered.length}). Deseja continuar com a geração?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              setShowPdfConfirm(false);
+              generatePDF();
+            }}>
+              Continuar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
