@@ -481,6 +481,26 @@ export default function Alertas() {
           }}
         />
       )}
+
+      <AlertDialog open={showPdfConfirm} onOpenChange={setShowPdfConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmação de exportação</AlertDialogTitle>
+            <AlertDialogDescription>
+              O arquivo terá mais de 100 linhas ({filtered.length}). Deseja continuar com a geração?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              setShowPdfConfirm(false);
+              generatePDF();
+            }}>
+              Continuar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
