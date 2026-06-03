@@ -124,6 +124,15 @@ export default function Alertas() {
         regras.push(pm ? `Preço desatualizado +${config.precoMercado.diasVermelho}d` : 'Sem preço de mercado');
       }
 
+      // Regra C: preço pesquisado dentro do intervalo selecionado (filtro de data)
+      if (desdeData && pm) {
+        const desdeMs = new Date(desdeData.getFullYear(), desdeData.getMonth(), desdeData.getDate()).getTime();
+        const updMs = parseLocalDate(pm.updated_at.slice(0, 10)).getTime();
+        if (updMs >= desdeMs) {
+          regras.push(`Preço pesquisado em ${format(parseLocalDate(pm.updated_at.slice(0, 10)), 'dd/MM/yyyy')}`);
+        }
+      }
+
       if (regras.length === 0) continue;
 
       // Severidade do card baseada em quantas regras de alerta dispararam
