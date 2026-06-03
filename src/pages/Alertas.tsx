@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Calendar as CalendarIcon, Check, ChevronDown, Copy, RefreshCw, Search, X } from 'lucide-react';
+import { AlertTriangle, Calendar as CalendarIcon, Check, ChevronDown, Copy, FileDown, RefreshCw, Search, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { useInventory } from '@/store/InventoryContext';
 import { useAlertasConfig } from '@/hooks/useAlertasConfig';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +14,16 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ProductDrawer } from '@/components/ProductDrawer';
 import { MarketPriceUpdateDialog } from '@/components/MarketPriceUpdateDialog';
 import { useToast } from '@/hooks/use-toast';
