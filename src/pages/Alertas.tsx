@@ -152,7 +152,7 @@ export default function Alertas() {
       });
     }
     return result;
-  }, [latestProdSnaps, produtoMap, precosMap, config]);
+  }, [latestProdSnaps, produtoMap, precosMap, config, desdeData]);
 
   const filtered = useMemo(() => {
     let arr = alertas;
