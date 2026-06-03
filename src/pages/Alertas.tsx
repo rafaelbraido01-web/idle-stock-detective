@@ -234,6 +234,42 @@ export default function Alertas() {
     toast({ title: 'Códigos copiados', description: `${filtered.length} códigos na área de transferência.` });
   };
 
+  const generatePDF = () => {
+    const doc = new jsPDF('landscape');
+    const tableData = filtered.map(a => [
+      a.produto!.codigo,
+      a.produto!.descricao,
+      a.produto!.marca || '',
+      formatCurrency(a.ps.valor_total),
+      a.ps.quantidade.toString(),
+      a.ps.data_ultima_compra ? formatDateBR(a.ps.data_ultima_compra) : '—',
+      a.ps.dias_sem_compra.toString(),
+      a.regras.join(', ')
+    ]);
+
+    doc.text('Relatório de Alertas de Inventário', 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 14, 22);
+
+    autoTable(doc, {
+      startY: 25,
+      head: [['Código', 'Descrição', 'Marca', 'Valor Total', 'Qtd', 'Últ. Compra', 'Dias S/ Compra', 'Alertas']],
+      body: tableData,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [66, 66, 66] }
+    });
+
+    doc.save(`alertas-inventario-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  };
+
+  const handlePdfRequest = () => {
+    if (filtered.length > 100) {
+      setShowPdfConfirm(true);
+    } else {
+      generatePDF();
+    }
+  };
+
   if (loading) {
     return <div className="text-muted-foreground text-sm">Carregando alertas...</div>;
   }
