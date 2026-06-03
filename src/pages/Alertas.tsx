@@ -58,6 +58,7 @@ export default function Alertas() {
   const [drawerProdutoId, setDrawerProdutoId] = useState<string | null>(null);
   const [desdeData, setDesdeData] = useState<Date | undefined>(undefined);
   const [updateTarget, setUpdateTarget] = useState<{ codigo: string; descricao: string; marca: string; precoTabela: number } | null>(null);
+  const [showPdfConfirm, setShowPdfConfirm] = useState(false);
 
   // Sync default brands when config loads first time
   useEffect(() => {
