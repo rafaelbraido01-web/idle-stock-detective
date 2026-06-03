@@ -296,9 +296,14 @@ export default function Alertas() {
             {kpis.total} {kpis.total === 1 ? 'alerta exibido' : 'alertas exibidos'} · snapshot de {formatDateBR(latestSnap.data_importacao.slice(0, 10))}
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={handleCopy} disabled={filtered.length === 0}>
-          <Copy className="h-4 w-4 mr-2" /> Copiar códigos
-        </Button>
+        <div className="flex gap-2 items-center flex-wrap">
+          <Button variant="outline" size="sm" onClick={handlePdfRequest} disabled={filtered.length === 0} className="border-primary/20 hover:border-primary/50">
+            <FileDown className="h-4 w-4 mr-2" /> Gerar PDF
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleCopy} disabled={filtered.length === 0}>
+            <Copy className="h-4 w-4 mr-2" /> Copiar códigos
+          </Button>
+        </div>
       </div>
 
       {/* KPIs glass */}
