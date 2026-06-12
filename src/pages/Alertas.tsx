@@ -118,6 +118,7 @@ export default function Alertas() {
         config.estoqueParado.enabled &&
         ps.dias_sem_compra >= config.estoqueParado.diasMin &&
         ps.valor_total >= config.estoqueParado.valorMin &&
+        (config.estoqueParado.valorMax === undefined || ps.valor_total <= config.estoqueParado.valorMax) &&
         ps.quantidade >= (config.estoqueParado.estoqueMin ?? 0)
       ) {
         regras.push(`Parado +${config.estoqueParado.diasMin}d`);
