@@ -64,6 +64,7 @@ export default function Configuracoes() {
   // Local mirrors (so inputs can be edited freely)
   const [diasMin, setDiasMin] = useState(config.estoqueParado.diasMin);
   const [valorMin, setValorMin] = useState(config.estoqueParado.valorMin);
+  const [valorMax, setValorMax] = useState(config.estoqueParado.valorMax);
   const [estoqueMin, setEstoqueMin] = useState(config.estoqueParado.estoqueMin);
   const [diasVerde, setDiasVerde] = useState(config.precoMercado.diasVerde);
   const [diasVermelho, setDiasVermelho] = useState(config.precoMercado.diasVermelho);
@@ -71,6 +72,7 @@ export default function Configuracoes() {
 
   useEffect(() => { setDiasMin(config.estoqueParado.diasMin); }, [config.estoqueParado.diasMin]);
   useEffect(() => { setValorMin(config.estoqueParado.valorMin); }, [config.estoqueParado.valorMin]);
+  useEffect(() => { setValorMax(config.estoqueParado.valorMax); }, [config.estoqueParado.valorMax]);
   useEffect(() => { setEstoqueMin(config.estoqueParado.estoqueMin); }, [config.estoqueParado.estoqueMin]);
   useEffect(() => { setDiasVerde(config.precoMercado.diasVerde); }, [config.precoMercado.diasVerde]);
   useEffect(() => { setDiasVermelho(config.precoMercado.diasVermelho); }, [config.precoMercado.diasVermelho]);
@@ -151,7 +153,7 @@ export default function Configuracoes() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <div>
                   <Label className="text-xs">Dias sem compra ≥</Label>
                   <Input
@@ -164,7 +166,7 @@ export default function Configuracoes() {
                   />
                 </div>
                 <div>
-                  <Label className="text-xs">Valor estoque ≥ (R$)</Label>
+                  <Label className="text-xs">Valor estoque (De)</Label>
                   <Input
                     type="number"
                     min={0}
@@ -172,6 +174,18 @@ export default function Configuracoes() {
                     onChange={e => setValorMin(Number(e.target.value))}
                     onBlur={() => valorMin !== config.estoqueParado.valorMin && persistEstoque({ valorMin })}
                     className="h-9 mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Valor estoque (Até)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={valorMax === undefined ? '' : valorMax}
+                    onChange={e => setValorMax(e.target.value === '' ? undefined : Number(e.target.value))}
+                    onBlur={() => valorMax !== config.estoqueParado.valorMax && persistEstoque({ valorMax })}
+                    className="h-9 mt-1"
+                    placeholder="Sem limite"
                   />
                 </div>
                 <div>
